@@ -11,6 +11,11 @@ keyboard layouts that expose them via AltGr (e.g. Turkish).
 this file — if implementation reveals a spec ambiguity or gap, resolve it in
 SPECS.md alongside the code change, don't just patch around it.
 
+**Cold start?** Read `PLAN.md` first — it has the current implementation
+status, architecture as actually built, and the remaining milestones. This
+file (`CLAUDE.md`) is the durable *how to work here*; `PLAN.md` is the
+living *what's done and what's next*.
+
 ## Stack
 
 C#/.NET library, targeting `net10.0` (current LTS). Layout:
@@ -24,6 +29,13 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
   cases that must throw `TemplateParseException` — see `10-errors/`.
 - `Guillemets.slnx` at repo root ties both projects together (.NET 10
   defaults `dotnet new sln` to the newer XML solution format).
+- Central package management: `Directory.Packages.props` (all `PackageVersion`
+  entries, `ManagePackageVersionsCentrally=true`) and `Directory.Build.props`
+  (shared `TargetFramework`/`LangVersion`/`ImplicitUsings`/`Nullable`), both at
+  repo root. Individual `.csproj` files hold only what's unique to them.
+- Assertions use **Shouldly** (`actual.ShouldBe(expected)`), not NUnit's
+  `Assert.That`. PascalCase-of-space-words token resolution uses
+  **Humanizer.Core**'s `.Dehumanize()`, not hand-rolled string splitting.
 
 ## Core concepts
 
@@ -75,17 +87,64 @@ default language's localization values is case-insensitive. See
   accessibility when it's not the default (`public`, `internal`, etc.).
 - Keep whitespace between statements minimal — don't pad method bodies with
   blank lines between unrelated statements.
-- One class per file. Closely-related small data types (e.g. an AST's node
-  interface + record types) may be grouped as nested types under one
-  containing class instead of splitting into many trivial files.
+- One class per file (one type per file in practice — e.g. `Ast/`, `Tokens/`,
+  `Renderers/` each hold one file per type/class).
+- Prefer polymorphic dispatch (a base type with an abstract/virtual method,
+  each subtype overriding it — or a separate strategy class per type) over a
+  `switch`/pattern-match that implements per-type behavior inline. A `switch`
+  that merely *selects* which already-implemented strategy instance to hand
+  off to (see `TemplateEngine.Renderer`) is fine — the behavior itself must
+  live in its own class, not in the switch arms. This does not apply to a
+  genuinely stateful, sequential parser walking a token stream (see
+  `Parser.cs`) — that's normal parser-writing, not the anti-pattern this rule
+  targets.
 
 ## Working on this repo
 
 - Run `dotnet test` from the repo root to run the full fixture suite. Each
-  of the 28 fixtures under `/specs` becomes one NUnit test case, named by
-  its relative path (e.g. `02-conditional-blocks/003-else-truthy`), via
-  `FixtureTests.cs` in the test project.
+  fixture under `/specs` becomes one NUnit test case, named by its relative
+  path (e.g. `02-conditional-blocks/003-else-truthy`), via `FixtureTests.cs`
+  in the test project.
 - Engine work proceeds fixture-group by fixture-group (see the numbered
   `/specs` subfolders, ordered simplest → most complex) — implement one
   group's mechanic, confirm `dotnet test` flips exactly that group green
   with no regressions, then move to the next.
+- **TDD, one fixture at a time.** Pick the next single fixture (smallest
+  next), write only the minimal code to make it pass, run the full suite to
+  confirm no regressions — then actually perform a reasonable refactor pass
+  (correct layering, remove duplication, apply the style rules above) rather
+  than leaving cleanup for later. Report the result and let the fixture's
+  author/reviewer weigh in before moving to the next one.
+- **No failing tests at commit time.** Fixtures not yet implemented are
+  listed in `FixtureTests.cs`'s `IgnoredFixtures` set and show as
+  `Ignored`/`Skipped`, never `Failed` — `dotnet test` should always report
+  zero failures. Remove a fixture's name from that set once its case goes
+  green; the set is empty once the engine fully implements the spec.
+- Known flaky build issue: `dotnet build`/`dotnet test` occasionally fails
+  with `MSB3374` (can't set last-write-time on an `obj/**/*.Up2Date` file).
+  Not a real permission problem — just retry the command once and it clears.
+
+## Parking (ending a session)
+
+When the user says they're "parking" (their term for wrapping up for the
+day), do this before ending the turn:
+
+1. Run `dotnet test` and confirm it's all-green (zero `Failed`) — flag it
+   clearly if it isn't; don't park on red.
+2. Update `PLAN.md`: refresh the status line/fixture count, move anything
+   completed this session out of "Remaining milestones" (or note partial
+   progress), add any newly-surfaced "Known v1 scope decisions."
+3. Update `CLAUDE.md` itself with any durable convention, rule, or
+   architecture decision that came up this session and isn't reflected here
+   yet — this file plus `PLAN.md` are what survive to a cold start on
+   another machine or conversation; don't let anything load-bearing live
+   only in this session's chat history.
+4. Remind the user of uncommitted changes — don't run git yourself (see the
+   no-git rule below); just point out what's pending.
+5. Give a short summary: what's done, what's next, anything to double-check.
+
+## Git
+
+Never run `git` commands (status, add, commit, mv, etc.) in this repo —
+the user handles git themselves. Give them the exact command to run and
+wait, rather than invoking it.
