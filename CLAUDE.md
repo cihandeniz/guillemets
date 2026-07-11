@@ -23,10 +23,14 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
 - `/test/Guillemets.Tests` — NUnit test project.
 - `/specs` — the fixture corpus, the acceptance contract. Don't edit
   fixtures to make a test pass; if one looks wrong, fix it deliberately
-  and say why. Two triple shapes: `.guil.md`/`.json`/`.md` (template /
-  data / expected rendered output) for success cases, or `.guil.md`/
-  `.json`/`.error` (template / data / expected exception message) for
-  cases that must throw `TemplateParseException` — see `10-errors/`.
+  and say why. Fixtures are flat sibling files sharing a number-prefixed
+  basename within each numbered group folder (e.g.
+  `02-conditional-blocks/001-boolean-true-no-else.guil.md` +
+  `.json` + `.md`) — not one subdirectory per case. Two triple shapes:
+  `.guil.md`/`.json`/`.md` (template / data / expected rendered output)
+  for success cases, or `.guil.md`/`.json`/`.error` (template / data /
+  expected exception message) for cases that must throw
+  `TemplateParseException` — see `10-errors/`.
 - `Guillemets.slnx` at repo root ties both projects together (.NET 10
   defaults `dotnet new sln` to the newer XML solution format).
 - Central package management: `Directory.Packages.props` (all `PackageVersion`
@@ -41,10 +45,15 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
 
 (Full detail in SPECS.md — this is a map, not a replacement.)
 
-- **Delimiters**: `«»`, depth-repeatable (`««`, `«««`, ...) purely for nesting
-  readability — all depths behave identically. Tokens may span multiple
-  lines; internal whitespace (including newlines) normalizes to a single
-  space before resolution.
+- **Delimiters**: `«»`. Depth is what distinguishes an inline variable from a
+  block: a single `«»` is always an inline variable/token (may still span
+  multiple lines — see below); a run of two or more (`««`, `«««`, ...) always
+  opens a block, and its close must use the same depth. Beyond depth 2, the
+  extra depth is purely for nesting readability (e.g. a block nested inside
+  another block) and behaves identically to `««`/`»»` for parsing purposes —
+  no fixture nests blocks yet, so this is currently unexercised. Tokens may
+  span multiple lines; internal whitespace (including newlines) normalizes to
+  a single space before resolution.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
 - **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type

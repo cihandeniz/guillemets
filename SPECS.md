@@ -85,7 +85,13 @@ uses `.SelectMany()` internally to keep the result flat.
 ## Blocks
 
 A block opens with `««name` on its own line and closes with `»»` on its own
-line. Behavior is inferred from the resolved type of `name`:
+line. The double guillemet is what marks this as a block rather than an
+inline variable (see Variables, above, which always use a single `«»`, even
+when its content spans multiple lines) — the closing depth must match the
+opening depth. Deeper consistent depths (`«««`/`»»»`, ...) are available
+purely for nesting readability when a block contains another block, and
+behave identically to `««`/`»»`. Behavior is inferred from the resolved type
+of `name`:
 
 | Resolved type | Behavior         |
 | ---           | ---              |
