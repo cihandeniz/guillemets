@@ -6,15 +6,13 @@ namespace Guillemets;
 
 public static class TemplateEngine
 {
-    static readonly Dictionary<Type, INodeRenderer> Renderers = new()
-    {
-        [typeof(Ast.LiteralNode)] = new LiteralNodeRenderer(),
-        [typeof(Ast.TokenNode)] = new TokenNodeRenderer(),
-    };
+    static readonly INodeRenderer LITERAL_NODE = new LiteralNodeRenderer();
+    static readonly INodeRenderer TOKEN_NODE = new TokenNodeRenderer();
 
     public static string Render(string template, JsonElement data)
     {
-        var nodes = Tokenizer.Tokenize(template);
+        var tokens = Tokenizer.Tokenize(template);
+        var nodes = Parser.Parse(tokens);
         var result = new StringBuilder();
         foreach (var node in nodes)
         {
@@ -25,5 +23,10 @@ public static class TemplateEngine
     }
 
     static INodeRenderer Renderer(Ast.INode node) =>
-        Renderers[node.GetType()];
+        node switch
+        {
+            Ast.LiteralNode => LITERAL_NODE,
+            Ast.TokenNode => TOKEN_NODE,
+            _ => throw new InvalidOperationException($"{node.GetType().Name} is not a supported node type")
+        };
 }

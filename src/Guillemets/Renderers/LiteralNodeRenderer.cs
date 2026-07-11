@@ -4,8 +4,8 @@ using static Guillemets.Ast;
 
 namespace Guillemets.Renderers;
 
-internal sealed class LiteralNodeRenderer : INodeRenderer
+internal sealed class LiteralNodeRenderer : NodeRendererBase<LiteralNode>
 {
-    public string Render(INode node, JsonElement data) =>
-        ((LiteralNode)node).Text;
+    public override string Render(LiteralNode node, JsonElement data) =>
+        node.Text;
 }

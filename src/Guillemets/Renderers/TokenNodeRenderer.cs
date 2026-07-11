@@ -5,13 +5,16 @@ using static Guillemets.Ast;
 
 namespace Guillemets.Renderers;
 
-internal sealed class TokenNodeRenderer : INodeRenderer
+internal sealed class TokenNodeRenderer : NodeRendererBase<TokenNode>
 {
-    public string Render(INode node, JsonElement data)
+    public override string Render(TokenNode node, JsonElement data)
     {
-        var path = ((TokenNode)node).Path;
-        var propertyName = path.Dehumanize();
+        var current = data;
+        foreach (var segment in node.Segments)
+        {
+            current = current.GetProperty(segment.Dehumanize());
+        }
 
-        return data.GetProperty(propertyName).GetString() ?? string.Empty;
+        return current.GetString() ?? string.Empty;
     }
 }

@@ -1,4 +1,4 @@
-using static Guillemets.Ast;
+using static Guillemets.Tokens;
 
 namespace Guillemets;
 
@@ -6,40 +6,40 @@ internal static class Tokenizer
 {
     const char OPEN = '«';
     const char CLOSE = '»';
+    const char COLON = ':';
+    readonly static HashSet<char> CHARS = [OPEN, CLOSE, COLON];
 
-    public static List<INode> Tokenize(string template)
+    public static List<IToken> Tokenize(string template)
     {
-        var nodes = new List<INode>();
+        var tokens = new List<IToken>();
         var literalStart = 0;
-        var i = 0;
-
-        while (i < template.Length)
+        for (var i = 0; i < template.Length; i++)
         {
-            if (template[i] == OPEN)
-            {
-                if (i > literalStart)
-                {
-                    nodes.Add(new LiteralNode(template[literalStart..i]));
-                }
+            var ch = template[i];
+            if (!CHARS.Contains(ch)) { continue; }
 
-                var close = template.IndexOf(CLOSE, i);
-                var path = template[(i + 1)..close];
-                nodes.Add(new TokenNode(path));
-
-                i = close + 1;
-                literalStart = i;
-            }
-            else
+            if (i > literalStart)
             {
-                i++;
+                tokens.Add(new LiteralToken(template[literalStart..i]));
             }
+
+            tokens.Add(SymbolToken(ch));
+            literalStart = i + 1;
         }
 
         if (literalStart < template.Length)
         {
-            nodes.Add(new LiteralNode(template[literalStart..]));
+            tokens.Add(new LiteralToken(template[literalStart..]));
         }
 
-        return nodes;
+        return tokens;
+    }
+
+    static IToken SymbolToken(char ch)
+    {
+        if (ch == OPEN) { return new OpenToken(); }
+        if (ch == CLOSE) { return new CloseToken(); }
+
+        return new ColonToken();
     }
 }
