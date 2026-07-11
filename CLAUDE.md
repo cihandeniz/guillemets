@@ -62,6 +62,21 @@ property `OfferNo`), so a schema mapping bridges them:
 default language's localization values is case-insensitive. See
 "Schema & Localization" in SPECS.md.
 
+## C# code style
+
+- `using` directives sorted alphabetically, no special-casing `System.*` to
+  the top — it sorts wherever it falls alphabetically among the others.
+- `using static` directives form their own group below the regular `using`
+  directives, separated by a blank line. Group multiple `using static`
+  directives together when there's more than one.
+- Never write `private` explicitly — it's the default; only state
+  accessibility when it's not the default (`public`, `internal`, etc.).
+- Keep whitespace between statements minimal — don't pad method bodies with
+  blank lines between unrelated statements.
+- One class per file. Closely-related small data types (e.g. an AST's node
+  interface + record types) may be grouped as nested types under one
+  containing class instead of splitting into many trivial files.
+
 ## Working on this repo
 
 - Run `dotnet test` from the repo root to run the full fixture suite. Each
