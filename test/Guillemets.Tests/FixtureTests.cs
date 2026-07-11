@@ -12,7 +12,6 @@ public class FixtureTests
     // green; this set is empty once the engine is complete.
     private static readonly HashSet<string> IgnoredFixtures =
     [
-        "01-variables/003-nested-property-chained-list",
         "01-variables/004-multiline-whitespace",
         "02-conditional-blocks/001-boolean-true-no-else",
         "02-conditional-blocks/002-boolean-false-no-else",

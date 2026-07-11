@@ -6,14 +6,34 @@ namespace Guillemets.Renderers;
 
 internal sealed class TokenNodeRenderer : NodeRendererBase<TokenNode>
 {
-    public override string Render(TokenNode node, JsonElement data)
+    public override string Render(TokenNode node, JsonElement data) =>
+        string.Join(", ", Resolve(data, node.Segments).Select(value => value.ToString()));
+
+    static IEnumerable<JsonElement> Resolve(JsonElement current, IReadOnlyList<string> segments)
     {
-        var current = data;
-        foreach (var segment in node.Segments)
+        if (segments.Count == 0)
         {
-            current = current.GetProperty(segment.Dehumanize());
+            yield return current;
+            yield break;
         }
 
-        return current.GetString() ?? string.Empty;
+        if (current.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in current.EnumerateArray())
+            {
+                foreach (var result in Resolve(item, segments))
+                {
+                    yield return result;
+                }
+            }
+
+            yield break;
+        }
+
+        var next = current.GetProperty(segments[0].Dehumanize());
+        foreach (var result in Resolve(next, segments.Skip(1).ToList()))
+        {
+            yield return result;
+        }
     }
 }
