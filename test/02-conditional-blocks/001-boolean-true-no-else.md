@@ -1,3 +1,3 @@
-Önce.
-Sayın Ayşe Yılmaz,
-Sonra.
+Before.
+Dear Alice Smith,
+After.

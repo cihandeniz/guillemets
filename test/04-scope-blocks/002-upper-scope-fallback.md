@@ -1,4 +1,4 @@
-Teklif No: 2026-001
+Quote No: 2026-001
 
-Acme A.Ş. firmasına özel sunduğumuz 2026-001 numaralı bu teklifin
-geçerlilik süresi 1 aydır.
+Acme Inc. has been given this quote number 2026-001, valid for 1
+month.

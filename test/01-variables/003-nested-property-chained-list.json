@@ -1,14 +1,14 @@
 {
-  "Teklifler": [
+  "Quotes": [
     {
-      "Fiyatlar": [
-        { "Tutar": 100 },
-        { "Tutar": 200 }
+      "Prices": [
+        { "Amount": 100 },
+        { "Amount": 200 }
       ]
     },
     {
-      "Fiyatlar": [
-        { "Tutar": 300 }
+      "Prices": [
+        { "Amount": 300 }
       ]
     }
   ]

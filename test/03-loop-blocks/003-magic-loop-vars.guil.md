@@ -1,5 +1,5 @@
-««kalemler
-««ilk
-İlk sırada: 
-»»«açıklama»
+««items
+««first
+First up: 
+»»«description»
 »»

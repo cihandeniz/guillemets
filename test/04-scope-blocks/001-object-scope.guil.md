@@ -1,3 +1,3 @@
-««şirket
-Vergi No: «vergi no»
+««company
+Tax No: «tax no»
 »»

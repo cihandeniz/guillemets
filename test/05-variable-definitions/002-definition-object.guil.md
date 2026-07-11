@@ -1,5 +1,5 @@
-««adres = şirket
-«sokak», «şehir»
+««address = company
+«street», «city»
 »»
 
-Teslimat adresi: «adres»
+Delivery address: «address»

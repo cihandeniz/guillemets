@@ -1,3 +1,3 @@
-İlk sırada: A
+First up: A
 B
 C

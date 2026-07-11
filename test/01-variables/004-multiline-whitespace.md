@@ -1,1 +1,1 @@
-Geçerlilik: 31.12.2026
+Valid until: 2026-12-31

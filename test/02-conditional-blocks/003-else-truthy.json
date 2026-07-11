@@ -1,5 +1,5 @@
 {
-  "Bireysel": true,
-  "AdSoyad": "Ayşe Yılmaz",
-  "ŞirketAdı": "Acme A.Ş."
+  "Individual": true,
+  "FullName": "Alice Smith",
+  "CompanyName": "Acme Inc."
 }

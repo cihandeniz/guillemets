@@ -1,6 +1,6 @@
 {
-  "Şirket": {
-    "Sokak": "Atatürk Cad. No:1",
-    "Şehir": "İstanbul"
+  "Company": {
+    "Street": "1 Main St.",
+    "City": "Springfield"
   }
 }

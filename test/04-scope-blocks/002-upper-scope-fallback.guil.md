@@ -1,6 +1,6 @@
-Teklif No: «teklif no»
+Quote No: «quote no»
 
-««şirket
-«şirket adı» firmasına özel sunduğumuz «teklif no» numaralı bu teklifin
-geçerlilik süresi 1 aydır.
+««company
+«company name» has been given this quote number «quote no», valid for 1
+month.
 »»

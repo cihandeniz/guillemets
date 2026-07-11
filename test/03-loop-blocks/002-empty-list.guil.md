@@ -1,4 +1,4 @@
-Kalemler:
-««kalemler
-- «açıklama»: «adet» «birim» × «birim fiyat» = «toplam»
+Items:
+««items
+- «description»: «quantity» «unit» × «unit price» = «total»
 »»

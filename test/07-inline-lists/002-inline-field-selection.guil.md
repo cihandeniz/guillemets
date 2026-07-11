@@ -1,1 +1,1 @@
-Tutarlar: «fiyat teklifleri: tutar»
+Amounts: «price quotes: amount»

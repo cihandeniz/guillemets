@@ -1,7 +1,7 @@
 {
-  "Kalemler": [
-    { "Açıklama": "Danışmanlık", "Adet": 2, "Birim": "gün", "BirimFiyat": 1500, "Toplam": 3000 },
-    { "Açıklama": "Kurulum", "Adet": 1, "Birim": "adet", "BirimFiyat": 500, "Toplam": 500 }
+  "Items": [
+    { "Description": "Consulting", "Quantity": 2, "Unit": "day", "UnitPrice": 1500, "Total": 3000 },
+    { "Description": "Setup", "Quantity": 1, "Unit": "unit", "UnitPrice": 500, "Total": 500 }
   ],
-  "AraToplam": 3500
+  "Subtotal": 3500
 }

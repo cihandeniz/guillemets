@@ -1,17 +1,17 @@
 {
-  "TeklifNo": "2026-0711",
-  "Bireysel": false,
-  "TamAdı": "Ayşe Yılmaz",
-  "ŞirketAdı": "Acme Danışmanlık A.Ş.",
-  "Tarih": "2026-07-11",
-  "GeçerlilikTarihi": "11.08.2026",
-  "Kalemler": [
-    { "Açıklama": "Danışmanlık", "Adet": 2, "Birim": "gün", "BirimFiyat": 1500, "Toplam": 3000 },
-    { "Açıklama": "Kurulum", "Adet": 1, "Birim": "adet", "BirimFiyat": 500, "Toplam": 500 }
+  "QuoteNo": "2026-0711",
+  "Individual": false,
+  "FullName": "Alice Smith",
+  "CompanyName": "Acme Consulting Inc.",
+  "Date": "2026-07-11",
+  "ValidUntil": "2026-08-11",
+  "Items": [
+    { "Description": "Consulting", "Quantity": 2, "Unit": "day", "UnitPrice": 1500, "Total": 3000 },
+    { "Description": "Setup", "Quantity": 1, "Unit": "unit", "UnitPrice": 500, "Total": 500 }
   ],
-  "AraToplam": 3500,
-  "KdvOranı": 20,
-  "Kdv": 700,
-  "GenelToplam": 4200,
-  "Şirket": "Acme Danışmanlık A.Ş."
+  "Subtotal": 3500,
+  "TaxRate": 20,
+  "Tax": 700,
+  "GrandTotal": 4200,
+  "Company": "Acme Consulting Inc."
 }

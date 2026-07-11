@@ -1,3 +1,3 @@
-Önce.
-Şirket bilgisi bulunmamaktadır
-Sonra.
+Before.
+No company information available
+After.

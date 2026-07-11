@@ -1,1 +1,1 @@
-Tutar: «tutar (para birimi = ₺)»
+Amount: «amount (currency = $)»

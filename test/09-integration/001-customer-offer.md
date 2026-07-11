@@ -1,32 +1,31 @@
-# Teklif #2026-0711
+# Quote #2026-0711
 
 
-**Müşteri:** Acme Danışmanlık A.Ş. yetkilileri
-**Tarih:** 11.07.2026
-**Geçerlilik:** 11.08.2026
-
----
-
-Sayın Acme Danışmanlık A.Ş. yetkilileri,
-
-Talep edilen hizmetler için bu teklifi sunmaktan memnuniyet duyarız. Ekibimiz,
-üzerinde anlaşılan zaman çizelgesi içinde yüksek kaliteli iş teslim edecek ve
-her adımda memnuniyetinizi sağlamayı hedefleyecektir.
-
-## Kalemler
-
-| Açıklama   | Adet           | Birim Fiyat            | Toplam         |
-| ---        | ---            | ---                    | ---            |
-| Danışmanlık | 2 gün | 1500 | 3000 |
-| Kurulum | 1 adet | 500 | 500 |
-|            |                | **Ara Toplam**         | 3500   |
-|            |                | **KDV (%20)** | 700          |
-|            |                | **Genel Toplam**       | 4200 |
+**Customer:** representatives of Acme Consulting Inc.
+**Date:** 2026-07-11
+**Valid Until:** 2026-08-11
 
 ---
 
-Sizinle çalışmayı dört gözle bekliyoruz. Bu teklif 11.08.2026 tarihine
-kadar geçerlidir. Herhangi bir sorunuz olması durumunda bizimle iletişime
-geçmekten çekinmeyiniz.
+Dear representatives of Acme Consulting Inc.,
 
-*Acme Danışmanlık A.Ş. — 11/07/2026*
+We are pleased to present this quote for the requested services. Our team
+will deliver high-quality work within the agreed timeline and aim to ensure
+your satisfaction at every step.
+
+## Items
+
+| Description | Quantity | Unit Price      | Total |
+| ----------- | -------- | --------------- | ----- |
+| Consulting  | 2 day    | 1500            | 3000  |
+| Setup       | 1 unit   | 500             | 500   |
+|             |          | **Subtotal**    | 3500  |
+|             |          | **Tax (%20)**   | 700   |
+|             |          | **Grand Total** | 4200  |
+
+---
+
+We look forward to working with you. This quote is valid until
+2026-08-11. Please don't hesitate to contact us with any questions.
+
+*Acme Consulting Inc. — 11/07/2026*

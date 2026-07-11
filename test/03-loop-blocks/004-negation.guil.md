@@ -1,6 +1,6 @@
-««kalemler
-««!ilk
+««items
+««!first
 ---
 »»
-«açıklama»
+«description»
 »»

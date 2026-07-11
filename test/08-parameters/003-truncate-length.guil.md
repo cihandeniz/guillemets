@@ -1,1 +1,1 @@
-Açıklama: «açıklama (uzunluk = 10)»
+Description: «description (length = 10)»

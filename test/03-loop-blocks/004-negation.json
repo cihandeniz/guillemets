@@ -1,7 +1,7 @@
 {
-  "Kalemler": [
-    { "Açıklama": "A" },
-    { "Açıklama": "B" },
-    { "Açıklama": "C" }
+  "Items": [
+    { "Description": "A" },
+    { "Description": "B" },
+    { "Description": "C" }
   ]
 }

@@ -1,1 +1,1 @@
-Merhaba, «isim»!
+Hello, «name»!

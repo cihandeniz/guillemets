@@ -1,2 +1,2 @@
 
-Sayın Ayşe Yılmaz,
+Dear Alice Smith,

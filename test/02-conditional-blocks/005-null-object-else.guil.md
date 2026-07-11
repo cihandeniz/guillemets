@@ -1,7 +1,7 @@
-Önce.
-««şirket bilgisi
-Şirket adı: «ad»
+Before.
+««company info
+Company name: «name»
 --
-Şirket bilgisi bulunmamaktadır
+No company information available
 »»
-Sonra.
+After.

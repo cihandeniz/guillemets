@@ -1,38 +1,37 @@
-# Teklif #«Teklif NO»
+# Quote #«Quote No»
 
-««Görüşülecek Kişi = bireysel
-«Tam Adı»
+««Contact Person = individual
+«Full Name»
 --
-«Şirket Adı» yetkilileri
+representatives of «Company Name»
 »»
 
-**Müşteri:** «Görüşülecek Kişi»
-**Tarih:** «Tarih»
-**Geçerlilik:** «Geçerlilik Tarihi»
+**Customer:** «Contact Person»
+**Date:** «Date»
+**Valid Until:** «Valid Until»
 
 ---
 
-Sayın «Görüşülecek Kişi»,
+Dear «Contact Person»,
 
-Talep edilen hizmetler için bu teklifi sunmaktan memnuniyet duyarız. Ekibimiz,
-üzerinde anlaşılan zaman çizelgesi içinde yüksek kaliteli iş teslim edecek ve
-her adımda memnuniyetinizi sağlamayı hedefleyecektir.
+We are pleased to present this quote for the requested services. Our team
+will deliver high-quality work within the agreed timeline and aim to ensure
+your satisfaction at every step.
 
-## Kalemler
+## Items
 
-| Açıklama   | Adet           | Birim Fiyat            | Toplam         |
-| ---        | ---            | ---                    | ---            |
-| ««kalemler                                                            |
-| «Açıklama» | «Adet» «Birim» | «Birim Fiyat»          | «Toplam»       |
-| »»                                                                    |
-|            |                | **Ara Toplam**         | «Ara Toplam»   |
-|            |                | **KDV (%«KDV Oranı»)** | «KDV»          |
-|            |                | **Genel Toplam**       | «Genel Toplam» |
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| ««items       |                   |                       |               |
+| «description» | «quantity» «unit» | «unit price»          | «total»       |
+| »»            |                   |                       |               |
+|               |                   | **Subtotal**          | «subtotal»    |
+|               |                   | **Tax (%«tax rate»)** | «tax»         |
+|               |                   | **Grand Total**       | «grand total» |
 
 ---
 
-Sizinle çalışmayı dört gözle bekliyoruz. Bu teklif «geçerlilik tarihi» tarihine
-kadar geçerlidir. Herhangi bir sorunuz olması durumunda bizimle iletişime
-geçmekten çekinmeyiniz.
+We look forward to working with you. This quote is valid until
+«valid until». Please don't hesitate to contact us with any questions.
 
-*«Şirket» — «Tarih (format = GG/AA/YYYY)»*
+*«Company» — «Date (format = DD/MM/YYYY)»*

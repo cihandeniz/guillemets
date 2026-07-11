@@ -1,1 +1,1 @@
-Etiketler: felsefe, bilgelik, antik-yunan
+Tags: philosophy, wisdom, ancient-greek

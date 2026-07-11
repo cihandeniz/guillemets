@@ -1,3 +1,3 @@
-Önce.
-Sayın Acme A.Ş. yetkilileri,
-Sonra.
+Before.
+Dear representatives of Acme Inc.,
+After.

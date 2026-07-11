@@ -1,3 +1,3 @@
-Kalemler:
-- Danışmanlık: 2 gün × 1500 = 3000
-- Kurulum: 1 adet × 500 = 500
+Items:
+- Consulting: 2 day × 1500 = 3000
+- Setup: 1 unit × 500 = 500

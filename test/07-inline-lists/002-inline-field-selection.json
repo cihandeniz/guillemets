@@ -1,7 +1,7 @@
 {
-  "FiyatTeklifleri": [
-    { "Tutar": 100 },
-    { "Tutar": 200 },
-    { "Tutar": 300 }
+  "PriceQuotes": [
+    { "Amount": 100 },
+    { "Amount": 200 },
+    { "Amount": 300 }
   ]
 }

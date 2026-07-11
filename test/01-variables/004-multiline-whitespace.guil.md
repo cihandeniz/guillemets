@@ -1,2 +1,2 @@
-Geçerlilik: «geçerlilik
-tarihi»
+Valid until: «valid
+until»

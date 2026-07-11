@@ -1,7 +1,7 @@
-Önce.
-««bireysel
-Sayın «ad soyad»,
+Before.
+««individual
+Dear «full name»,
 --
-Sayın «şirket adı» yetkilileri,
+Dear representatives of «company name»,
 »»
-Sonra.
+After.

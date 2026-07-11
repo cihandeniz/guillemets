@@ -1,7 +1,7 @@
-««görüşülecek kişi = bireysel
-«tam adı»
+««contact person = individual
+«full name»
 --
-«şirket adı» yetkilileri
+representatives of «company name»
 »»
 
-Sayın «görüşülecek kişi»,
+Dear «contact person»,

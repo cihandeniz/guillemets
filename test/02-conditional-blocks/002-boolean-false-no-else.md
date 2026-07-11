@@ -1,2 +1,2 @@
-Önce.
-Sonra.
+Before.
+After.

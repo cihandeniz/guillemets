@@ -1,1 +1,1 @@
-Sayın «ad soyad»,
+Dear «full name»,

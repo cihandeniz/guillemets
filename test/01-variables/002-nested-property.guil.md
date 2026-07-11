@@ -1,1 +1,1 @@
-Şirket adı: «şirket: ad»
+Company name: «company: name»

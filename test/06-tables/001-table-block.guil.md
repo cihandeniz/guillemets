@@ -1,6 +1,6 @@
-| Açıklama   | Adet           | Birim Fiyat            | Toplam         |
-| ---        | ---            | ---                    | ---            |
-| ««kalemler |                |                        |                |
-| «açıklama» | «adet» «birim» | «birim fiyat»          | «toplam»       |
-| »»         |                |                        |                |
-|            |                | **Ara Toplam**         | «ara toplam»   |
+| Description   | Quantity          | Unit Price   | Total      |
+| ------------- | ----------------- | ------------ | ---------- |
+| ««items       |                   |              |            |
+| «description» | «quantity» «unit» | «unit price» | «total»    |
+| »»            |                   |              |            |
+|               |                   | **Subtotal** | «subtotal» |

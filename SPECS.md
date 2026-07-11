@@ -16,31 +16,29 @@ Multi-quote depth (`««`, `«««`, ...) is used for readability at nesting lev
 The engine accepts any consistent depth — the author chooses based on
 surrounding context.
 
-Tokens may span multiple lines. Whitespace including newlines inside `«»` is
-normalized to a single space before resolution.
-
 ```markdown
-«geçerlilik
-tarihi»
+«valid
+until»
 ```
 
-resolves identically to `«geçerlilik tarihi»`.
+resolves identically to `«valid until»`.
 
 ---
 
 ## Schema & Localization
 
-Template authors write variable names in any language using natural,
-space-separated words. Developers define the model in English using standard
-naming conventions. Localization and naming convention conversions bridges the
-two.
+Template authors write variable names using natural, space-separated words —
+whatever terms make sense to them. Developers define the model in English
+using standard naming conventions. A schema bridges the two, since the
+author's business vocabulary won't always match the developer's code
+vocabulary.
 
 ### Template
 
 ```markdown
-«teklif no»
-«ad soyad»
-«şirket: adı»
+«quote no»
+«full name»
+«company: name»
 ```
 
 ### Model (C#)
@@ -54,10 +52,10 @@ model.Company.Name
 ### Schema mapping
 
 ```markdown
-Teklif NO = teklif no  = OfferNo
-Ad Soyad  = ad soyad   = FullName
-Şirket    = şirket     = Company
-Adı       = adı        = Name
+Quote No  = quote no  = OfferNo
+Full Name = full name = FullName
+Company   = company   = Company
+Name      = name      = Name
 ```
 
 Space-separated words in templates map to PascalCase/camelCase in the model.
@@ -69,7 +67,7 @@ resolve back to property names.
 Single-line or multi-line token resolving to a scalar value.
 
 ```markdown
-«ad soyad»
+«full name»
 ```
 
 ### Nested Property Access
@@ -79,9 +77,9 @@ list, applies a projection (equivalent to `.Select()`). Chaining across lists
 uses `.SelectMany()` internally to keep the result flat.
 
 ```
-«şirket: adı»
-«teklifler: fiyatlar: tutar»
-«teklifler: fiyatlar: tutar: dolar fiyatı»
+«company: name»
+«quotes: prices: amount»
+«quotes: prices: amount: dollar price»
 ```
 
 ## Blocks
@@ -98,29 +96,29 @@ line. Behavior is inferred from the resolved type of `name`:
 No keyword is required. The same syntax covers all three cases.
 
 ```markdown
-««bireysel
-Sayın «ad soyad»,
+««individual
+Dear «full name»,
 »»
 
-««teklif kalemleri
-**«açıklama»**
+««quote items
+**«description»**
 
-«adet» «birim» × «birim fiyat» = «toplam»
+«quantity» «unit» × «unit price» = «total»
 »»
 
-««şirket
-Vergi No: «vergi no»
+««company
+Tax No: «tax no»
 »»
 ```
 
 When a variable does not exist in existing scope, it looks for upper scopes.
 
 ```markdown
-Teklif No: «teklif no»
+Quote No: «quote no»
 
-««şirket
-«şirket adı» firmasına özel sunduğumuz «teklif no» numaralı bu teklifin
-geçerlilik süresi 1 aydır.
+««company
+«company name» has been given this quote number «quote no», valid for 1
+month.
 »»
 ```
 
@@ -130,20 +128,20 @@ geçerlilik süresi 1 aydır.
 Used with boolean blocks and variable definitions.
 
 ```markdown
-««bireysel
-Sayın «ad soyad»,
+««individual
+Dear «full name»,
 --
-Sayın «şirket adı» yetkilileri,
+Dear representatives of «company name»,
 »»
 ```
 
 Else works also when a given object is null.
 
 ```markdown
-««şirket bilgisi
-Şirket adı: «şirket adı»
+««company info
+Company name: «name»
 --
-Şirket bilgisi bulunmamaktadır
+No company information available
 »»
 ```
 
@@ -153,16 +151,16 @@ The following variables are injected automatically inside every loop block:
 
 | Variable | Meaning              |
 | ---      | ---                  |
-| `«ilk»`  | true on first item   |
-| `«son»`  | true on last item    |
+| `«first»`| true on first item   |
+| `«last»` | true on last item    |
 
 ### Negation
 
 `!` prefix negates any boolean variable:
 
 ```markdown
-«!son»    → true when not last item
-«!ilk»    → true when not first item
+«!last»    → true when not last item
+«!first»   → true when not first item
 ```
 
 ## Variable Definitions
@@ -171,10 +169,10 @@ A block can capture its rendered output into a named variable instead of
 rendering inline. Use `= condition` after the variable name.
 
 ```markdown
-««görüşülecek kişi = bireysel
-«tam adı»
+««contact person = individual
+«full name»
 --
-«şirket adı» yetkilileri
+representatives of «company name»
 »»
 ```
 
@@ -182,9 +180,9 @@ The defined variable is then available as a plain variable anywhere below its
 definition:
 
 ```markdown
-Sayın «görüşülecek kişi»,
+Dear «contact person»,
 
-Bu teklif «görüşülecek kişi» adına hazırlanmıştır.
+This quote has been prepared for «contact person».
 ```
 
 The right-hand side of `=` follows the same context-aware block rules: boolean →
@@ -200,14 +198,14 @@ A block can be supports beginning and ending `|` to fit into a table without
 breaking markdown table syntax.
 
 ```markdown
-| Açıklama   | Adet           | Birim Fiyat            | Toplam         |
-| ---        | ---            | ---                    | ---            |
-| ««kalemler                                                            |
-| «açıklama» | «adet» «birim» | «birim fiyat»          | «toplam»       |
-| »»                                                                    |
-|            |                | **Ara Toplam**         | «ara toplam»   |
-|            |                | **KDV (%«kdv oranı»)** | «kdv»          |
-|            |                | **Genel Toplam**       | «genel toplam» |
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| ««items       |                   |                       |               |
+| «description» | «quantity» «unit» | «unit price»          | «total»       |
+| »»            |                   |                       |               |
+|               |                   | **Subtotal**          | «subtotal»    |
+|               |                   | **Tax (%«tax rate»)** | «tax»         |
+|               |                   | **Grand Total**       | «grand total» |
 ```
 
 ## Inline Lists
@@ -216,8 +214,8 @@ A variable that resolves to a list of scalars is automatically joined with `, `
 (comma space) when used inline:
 
 ```markdown
-Etiketler: «etiketler»
-→ Etiketler: felsefe, bilgelik, antik-yunan
+Tags: «tags»
+→ Tags: philosophy, wisdom, ancient-greek
 ```
 
 ### Inline List with Field Selection
@@ -225,8 +223,8 @@ Etiketler: «etiketler»
 When list items are objects, use `:` to project a field:
 
 ```markdown
-«fiyat teklifleri: tutar»
-«teklifler: fiyatlar: tutar: dolar fiyatı»
+«price quotes: amount»
+«quotes: prices: amount: dollar price»
 ```
 
 The `:` chain resolves lists via projection and flattening, objects via property
@@ -237,20 +235,20 @@ access — whichever the engine encounters at each step.
 Pass a separator using inner `()` as a named parameter:
 
 ```markdown
-«teklif: etiketler (ayraç = , )»
+«quote: tags (separator = , )»
 ```
 
 ### Loop Block with Separator
 
-Use the `(ayraç)` parameter on the last line of the block:
+Use the `(separator)` parameter on the last line of the block:
 
 ```markdown
-««etiketler = teklif: etiketler
-«ad»
-(ayraç = , )»»
+««tags = quote: tags
+«name»
+(separator = , )»»
 ```
 
-renders as a comma-separated list when used via `«etiketler»`.
+renders as a comma-separated list when used via `«tags»`.
 
 ## Parameters
 
@@ -258,54 +256,53 @@ Inner `(name = value)` syntax passes named parameters to the enclosing
 expression. A fixed set of built-in parameters is supported:
 
 ```markdown
-«tarih (format = GG/AA/YYYY)»
-«tutar (para birimi = ₺)»
-«açıklama (uzunluk = 80)»
-«liste: ad (ayraç = , )»
+«date (format = DD/MM/YYYY)»
+«amount (currency = $)»
+«description (length = 80)»
+«list: name (separator = , )»
 ```
 
 Parameters are positional by name and resolved before the outer expression is
 evaluated.
 
-## Full Example — Customer Offer
+## Full Example — Customer Quote
 
 ```markdown
-# Teklif #«Teklif NO»
+# Quote #«Quote No»
 
-««Görüşülecek Kişi = bireysel
-«Tam Adı»
+««Contact Person = individual
+«Full Name»
 --
-«Şirket Adı» yetkilileri
+representatives of «Company Name»
 »»
 
-**Müşteri:** «Görüşülecek Kişi»
-**Tarih:** «Tarih»
-**Geçerlilik:** «Geçerlilik Tarihi»
+**Customer:** «Contact Person»
+**Date:** «Date»
+**Valid Until:** «Valid Until»
 
 ---
 
-Sayın «Görüşülecek Kişi»,
+Dear «Contact Person»,
 
-Talep edilen hizmetler için bu teklifi sunmaktan memnuniyet duyarız. Ekibimiz,
-üzerinde anlaşılan zaman çizelgesi içinde yüksek kaliteli iş teslim edecek ve
-her adımda memnuniyetinizi sağlamayı hedefleyecektir.
+We are pleased to present this quote for the requested services. Our team
+will deliver high-quality work within the agreed timeline and aim to ensure
+your satisfaction at every step.
 
-## Kalemler
+## Items
 
-| Açıklama   | Adet           | Birim Fiyat            | Toplam         |
-| ---        | ---            | ---                    | ---            |
-| ««kalemler                                                            |
-| «Açıklama» | «Adet» «Birim» | «Birim Fiyat»          | «Toplam»       |
-| »»                                                                    |
-|            |                | **Ara Toplam**         | «Ara Toplam»   |
-|            |                | **KDV (%«KDV Oranı»)** | «KDV»          |
-|            |                | **Genel Toplam**       | «Genel Toplam» |
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| ««items       |                   |                       |               |
+| «Description» | «Quantity» «Unit» | «Unit Price»          | «Total»       |
+| »»            |                   |                       |               |
+|               |                   | **Subtotal**          | «Subtotal»    |
+|               |                   | **Tax (%«Tax Rate»)** | «Tax»         |
+|               |                   | **Grand Total**       | «Grand Total» |
 
 ---
 
-Sizinle çalışmayı dört gözle bekliyoruz. Bu teklif «geçerlilik tarihi» tarihine
-kadar geçerlidir. Herhangi bir sorunuz olması durumunda bizimle iletişime
-geçmekten çekinmeyiniz.
+We look forward to working with you. This quote is valid until
+«valid until». Please don't hesitate to contact us with any questions.
 
-*«Şirket» — «Tarih (format = GG/AA/YYYY)»*
+*«Company» — «Date (format = DD/MM/YYYY)»*
 ```

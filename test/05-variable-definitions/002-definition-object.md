@@ -1,2 +1,2 @@
 
-Teslimat adresi: Atatürk Cad. No:1, İstanbul
+Delivery address: 1 Main St., Springfield

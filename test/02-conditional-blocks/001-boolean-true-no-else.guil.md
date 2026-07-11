@@ -1,5 +1,5 @@
-Önce.
-««bireysel
-Sayın «ad soyad»,
+Before.
+««individual
+Dear «full name»,
 »»
-Sonra.
+After.

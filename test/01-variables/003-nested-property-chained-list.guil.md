@@ -1,1 +1,1 @@
-Tutarlar: «teklifler: fiyatlar: tutar»
+Amounts: «quotes: prices: amount»

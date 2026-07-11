@@ -1,1 +1,1 @@
-Etiketler: «etiketler»
+Tags: «tags»

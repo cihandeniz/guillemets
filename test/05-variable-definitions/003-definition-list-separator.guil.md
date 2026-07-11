@@ -1,5 +1,5 @@
-««etiketler = teklif: etiketler
-«ad»
-(ayraç = , )»»
+««tags = quote: tags
+«name»
+(separator = , )»»
 
-Etiketler: «etiketler»
+Tags: «tags»

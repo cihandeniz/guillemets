@@ -1,1 +1,1 @@
-Tarih: «tarih (format = GG/AA/YYYY)»
+Date: «date (format = DD/MM/YYYY)»

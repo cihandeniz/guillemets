@@ -1,1 +1,1 @@
-Etiketler: «teklif: etiketler (ayraç = ; )»
+Tags: «quote: tags (separator = ; )»
