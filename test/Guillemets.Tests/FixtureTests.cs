@@ -64,6 +64,8 @@ public class FixtureTests
                      .OrderBy(p => p, StringComparer.Ordinal))
         {
             var basePath = templatePath[..^".guil.md".Length];
+            if (File.Exists(basePath + ".error")) { continue; }
+
             var dataPath = basePath + ".json";
             var expectedPath = basePath + ".md";
             var relativeName = Path.GetRelativePath(SpecsRoot, basePath).Replace('\\', '/');
@@ -78,6 +80,23 @@ public class FixtureTests
         }
     }
 
+    private static IEnumerable<TestCaseData> ErrorFixtureCases()
+    {
+        foreach (var templatePath in Directory
+                     .EnumerateFiles(SpecsRoot, "*.guil.md", SearchOption.AllDirectories)
+                     .OrderBy(p => p, StringComparer.Ordinal))
+        {
+            var basePath = templatePath[..^".guil.md".Length];
+            var errorPath = basePath + ".error";
+            if (!File.Exists(errorPath)) { continue; }
+
+            var dataPath = basePath + ".json";
+            var relativeName = Path.GetRelativePath(SpecsRoot, basePath).Replace('\\', '/');
+
+            yield return new TestCaseData(templatePath, dataPath, errorPath).SetName(relativeName);
+        }
+    }
+
     [TestCaseSource(nameof(FixtureCases))]
     public void Fixture_RendersExpectedOutput(string templatePath, string dataPath, string expectedPath)
     {
@@ -88,5 +107,17 @@ public class FixtureTests
         var actual = TemplateEngine.Render(template, dataDoc.RootElement);
 
         actual.ShouldBe(expected);
+    }
+
+    [TestCaseSource(nameof(ErrorFixtureCases))]
+    public void Fixture_ThrowsExpectedError(string templatePath, string dataPath, string errorPath)
+    {
+        var template = File.ReadAllText(templatePath);
+        var expectedError = File.ReadAllText(errorPath);
+        using var dataDoc = JsonDocument.Parse(File.ReadAllText(dataPath));
+
+        var exception = Should.Throw<TemplateParseException>(() => TemplateEngine.Render(template, dataDoc.RootElement));
+
+        exception.Message.ShouldBe(expectedError);
     }
 }

@@ -1,7 +1,6 @@
+using Guillemets.Ast;
 using Humanizer;
 using System.Text.Json;
-
-using static Guillemets.Ast;
 
 namespace Guillemets.Renderers;
 

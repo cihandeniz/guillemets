@@ -1,5 +1,7 @@
-using static Guillemets.Ast;
-using static Guillemets.Tokens;
+using Guillemets.Ast;
+using Guillemets.Tokens;
+
+using static Guillemets.Tokenizer;
 
 namespace Guillemets;
 
@@ -31,11 +33,15 @@ internal sealed class Parser
 
     void ParseGuillemet()
     {
+        var openPosition = tokens[i].Position;
         i++;
         var segments = new List<string>();
 
-        while (tokens[i] is not CloseToken)
+        while (true)
         {
+            if (i >= tokens.Count) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", openPosition); }
+            if (tokens[i] is CloseToken) { break; }
+
             if (tokens[i] is LiteralToken segment)
             {
                 segments.Add(segment.Text.Trim());
@@ -56,7 +62,7 @@ internal sealed class Parser
 
     void ParseColon()
     {
-        nodes.Add(new LiteralNode(":"));
+        nodes.Add(new LiteralNode($"{COLON}"));
         i++;
     }
 }

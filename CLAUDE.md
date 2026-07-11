@@ -16,10 +16,12 @@ SPECS.md alongside the code change, don't just patch around it.
 C#/.NET library, targeting `net10.0` (current LTS). Layout:
 - `/src/Guillemets` — the class library.
 - `/test/Guillemets.Tests` — NUnit test project.
-- `/specs` — the fixture corpus (`.guil.md` template / `.json` data /
-  `.md` expected-output triples), the acceptance contract. Don't edit
+- `/specs` — the fixture corpus, the acceptance contract. Don't edit
   fixtures to make a test pass; if one looks wrong, fix it deliberately
-  and say why.
+  and say why. Two triple shapes: `.guil.md`/`.json`/`.md` (template /
+  data / expected rendered output) for success cases, or `.guil.md`/
+  `.json`/`.error` (template / data / expected exception message) for
+  cases that must throw `TemplateParseException` — see `10-errors/`.
 - `Guillemets.slnx` at repo root ties both projects together (.NET 10
   defaults `dotnet new sln` to the newer XML solution format).
 

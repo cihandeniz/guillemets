@@ -1,6 +1,5 @@
+using Guillemets.Ast;
 using System.Text.Json;
-
-using static Guillemets.Ast;
 
 namespace Guillemets.Renderers;
 
