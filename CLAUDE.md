@@ -13,9 +13,15 @@ SPECS.md alongside the code change, don't just patch around it.
 
 ## Stack
 
-C#/.NET library. No project scaffolding exists yet — this is a from-scratch
-build. Target framework and package layout are not yet decided; use current
-.NET LTS conventions unless told otherwise.
+C#/.NET library, targeting `net10.0` (current LTS). Layout:
+- `/src/Guillemets` — the class library.
+- `/test/Guillemets.Tests` — NUnit test project.
+- `/specs` — the fixture corpus (`.guil.md` template / `.json` data /
+  `.md` expected-output triples), the acceptance contract. Don't edit
+  fixtures to make a test pass; if one looks wrong, fix it deliberately
+  and say why.
+- `Guillemets.slnx` at repo root ties both projects together (.NET 10
+  defaults `dotnet new sln` to the newer XML solution format).
 
 ## Core concepts
 
@@ -58,7 +64,11 @@ default language's localization values is case-insensitive. See
 
 ## Working on this repo
 
-- No build/test tooling exists yet. First implementation work should stand up
-  the `.csproj` structure and a test project before behavior code.
-- Once tests exist, update this section with the actual run command and keep
-  it current.
+- Run `dotnet test` from the repo root to run the full fixture suite. Each
+  of the 28 fixtures under `/specs` becomes one NUnit test case, named by
+  its relative path (e.g. `02-conditional-blocks/003-else-truthy`), via
+  `FixtureTests.cs` in the test project.
+- Engine work proceeds fixture-group by fixture-group (see the numbered
+  `/specs` subfolders, ordered simplest → most complex) — implement one
+  group's mechanic, confirm `dotnet test` flips exactly that group green
+  with no regressions, then move to the next.
