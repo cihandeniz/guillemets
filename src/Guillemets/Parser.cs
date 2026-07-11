@@ -23,28 +23,27 @@ internal sealed class Parser
     {
         while (i < tokens.Count)
         {
-            if (tokens[i] is OpenToken) { ParseGuillemet(); }
-            else if (tokens[i] is LiteralToken) { ParseLiteral(); }
+            if (tokens[i] is OpenToken open) { ParseGuillemet(open); }
+            else if (tokens[i] is LiteralToken literal) { ParseLiteral(literal); }
             else { ParseColon(); }
         }
 
         return nodes;
     }
 
-    void ParseGuillemet()
+    void ParseGuillemet(OpenToken open)
     {
-        var openPosition = tokens[i].Position;
         i++;
-        var segments = new List<string>();
 
+        var segments = new List<string>();
         while (true)
         {
-            if (i >= tokens.Count) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", openPosition); }
+            if (i >= tokens.Count) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", open.Position); }
             if (tokens[i] is CloseToken) { break; }
 
             if (tokens[i] is LiteralToken segment)
             {
-                segments.Add(segment.Text.Trim());
+                segments.Add(NormalizeWhitespace(segment.Text));
             }
 
             i++;
@@ -54,9 +53,9 @@ internal sealed class Parser
         i++;
     }
 
-    void ParseLiteral()
+    void ParseLiteral(LiteralToken literal)
     {
-        nodes.Add(new LiteralNode(((LiteralToken)tokens[i]).Text));
+        nodes.Add(new LiteralNode(literal.Text));
         i++;
     }
 
@@ -65,4 +64,7 @@ internal sealed class Parser
         nodes.Add(new LiteralNode($"{COLON}"));
         i++;
     }
+
+    static string NormalizeWhitespace(string text) =>
+        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }
