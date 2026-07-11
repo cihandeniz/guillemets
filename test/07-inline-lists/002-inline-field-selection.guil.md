@@ -1,0 +1,1 @@
+Tutarlar: «fiyat teklifleri: tutar»

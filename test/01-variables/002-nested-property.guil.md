@@ -1,0 +1,1 @@
+Şirket adı: «şirket: ad»

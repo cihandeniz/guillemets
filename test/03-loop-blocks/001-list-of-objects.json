@@ -1,0 +1,6 @@
+{
+  "Kalemler": [
+    { "Açıklama": "Danışmanlık", "Adet": 2, "Birim": "gün", "BirimFiyat": 1500, "Toplam": 3000 },
+    { "Açıklama": "Kurulum", "Adet": 1, "Birim": "adet", "BirimFiyat": 500, "Toplam": 500 }
+  ]
+}

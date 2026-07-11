@@ -1,0 +1,1 @@
+Tutarlar: «teklifler: fiyatlar: tutar»

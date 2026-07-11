@@ -1,0 +1,15 @@
+{
+  "Teklifler": [
+    {
+      "Fiyatlar": [
+        { "Tutar": 100 },
+        { "Tutar": 200 }
+      ]
+    },
+    {
+      "Fiyatlar": [
+        { "Tutar": 300 }
+      ]
+    }
+  ]
+}

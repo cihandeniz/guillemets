@@ -1,0 +1,1 @@
+Tutar: «tutar (para birimi = ₺)»

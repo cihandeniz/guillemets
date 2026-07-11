@@ -1,0 +1,1 @@
+Şirket adı: Acme Yazılım

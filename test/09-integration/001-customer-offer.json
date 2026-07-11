@@ -1,0 +1,17 @@
+{
+  "TeklifNo": "2026-0711",
+  "Bireysel": false,
+  "TamAdı": "Ayşe Yılmaz",
+  "ŞirketAdı": "Acme Danışmanlık A.Ş.",
+  "Tarih": "2026-07-11",
+  "GeçerlilikTarihi": "11.08.2026",
+  "Kalemler": [
+    { "Açıklama": "Danışmanlık", "Adet": 2, "Birim": "gün", "BirimFiyat": 1500, "Toplam": 3000 },
+    { "Açıklama": "Kurulum", "Adet": 1, "Birim": "adet", "BirimFiyat": 500, "Toplam": 500 }
+  ],
+  "AraToplam": 3500,
+  "KdvOranı": 20,
+  "Kdv": 700,
+  "GenelToplam": 4200,
+  "Şirket": "Acme Danışmanlık A.Ş."
+}
