@@ -96,17 +96,33 @@ default language's localization values is case-insensitive. See
   accessibility when it's not the default (`public`, `internal`, etc.).
 - Keep whitespace between statements minimal — don't pad method bodies with
   blank lines between unrelated statements.
-- One class per file (one type per file in practice — e.g. `Ast/`, `Tokens/`,
-  `Renderers/` each hold one file per type/class).
+- One class per file (one type per file in practice — e.g. `Ast/`, `Tokens/`
+  each hold one file per type/class).
 - Prefer polymorphic dispatch (a base type with an abstract/virtual method,
   each subtype overriding it — or a separate strategy class per type) over a
-  `switch`/pattern-match that implements per-type behavior inline. A `switch`
-  that merely *selects* which already-implemented strategy instance to hand
-  off to (see `TemplateEngine.Renderer`) is fine — the behavior itself must
-  live in its own class, not in the switch arms. This does not apply to a
-  genuinely stateful, sequential parser walking a token stream (see
-  `Parser.cs`) — that's normal parser-writing, not the anti-pattern this rule
-  targets.
+  `switch`/pattern-match that implements per-type behavior inline. `INode`
+  is the concrete example: every AST node (`LiteralNode`, `TokenNode`,
+  `BlockNode`) implements `Render` itself — there is no dispatcher switch
+  anywhere in the renderer path. A `switch` that merely *selects* which
+  already-implemented strategy instance to hand off to is still fine if one
+  is ever needed — the behavior itself must live in its own class, not in
+  the switch arms. This does not apply to a genuinely stateful, sequential
+  parser walking a token stream (see `Parser.cs`/`TokenCursor.cs`) — that's
+  normal parser-writing, not the anti-pattern this rule targets.
+- Don't call `new SomeType(...)` inside a constructor body unless `SomeType`
+  is a DTO or a `record`. Real dependencies (services, resolvers, cursors)
+  are constructor-injected and wired up at the composition root — for this
+  codebase that's `TemplateEngine.Render`'s static method body (and
+  `Tokenizer.Tokenize()`, which builds the `TokenCursor` it returns).
+- Never write `sealed` on a class or record — an explicit house style, not
+  an oversight; types stay open for inheritance even though nothing
+  currently derives from them.
+- Naming (see `.editorconfig`): private instance fields are `_camelCase`;
+  any `static` field, regardless of accessibility, is `SCREAMING_CASE` (a
+  custom naming rule distinct from the private-field one, added because
+  `dotnet_style_require_accessibility_modifiers`/SA1311-style "static
+  readonly fields start uppercase" conventions would otherwise conflict with
+  the private-field rule).
 
 ## Working on this repo
 
@@ -125,10 +141,18 @@ default language's localization values is case-insensitive. See
   than leaving cleanup for later. Report the result and let the fixture's
   author/reviewer weigh in before moving to the next one.
 - **No failing tests at commit time.** Fixtures not yet implemented are
-  listed in `FixtureTests.cs`'s `IgnoredFixtures` set and show as
+  listed in `FixtureTests.cs`'s `IGNORED_FIXTURES` set and show as
   `Ignored`/`Skipped`, never `Failed` — `dotnet test` should always report
   zero failures. Remove a fixture's name from that set once its case goes
-  green; the set is empty once the engine fully implements the spec.
+  green; the set is empty once the engine fully implements the spec. When a
+  fixture is added for a scenario that's deliberately not implemented yet
+  (a "solve this later" marker), leave a comment above its `IGNORED_FIXTURES`
+  entry explaining what's undecided/missing — don't just list the name bare.
+- **The build itself enforces style, not just `dotnet format`.**
+  `Directory.Build.props` sets `EnforceCodeStyleInBuild` and
+  `TreatWarningsAsErrors`, so `dotnet build`/`dotnet test` fail on any
+  `.editorconfig` violation or compiler warning, not only when someone
+  happens to run `dotnet format --verify-no-changes`.
 - Known flaky build issue: `dotnet build`/`dotnet test` occasionally fails
   with `MSB3374` (can't set last-write-time on an `obj/**/*.Up2Date` file).
   Not a real permission problem — just retry the command once and it clears.

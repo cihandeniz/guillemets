@@ -1,32 +1,36 @@
-using Guillemets.Renderers;
+using Guillemets.Ast;
+using Guillemets.Ast.Rendering;
 using System.Text;
 using System.Text.Json;
 
 namespace Guillemets;
 
-public static class TemplateEngine
+public class TemplateEngine : IRenderer
 {
-    static readonly INodeRenderer LITERAL_NODE = new LiteralNodeRenderer();
-    static readonly INodeRenderer TOKEN_NODE = new TokenNodeRenderer();
-
     public static string Render(string template, JsonElement data)
     {
-        var tokens = Tokenizer.Tokenize(template);
-        var nodes = Parser.Parse(tokens);
+        var tokens = new Tokenizer(template).Tokenize();
+        var nodes = new Parser(tokens).Parse();
+        IRenderer engine = new TemplateEngine(new());
+
+        return engine.RenderAll(nodes, data);
+    }
+
+    readonly RenderContext _context;
+
+    TemplateEngine(PropertyResolver propertyResolver)
+    {
+        _context = new(propertyResolver, this);
+    }
+
+    string IRenderer.RenderAll(IReadOnlyList<INode> nodes, JsonElement data)
+    {
         var result = new StringBuilder();
         foreach (var node in nodes)
         {
-            result.Append(Renderer(node).Render(node, data));
+            result.Append(node.Render(_context, data));
         }
 
         return result.ToString();
     }
-
-    static INodeRenderer Renderer(Ast.INode node) =>
-        node switch
-        {
-            Ast.LiteralNode => LITERAL_NODE,
-            Ast.TokenNode => TOKEN_NODE,
-            _ => throw new InvalidOperationException($"{node.GetType().Name} is not a supported node type")
-        };
 }

@@ -1,4 +1,11 @@
+using Guillemets.Ast.Rendering;
+using System.Text.Json;
+
 namespace Guillemets.Ast;
 
-internal sealed record LiteralNode(string Text)
-    : INode;
+internal record LiteralNode(string Text)
+    : INode
+{
+    public string Render(RenderContext context, JsonElement data) =>
+        Text;
+}

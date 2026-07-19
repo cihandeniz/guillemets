@@ -76,6 +76,11 @@ Single-line or multi-line token resolving to a scalar value.
 list, applies a projection (equivalent to `.Select()`). Chaining across lists
 uses `.SelectMany()` internally to keep the result flat.
 
+Always write a space after `:` (`company: name`, not `company:name`) —
+whitespace normalizes away during parsing either way, so this is a house style
+for readability, not a parser requirement. Follow it in every fixture and
+example.
+
 ```
 «company: name»
 «quotes: prices: amount»
@@ -127,6 +132,30 @@ Quote No: «quote no»
 month.
 »»
 ```
+
+### Resolving the Block Name
+
+`name` is a property chain, resolved the same way as an inline variable (see
+Nested Property Access, above) — including projection over lists.
+
+If the chain does not resolve to anything at all (e.g. it projects through an
+empty list), the block is treated as falsy, same as an explicit `false` —
+this is not an error.
+
+If the chain's last segment is a boolean property projected through a list,
+the block filters the list down to the item(s) where that property is true
+and scopes into the match, rather than collapsing the projected booleans into
+a single truthy/falsy check:
+
+```markdown
+««items: active
+Dear «full name»,
+»»
+```
+
+Given `items` is a list of objects each with `active` and `full name`, this
+finds the item where `active` is true and renders the body scoped to it —
+`full name` resolves against that matched item, not the outer scope.
 
 ### Else
 

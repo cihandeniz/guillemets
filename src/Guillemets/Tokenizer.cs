@@ -2,29 +2,30 @@ using Guillemets.Tokens;
 
 namespace Guillemets;
 
-internal static class Tokenizer
+internal class Tokenizer(string _template)
 {
     public const char OPEN = '«';
     public const char CLOSE = '»';
     public const char COLON = ':';
     public const char NEWLINE = '\n';
-    readonly static HashSet<char> SYMBOLS = [OPEN, CLOSE, COLON];
 
-    public static List<IToken> Tokenize(string template)
+    static readonly HashSet<char> SYMBOLS = [OPEN, CLOSE, COLON];
+
+    public TokenCursor Tokenize()
     {
         var tokens = new List<IToken>();
         var literalStart = 0;
         var literalStartPosition = new Position(1, 1);
         var position = new Position(1, 1);
 
-        for (var i = 0; i < template.Length; i++)
+        for (var i = 0; i < _template.Length; i++)
         {
-            var ch = template[i];
+            var ch = _template[i];
             if (SYMBOLS.Contains(ch))
             {
                 if (i > literalStart)
                 {
-                    tokens.Add(new LiteralToken(template[literalStart..i], literalStartPosition));
+                    tokens.Add(new LiteralToken(_template[literalStart..i], literalStartPosition));
                 }
 
                 tokens.Add(SymbolToken(ch, position));
@@ -35,15 +36,15 @@ internal static class Tokenizer
             if (literalStart == i + 1) { literalStartPosition = position; }
         }
 
-        if (literalStart < template.Length)
+        if (literalStart < _template.Length)
         {
-            tokens.Add(new LiteralToken(template[literalStart..], literalStartPosition));
+            tokens.Add(new LiteralToken(_template[literalStart..], literalStartPosition));
         }
 
-        return tokens;
+        return new(tokens);
     }
 
-    static IToken SymbolToken(char ch, Position position)
+    IToken SymbolToken(char ch, Position position)
     {
         if (ch == OPEN) { return new OpenToken(position); }
         if (ch == CLOSE) { return new CloseToken(position); }

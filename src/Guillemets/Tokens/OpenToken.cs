@@ -1,4 +1,4 @@
 namespace Guillemets.Tokens;
 
-internal sealed record OpenToken(Position Position)
+internal record OpenToken(Position Position)
     : IToken;

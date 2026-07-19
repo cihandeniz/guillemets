@@ -1,4 +1,3 @@
-using Guillemets;
 using Shouldly;
 using System.Text.Json;
 
@@ -10,10 +9,8 @@ public class FixtureTests
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
-    private static readonly HashSet<string> IgnoredFixtures =
+    static readonly HashSet<string> IGNORED_FIXTURES =
     [
-        "02-conditional-blocks/001-boolean-true-no-else",
-        "02-conditional-blocks/002-boolean-false-no-else",
         "02-conditional-blocks/003-else-truthy",
         "02-conditional-blocks/004-else-falsy",
         "02-conditional-blocks/005-null-object-else",
@@ -21,6 +18,7 @@ public class FixtureTests
         "03-loop-blocks/002-empty-list",
         "03-loop-blocks/003-magic-loop-vars",
         "03-loop-blocks/004-negation",
+        "03-loop-blocks/005-filtered-item-scope",
         "04-scope-blocks/001-object-scope",
         "04-scope-blocks/002-upper-scope-fallback",
         "05-variable-definitions/001-definition-boolean",
@@ -36,9 +34,9 @@ public class FixtureTests
         "09-integration/001-customer-offer",
     ];
 
-    private static readonly string SpecsRoot = FindSpecsRoot();
+    static readonly string SPECS_ROOT = FindSpecsRoot();
 
-    private static string FindSpecsRoot()
+    static string FindSpecsRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Guillemets.slnx")))
@@ -55,10 +53,10 @@ public class FixtureTests
         return Path.Combine(dir.FullName, "specs");
     }
 
-    private static IEnumerable<TestCaseData> FixtureCases()
+    static IEnumerable<TestCaseData> FixtureCases()
     {
         foreach (var templatePath in Directory
-                     .EnumerateFiles(SpecsRoot, "*.guil.md", SearchOption.AllDirectories)
+                     .EnumerateFiles(SPECS_ROOT, "*.guil.md", SearchOption.AllDirectories)
                      .OrderBy(p => p, StringComparer.Ordinal))
         {
             var basePath = templatePath[..^".guil.md".Length];
@@ -66,10 +64,10 @@ public class FixtureTests
 
             var dataPath = basePath + ".json";
             var expectedPath = basePath + ".md";
-            var relativeName = Path.GetRelativePath(SpecsRoot, basePath).Replace('\\', '/');
+            var relativeName = Path.GetRelativePath(SPECS_ROOT, basePath).Replace('\\', '/');
 
             var testCase = new TestCaseData(templatePath, dataPath, expectedPath).SetName(relativeName);
-            if (IgnoredFixtures.Contains(relativeName))
+            if (IGNORED_FIXTURES.Contains(relativeName))
             {
                 testCase.Ignore("not yet implemented");
             }
@@ -78,10 +76,10 @@ public class FixtureTests
         }
     }
 
-    private static IEnumerable<TestCaseData> ErrorFixtureCases()
+    static IEnumerable<TestCaseData> ErrorFixtureCases()
     {
         foreach (var templatePath in Directory
-                     .EnumerateFiles(SpecsRoot, "*.guil.md", SearchOption.AllDirectories)
+                     .EnumerateFiles(SPECS_ROOT, "*.guil.md", SearchOption.AllDirectories)
                      .OrderBy(p => p, StringComparer.Ordinal))
         {
             var basePath = templatePath[..^".guil.md".Length];
@@ -89,7 +87,7 @@ public class FixtureTests
             if (!File.Exists(errorPath)) { continue; }
 
             var dataPath = basePath + ".json";
-            var relativeName = Path.GetRelativePath(SpecsRoot, basePath).Replace('\\', '/');
+            var relativeName = Path.GetRelativePath(SPECS_ROOT, basePath).Replace('\\', '/');
 
             yield return new TestCaseData(templatePath, dataPath, errorPath).SetName(relativeName);
         }

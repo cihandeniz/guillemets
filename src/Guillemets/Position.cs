@@ -1,6 +1,6 @@
 namespace Guillemets;
 
-public sealed record Position(int Line, int Column)
+public record Position(int Line, int Column)
 {
     public Position NextLine() =>
         new(Line + 1, 1);

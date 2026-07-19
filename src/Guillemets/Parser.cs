@@ -5,66 +5,113 @@ using static Guillemets.Tokenizer;
 
 namespace Guillemets;
 
-internal sealed class Parser
+internal class Parser(TokenCursor _tokens)
 {
-    readonly List<INode> nodes = [];
-    readonly List<IToken> tokens;
-    int i = 0;
+    public List<INode> Parse() =>
+        ParseNodes(closeDepth: null);
 
-    public static List<INode> Parse(List<IToken> input) =>
-        new Parser(input).Parse();
-
-    Parser(List<IToken> input)
+    List<INode> ParseNodes(int? closeDepth)
     {
-        tokens = input;
-    }
-
-    List<INode> Parse()
-    {
-        while (i < tokens.Count)
+        var nodes = new List<INode>();
+        while (!_tokens.AtEnd && !ReachedClose(closeDepth))
         {
-            if (tokens[i] is OpenToken open) { ParseGuillemet(open); }
-            else if (tokens[i] is LiteralToken literal) { ParseLiteral(literal); }
-            else { ParseColon(); }
+            nodes.Add(ParseNext());
         }
 
         return nodes;
     }
 
-    void ParseGuillemet(OpenToken open)
+    bool ReachedClose(int? closeDepth) =>
+        closeDepth is not null &&
+        _tokens.Current is CloseToken &&
+        _tokens.CountConsecutive<CloseToken>() == closeDepth;
+
+    INode ParseNext()
     {
-        i++;
-
-        var segments = new List<string>();
-        while (true)
+        if (_tokens.Current is OpenToken open)
         {
-            if (i >= tokens.Count) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", open.Position); }
-            if (tokens[i] is CloseToken) { break; }
+            var depth = _tokens.CountConsecutive<OpenToken>();
 
-            if (tokens[i] is LiteralToken segment)
-            {
-                segments.Add(NormalizeWhitespace(segment.Text));
-            }
-
-            i++;
+            return depth >= 2 ? ParseBlock(open, depth) : ParseVariable(open);
         }
 
-        nodes.Add(new TokenNode(segments));
-        i++;
+        if (_tokens.Current is LiteralToken literal)
+        {
+            _tokens.Advance();
+
+            return new LiteralNode(literal.Text);
+        }
+
+        _tokens.Advance();
+
+        return new LiteralNode($"{COLON}");
     }
 
-    void ParseLiteral(LiteralToken literal)
+    INode ParseVariable(OpenToken open)
     {
-        nodes.Add(new LiteralNode(literal.Text));
-        i++;
+        _tokens.Advance();
+
+        var properties = new List<string>();
+        while (true)
+        {
+            if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", open.Position); }
+            if (_tokens.Current is CloseToken) { break; }
+
+            if (_tokens.Current is LiteralToken literal) { properties.Add(NormalizeWhitespace(literal.Text)); }
+            _tokens.Advance();
+        }
+
+        _tokens.Advance();
+        return new TokenNode(new PropertyChain(properties));
     }
 
-    void ParseColon()
+    INode ParseBlock(OpenToken open, int depth)
     {
-        nodes.Add(new LiteralNode($"{COLON}"));
-        i++;
+        _tokens.Skip(depth);
+
+        var properties = ParseBlockHeader(open.Position);
+        var body = ParseNodes(closeDepth: depth);
+
+        if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {new string(OPEN, depth)}", open.Position); }
+
+        _tokens.Skip(depth);
+        _tokens.TrimLeadingNewlineIfPresent();
+
+        return new BlockNode(properties, body);
     }
 
-    static string NormalizeWhitespace(string text) =>
+    PropertyChain ParseBlockHeader(Position openPosition)
+    {
+        var properties = new List<string>();
+        while (true)
+        {
+            if (_tokens.AtEnd) { throw new TemplateParseException("Unclosed block header", openPosition); }
+
+            if (_tokens.Current is not LiteralToken literal)
+            {
+                _tokens.Advance();
+
+                continue;
+            }
+
+            var newlineIndex = literal.Text.IndexOf(NEWLINE);
+            if (newlineIndex < 0)
+            {
+                properties.Add(NormalizeWhitespace(literal.Text));
+                _tokens.Advance();
+
+                continue;
+            }
+
+            var header = literal.Text[..newlineIndex];
+            if (header.Length > 0) { properties.Add(NormalizeWhitespace(header)); }
+
+            _tokens.TrimCurrentLiteral(newlineIndex + 1);
+
+            return new(properties);
+        }
+    }
+
+    string NormalizeWhitespace(string text) =>
         string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }
