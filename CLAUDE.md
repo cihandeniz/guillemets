@@ -3,231 +3,178 @@
 ## Project
 
 Guillemets — a logicless, markdown-aware template engine for non-technical
-authors. `«»` (U+00AB/U+00BB) are the sole delimiter characters, chosen
-because they never collide with standard markdown and are easy to type on
-keyboard layouts that expose them via AltGr (e.g. Turkish).
+authors. `«»` (U+00AB/U+00BB) are the sole delimiters, chosen because they
+never collide with markdown and are easy to type via AltGr (e.g. Turkish
+keyboards).
 
-**SPECS.md is the source of truth for behavior.** It is authoritative over
-this file — if implementation reveals a spec ambiguity or gap, resolve it in
-SPECS.md alongside the code change, don't just patch around it.
+**SPECS.md is the source of truth for behavior**, authoritative over this
+file — resolve spec ambiguities there alongside the code change, don't
+just patch around them.
 
-**Cold start?** Read `PLAN.md` first — it has the current implementation
-status, architecture as actually built, and the remaining milestones. This
-file (`CLAUDE.md`) is the durable *how to work here*; `PLAN.md` is the
-living *what's done and what's next*.
+**Cold start?** Read `PLAN.md` first for implementation status and
+remaining milestones. This file is the durable *how to work here*;
+`PLAN.md` is the living *what's done and what's next*.
 
 ## Stack
 
-C#/.NET library, targeting `net10.0` (current LTS). Layout:
-- `/src/Guillemets` — the class library.
-- `/test/Guillemets.Tests` — NUnit test project.
+C#/.NET, targeting `net10.0`. Layout:
+- `/src/Guillemets` — the class library. `/test/Guillemets.Tests` — NUnit
+  test project.
 - `/specs` — the fixture corpus, the acceptance contract. Don't edit
   fixtures to make a test pass; if one looks wrong, fix it deliberately
-  and say why. Fixtures are flat sibling files sharing a number-prefixed
-  basename within each numbered group folder (e.g.
-  `02-conditional-blocks/003-null-object-else.guil.md` +
-  `.json` + `.md`) — not one subdirectory per case. Two triple shapes:
-  `.guil.md`/`.json`/`.md` (template / data / expected rendered output)
-  for success cases, or `.guil.md`/`.json`/`.error` (template / data /
-  expected exception message) for cases that must throw
-  `TemplateParseException` — see `10-errors/`. When several cases share one
-  template, give the template just the group number (`005-nested-blocks
-  .guil.md`) and suffix each case's `.json`/`.md` with a letter on that
-  same number (`005a-both-truthy.json`/`.md`, `005b-inner-falsy...`) —
-  `FixtureTests.cs` matches a case to its template by leading digits, so
-  don't duplicate template content across cases that only differ in data.
-  A fixture with its own unique template still just uses the plain
-  `NNN-description` form for all three files, as before.
-- `Guillemets.slnx` at repo root ties both projects together (.NET 10
-  defaults `dotnet new sln` to the newer XML solution format).
-- Central package management: `Directory.Packages.props` (all `PackageVersion`
-  entries, `ManagePackageVersionsCentrally=true`) and `Directory.Build.props`
-  (shared `TargetFramework`/`LangVersion`/`ImplicitUsings`/`Nullable`), both at
-  repo root. Individual `.csproj` files hold only what's unique to them.
-- Assertions use **Shouldly** (`actual.ShouldBe(expected)`), not NUnit's
-  `Assert.That`. PascalCase-of-space-words token resolution uses
-  **Humanizer.Core**'s `.Dehumanize()`, not hand-rolled string splitting.
+  and say why. Each case is a flat file triple sharing a basename in a
+  numbered group folder: `.guil.md`/`.json`/`.md` (template/data/expected
+  output) for success, or `.guil.md`/`.json`/`.error` (expected exception
+  message) for cases that must throw `TemplateParseException`. Several
+  cases can share one template by giving the template just the group
+  number and suffixing each case's `.json`/`.md` with a letter
+  (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `FixtureTests.cs`
+  matches a case to its template by leading digits. Group folders are
+  numbered on disk for sort order only — refer to fixtures by name in
+  prose, not number.
+- `Guillemets.slnx` at repo root (.NET 10's default `dotnet new sln`
+  format).
+- Central package management: `Directory.Packages.props` (versions) +
+  `Directory.Build.props` (shared `TargetFramework`/`LangVersion`/
+  `Nullable`/etc.), both at repo root.
+- Assertions use **Shouldly**, not NUnit's `Assert.That`.
+  PascalCase-of-space-words resolution uses **Humanizer.Core**'s
+  `.Dehumanize()`, not hand-rolled splitting.
 
 ## Core concepts
 
 (Full detail in SPECS.md — this is a map, not a replacement.)
 
-- **Delimiters**: `«»`. Depth is what distinguishes an inline variable from a
-  block: a single `«»` is always an inline variable/token (may still span
-  multiple lines — see below); a run of two or more (`««`, `«««`, ...) always
-  opens a block, and its close must use the same depth. Beyond depth 2, the
-  extra depth is purely for nesting readability (e.g. a block nested inside
-  another block) and is claimed to behave identically to `««`/`»»` for
-  parsing purposes. Nested blocks themselves *are* exercised now
-  (`02-conditional-blocks/005a`–`005c`, sharing one `005-nested-blocks
-  .guil.md`) — the parser balances nesting via its own call stack
-  (recursive-descent `ParseBlock`/`ParseNodes`), not by tracking depth on
-  the tokens, so the fixtures use the *same* `««` depth for both outer and
-  inner block. No fixture yet uses a genuinely deeper depth
-  (`«««`) for an inner block specifically to test that the extra depth is
-  cosmetic — that part of the claim is still unexercised. Tokens may span
-  multiple lines; internal whitespace (including newlines) normalizes to a
-  single space before resolution.
+- **Delimiters**: `«»`. A single `«»` is always an inline variable/token
+  (may span multiple lines, normalized to single spaces); a run of two or
+  more (`««`, `«««`, ...) always opens a block, closed at the same depth.
+  Beyond depth 2 the extra depth is cosmetic (nesting readability only) —
+  unexercised by any fixture using a genuinely deeper inner delimiter.
+  Nesting itself works today (`conditional-blocks/nested-blocks`), via the
+  parser's own recursive-descent call stack, not depth-tracking on tokens.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
-- **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type
-  of `name` — boolean → if, list → loop, object → scope. No keywords, same
-  syntax for all three. Variable lookup falls back to enclosing scopes.
+- **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved
+  type of `name` — boolean → if, list → loop, object → scope. No
+  keywords, same syntax for all three. Variable lookup falls back to
+  enclosing scopes.
 - **Else**: `--` on its own line splits truthy/falsy (or non-null/null)
   branches inside a block.
 - **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
 - **Variable definitions**: `««name = expr` ... `»»` captures a block's
-  rendered output (or resolved value) into `name` for reuse below. RHS
-  follows the same type-inferred if/loop/scope rules.
-- **Tables**: a block may open/close with a leading/trailing `|` so it stays
-  valid inside a markdown table row.
-- **Inline lists**: scalar lists auto-join with `, `; override via the
-  `(separator = ...)` parameter, usable inline or as the last line of a loop
-  block.
-- **Parameters**: `(name = value)` inside a token, resolved before the outer
-  expression evaluates. Built-ins: `format`, `currency`, `length`,
+  rendered output (or resolved value) into `name` for reuse below, under
+  the same type-inferred if/loop/scope rules.
+- **Tables**: a block may open/close with a leading/trailing `|` so it
+  stays valid inside a markdown table row.
+- **Inline lists**: scalar lists auto-join with `, `; override via
+  `(separator = ...)`, usable inline or as the last line of a loop block.
+- **Parameters**: `(name = value)` inside a token, resolved before the
+  outer expression evaluates. Built-ins: `format`, `currency`, `length`,
   `separator`.
 
 ## Localization / naming
 
-Templates are authored with natural, space-separated words — the author's own
-business vocabulary. Models are defined by developers in English,
-PascalCase/camelCase — the developer's code vocabulary. The two don't always
-match (e.g. a template author writes "quote no" but the developer named the
-property `OfferNo`), so a schema mapping bridges them:
-`Localized Term = template token = PropertyName`. Resolution against the
-default language's localization values is case-insensitive. See
-"Schema & Localization" in SPECS.md.
+Templates are authored with natural, space-separated words — the
+author's business vocabulary. Models are defined by developers in
+PascalCase/camelCase — the developer's code vocabulary. Where the two
+don't match (e.g. "quote no" vs. `OfferNo`), a schema mapping bridges
+them: `Localized Term = template token = PropertyName`, resolved
+case-insensitively against the default language. See "Schema &
+Localization" in SPECS.md.
 
 ## C# code style
 
-- `using` directives sorted alphabetically, no special-casing `System.*` to
-  the top — it sorts wherever it falls alphabetically among the others.
-- `using static` directives form their own group below the regular `using`
-  directives, separated by a blank line. Group multiple `using static`
-  directives together when there's more than one.
-- Never write `private` explicitly — it's the default; only state
-  accessibility when it's not the default (`public`, `internal`, etc.).
-- Keep whitespace between statements minimal — don't pad method bodies with
-  blank lines between unrelated statements.
-- One class per file (one type per file in practice — e.g. `Ast/`, `Tokens/`
-  each hold one file per type/class).
-- Prefer polymorphic dispatch (a base type with an abstract/virtual method,
-  each subtype overriding it — or a separate strategy class per type) over a
-  `switch`/pattern-match that implements per-type behavior inline. `INode`
-  is the concrete example: every AST node (`LiteralNode`, `TokenNode`,
-  `BlockNode`) implements `Render` itself — there is no dispatcher switch
-  anywhere in the renderer path. A `switch` that merely *selects* which
-  already-implemented strategy instance to hand off to is still fine if one
-  is ever needed — the behavior itself must live in its own class, not in
-  the switch arms. This does not apply to a genuinely stateful, sequential
-  parser walking a token stream (see `Parser.cs`/`TokenCursor.cs`) — that's
-  normal parser-writing, not the anti-pattern this rule targets.
-- Don't call `new SomeType(...)` inside a constructor body unless `SomeType`
-  is a DTO or a `record`. Real dependencies (services, resolvers, cursors)
-  are constructor-injected and wired up at the composition root — for this
-  codebase that's `TemplateEngine.Render`'s static method body (and
-  `Tokenizer.Tokenize()`, which builds the `TokenCursor` it returns).
-- Never write `sealed` on a class or record — an explicit house style, not
-  an oversight; types stay open for inheritance even though nothing
-  currently derives from them.
+- `using` directives sorted alphabetically (no special-casing `System.*`);
+  `using static` directives form their own group below, separated by a
+  blank line.
+- Never write `private` explicitly — it's the default.
+- Keep whitespace between statements minimal — no blank-line padding
+  between unrelated statements.
+- One type per file.
+- Prefer polymorphic dispatch (base type + virtual/abstract method, or a
+  strategy class per type) over a `switch`/pattern-match implementing
+  per-type behavior inline — the behavior must live in its own class, not
+  in the switch arms. A `switch` that only *selects* between
+  already-implemented strategies is fine. Doesn't apply to a genuinely
+  stateful, sequential parser walking a token stream — that's normal
+  parser-writing.
+- Don't call `new SomeType(...)` inside a constructor body unless
+  `SomeType` is a DTO or `record`. Real dependencies are
+  constructor-injected and wired up at the composition root
+  (`TemplateEngine.Render`, `Tokenizer.Tokenize()`).
+- Never write `sealed` — explicit house style; types stay open for
+  inheritance even with no current subtypes.
 - Naming (see `.editorconfig`): private instance fields are `_camelCase`;
   any `static` field, regardless of accessibility, is `SCREAMING_CASE` (a
-  custom naming rule distinct from the private-field one, added because
-  `dotnet_style_require_accessibility_modifiers`/SA1311-style "static
-  readonly fields start uppercase" conventions would otherwise conflict with
-  the private-field rule).
+  custom rule, since standard "static fields start uppercase" conventions
+  would otherwise conflict with the private-field rule).
 - Write small, single-purpose methods from the start, not as a later
-  cleanup pass — if the same multi-line bookkeeping sequence shows up more
-  than once in a method body, factor it out immediately. Prefer a plain
-  private method over a local function that closes over another method's
-  locals — a local function reading/mutating its enclosing method's state
-  is harder to follow than a named method with its own clear scope.
-- For a class that walks/scans something stateful and sequential (a
-  tokenizer, a parser), give it private instance fields for its working
-  state (position, current index, accumulated output, etc.) instead of
-  threading that state through method parameters and return values. See
-  `Tokenizer.cs`: `_index`/`_position`/`_literalStart`/`_tokens` are fields,
-  set up once per instance (a fresh `Tokenizer` is built per render — see
-  `TemplateEngine.Render` — so there's no cross-call reuse to guard
-  against), and its methods read/mutate them directly. This does not mean
-  "prefer mutable fields in general" — a small pure function taking/
-  returning plain values (`RunLength`, `IsElseMarker`) is still the better
-  fit when there's no ongoing scan state to carry.
-- Avoid tuples (and small one-off DTO/record types) used purely to shuttle
-  two or three values between two methods — e.g. don't write
-  `(int Length, IToken? Token) MatchSymbol(...)`. If a method only needs to
-  report success/failure, return `bool` (mutating instance state as a
-  side effect, per the point above); if it genuinely needs to hand back one
-  meaningful value, return that value directly, typed explicitly.
-- Never use the `!` null-forgiving operator — it silences the compiler's
-  null check instead of resolving it, which defeats the point of having
-  `Nullable` enabled at all (see `Directory.Build.props`) and hides bugs
-  that would otherwise surface at compile time. Follow the house nullable
-  guide instead: <https://github.com/mouseless/learn-dotnet/blob/main/nullable-usage/README.md>.
-  When a value is nullable by type but is a real invariant that it won't
-  actually be null at a given point (e.g. `Tokenizer.FlushLiteral` reading
-  `SymbolNode.Terminal` off the tree's root, which `BuildSymbolTree` always
-  populates), make that explicit with `?? throw new
-  InvalidOperationException(...)` rather than asserting it away with `!` —
-  if the invariant is ever violated by a future change, this fails loudly
-  at the point of use instead of risking a `NullReferenceException`
-  somewhere downstream.
+  cleanup pass — factor out a repeated multi-line sequence immediately.
+  Prefer a plain private method over a local function closing over
+  another method's locals.
+- Give a stateful, sequential scanner (a cursor, a parser) private
+  instance fields only for state that must persist *across* separate
+  method calls (e.g. `TokenCursor._position`, since `Parser` drives it
+  call by call). When one method owns an entire scan start to finish,
+  plain locals are the better fit (e.g. `Tokenizer.Tokenize()`).
+- Avoid tuples/small one-off DTOs used purely to shuttle two or three
+  values between methods. A success/failure method returns `bool`
+  (mutating instance state as a side effect); a method that needs to hand
+  back one meaningful value returns that value directly, typed
+  explicitly.
+- Never use the `!` null-forgiving operator — it silences the compiler
+  instead of resolving the issue, defeating the point of `Nullable`
+  (`Directory.Build.props`). Follow the house nullable guide:
+  <https://github.com/mouseless/learn-dotnet/blob/main/nullable-usage/README.md>.
+  When a value is nullable by type but a real invariant guarantees it
+  isn't null at some point, use `?? throw new
+  InvalidOperationException(...)` instead — it fails loudly at the point
+  of use if the invariant is ever broken, rather than risking a
+  `NullReferenceException` downstream.
 
 ## Working on this repo
 
-- Run `dotnet test` from the repo root to run the full fixture suite. Each
-  fixture under `/specs` becomes one NUnit test case, named by its relative
-  path (e.g. `02-conditional-blocks/002a-truthy`), via `FixtureTests.cs`
-  in the test project.
-- Engine work proceeds fixture-group by fixture-group (see the numbered
-  `/specs` subfolders, ordered simplest → most complex) — implement one
-  group's mechanic, confirm `dotnet test` flips exactly that group green
-  with no regressions, then move to the next.
-- **TDD, one fixture at a time.** Pick the next single fixture (smallest
-  next), write only the minimal code to make it pass, run the full suite to
-  confirm no regressions — then actually perform a reasonable refactor pass
-  (correct layering, remove duplication, apply the style rules above) rather
-  than leaving cleanup for later. Report the result and let the fixture's
-  author/reviewer weigh in before moving to the next one.
-- **No failing tests at commit time.** Fixtures not yet implemented are
-  listed in `FixtureTests.cs`'s `IGNORED_FIXTURES` set and show as
-  `Ignored`/`Skipped`, never `Failed` — `dotnet test` should always report
-  zero failures. Remove a fixture's name from that set once its case goes
-  green; the set is empty once the engine fully implements the spec. When a
-  fixture is added for a scenario that's deliberately not implemented yet
-  (a "solve this later" marker), leave a comment above its `IGNORED_FIXTURES`
-  entry explaining what's undecided/missing — don't just list the name bare.
-- **The build itself enforces style, not just `dotnet format`.**
-  `Directory.Build.props` sets `EnforceCodeStyleInBuild` and
+- Run `dotnet test` from the repo root for the full fixture suite — each
+  fixture becomes one NUnit test case, named by its relative path under
+  `/specs`.
+- Engine work proceeds fixture-group by fixture-group, simplest → most
+  complex — implement one group's mechanic, confirm `dotnet test` flips
+  exactly that group green with no regressions, then move on.
+- **TDD, one fixture at a time.** Pick the smallest next fixture, write
+  only the minimal code to pass it, run the full suite to confirm no
+  regressions — then actually refactor (correct layering, remove
+  duplication, apply the style rules above) rather than leaving cleanup
+  for later. Report and let the fixture's author/reviewer weigh in
+  before moving to the next one.
+- **No failing tests at commit time.** Unimplemented fixtures are listed
+  in `FixtureTests.cs`'s `IGNORED_FIXTURES` set (`Ignored`, never
+  `Failed`) — remove a fixture's name once its case goes green. When a
+  fixture is deliberately left unimplemented, leave a comment above its
+  entry explaining what's undecided.
+- **The build enforces style, not just `dotnet format`.**
+  `Directory.Build.props` sets `EnforceCodeStyleInBuild`/
   `TreatWarningsAsErrors`, so `dotnet build`/`dotnet test` fail on any
-  `.editorconfig` violation or compiler warning, not only when someone
-  happens to run `dotnet format --verify-no-changes`.
-- Known flaky build issue: `dotnet build`/`dotnet test` occasionally fails
-  with `MSB3374` (can't set last-write-time on an `obj/**/*.Up2Date` file).
-  Not a real permission problem — just retry the command once and it clears.
+  `.editorconfig` violation or compiler warning.
+- Known flaky build issue: `MSB3374` (can't set last-write-time on an
+  `obj/**/*.Up2Date` file) — not a real problem, just retry once.
 
 ## Parking (ending a session)
 
-When the user says they're "parking" (their term for wrapping up for the
-day), do this before ending the turn:
+When the user says they're "parking" (wrapping up for the day):
 
-1. Run `dotnet test` and confirm it's all-green (zero `Failed`) — flag it
-   clearly if it isn't; don't park on red.
-2. Update `PLAN.md`: refresh the status line/fixture count, move anything
-   completed this session out of "Remaining milestones" (or note partial
-   progress), add any newly-surfaced "Known v1 scope decisions."
-3. Update `CLAUDE.md` itself with any durable convention, rule, or
-   architecture decision that came up this session and isn't reflected here
-   yet — this file plus `PLAN.md` are what survive to a cold start on
-   another machine or conversation; don't let anything load-bearing live
-   only in this session's chat history.
-4. Remind the user of uncommitted changes — don't run git yourself (see the
-   no-git rule below); just point out what's pending.
-5. Give a short summary: what's done, what's next, anything to double-check.
+1. Run `dotnet test`, confirm all-green — flag clearly if not; don't park
+   on red.
+2. Update `PLAN.md`: refresh status/fixture count, move completed work
+   out of "Remaining milestones," add new "Known v1 scope decisions."
+3. Update `CLAUDE.md` with any durable convention/rule/decision from this
+   session — these two files are what survive to a cold start elsewhere;
+   nothing load-bearing should live only in chat history.
+4. Remind the user of uncommitted changes — don't run git yourself; just
+   point out what's pending.
+5. Give a short summary: what's done, what's next, anything to
+   double-check.
 
 ## Git
 
-Never run `git` commands (status, add, commit, mv, etc.) in this repo —
-the user handles git themselves. Give them the exact command to run and
-wait, rather than invoking it.
+Never run `git` commands in this repo — the user handles git themselves.
+Give them the exact command to run and wait.
