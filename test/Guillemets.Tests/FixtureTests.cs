@@ -11,11 +11,6 @@ public class FixtureTests
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
-        "03-loop-blocks/001a-populated",
-        "03-loop-blocks/001b-empty",
-        "03-loop-blocks/002-magic-loop-vars",
-        "03-loop-blocks/003-negation",
-        "03-loop-blocks/004-filtered-item-scope",
         "04-scope-blocks/001-object-scope",
         "04-scope-blocks/002-upper-scope-fallback",
         "05-variable-definitions/001-definition-boolean",

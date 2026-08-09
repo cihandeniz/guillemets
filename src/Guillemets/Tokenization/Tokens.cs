@@ -11,4 +11,5 @@ internal static class Tokens
     public static CloseBlockToken CloseBlock(TokenContext context) => new(context.Text, context.Position);
     public static ColonToken Colon(TokenContext context) => new(context.Text, context.Position);
     public static ElseToken Else(TokenContext context) => new(context.Text, context.Position);
+    public static NegationToken Negation(TokenContext context) => new(context.Text, context.Position);
 }

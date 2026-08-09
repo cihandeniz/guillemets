@@ -1,0 +1,6 @@
+{
+  "Items": [
+    { "Active": true, "FullName": "Alice Smith" },
+    { "Active": false, "FullName": "Bob Jones" }
+  ]
+}

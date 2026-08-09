@@ -1,5 +1,7 @@
 ««items
 ««first
-First up: 
-»»«description»
+First up: «description»
+--
+«description»
+»»
 »»

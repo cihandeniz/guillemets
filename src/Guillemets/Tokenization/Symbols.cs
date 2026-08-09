@@ -6,6 +6,7 @@ internal static class Symbols
     public const char CLOSE = '»';
     public const char COLON = ':';
     public const char DASH = '-';
+    public const char BANG = '!';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -17,5 +18,6 @@ internal static class Symbols
             .Add([CLOSE, CLOSE], Tokens.CloseBlock)
             .Add([CLOSE, CLOSE, Position.NEWLINE], Tokens.CloseBlock)
             .Add([COLON], Tokens.Colon)
-            .Add([DASH, DASH, Position.NEWLINE], Tokens.Else);
+            .Add([DASH, DASH, Position.NEWLINE], Tokens.Else)
+            .Add([BANG], Tokens.Negation);
 }

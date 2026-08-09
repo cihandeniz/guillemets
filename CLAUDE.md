@@ -22,7 +22,12 @@ C#/.NET, targeting `net10.0`. Layout:
   test project.
 - `/specs` — the fixture corpus, the acceptance contract. Don't edit
   fixtures to make a test pass; if one looks wrong, fix it deliberately
-  and say why. Each case is a flat file pair or triple sharing a basename
+  and say why. If satisfying a fixture demands disproportionate
+  parser/engine complexity, check whether the fixture's *template* (not
+  just its data/expected output) is shaped awkwardly before adding
+  permanent special-casing — the same capability can often be exercised
+  with a more natural template, and that's usually the better fix. Each
+  case is a flat file pair or triple sharing a basename
   in a numbered group folder: `.guil.md`/`.md` (template/expected output)
   for success, or `.guil.md`/`.error` (expected exception message) for
   cases that must throw `TemplateParseException`, plus an optional
@@ -125,6 +130,18 @@ Localization" in SPECS.md.
   (mutating instance state as a side effect); a method that needs to hand
   back one meaningful value returns that value directly, typed
   explicitly.
+- No comments in source. If code needs one to be understood, that's a
+  signal to restructure — extract a well-named method, turn an encoded
+  string/boolean convention into a properly-named type or property — not
+  to narrate it in prose. Applies to WHY-comments too, not just
+  WHAT-comments.
+- Fix a bug in the component that actually owns the relevant knowledge,
+  not by compensating with a heuristic wherever the symptom happened to
+  surface — if a fix requires guessing at another layer's shape or
+  invariants, the guess belongs in that layer instead. Relatedly, a
+  method shouldn't reach into a caller's shared/mutable state (e.g.
+  casting a cursor's `Current`) to get what it needs — take it as an
+  explicit parameter, even if the caller has to compute it first.
 - Never use the `!` null-forgiving operator — it silences the compiler
   instead of resolving the issue, defeating the point of `Nullable`
   (`Directory.Build.props`). Follow the house nullable guide:

@@ -198,6 +198,15 @@ The following variables are injected automatically inside every loop block:
 «!first»   → true when not first item
 ```
 
+In a longer property chain, only the final segment can be negated:
+
+```markdown
+«company: !active»
+```
+
+Negating an earlier segment (e.g. `company: !active: something`) is not
+supported.
+
 ## Variable Definitions
 
 A block can capture its rendered output into a named variable instead of

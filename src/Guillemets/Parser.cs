@@ -31,14 +31,14 @@ internal class Parser(TokenCursor _tokens)
 
     INode ParseNext()
     {
-        if (_tokens.Current is OpenBlockToken openBlock)
-        {
-            return ParseBlock(openBlock);
-        }
-
         if (_tokens.Current is OpenToken open)
         {
             return ParseVariable(open);
+        }
+
+        if (_tokens.Current is OpenBlockToken openBlock)
+        {
+            return ParseBlock(openBlock);
         }
 
         if (_tokens.Current is ITextToken textToken)
@@ -55,18 +55,26 @@ internal class Parser(TokenCursor _tokens)
     {
         _tokens.Advance();
 
-        var properties = new List<string>();
+        var chain = new PropertyChainBuilder();
         while (true)
         {
             if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", open.Position); }
             if (_tokens.Current is CloseToken) { break; }
 
-            if (_tokens.Current is LiteralToken literal) { properties.Add(NormalizeWhitespace(literal.Text)); }
+            if (_tokens.Current is NegationToken)
+            {
+                chain.Negate();
+            }
+            else if (_tokens.Current is LiteralToken literal)
+            {
+                chain.Add(literal.Text);
+            }
+
             _tokens.Advance();
         }
 
         _tokens.Advance();
-        return new TokenNode(new PropertyChain(properties));
+        return new TokenNode(chain.Build());
     }
 
     INode ParseBlock(OpenBlockToken open)
@@ -92,10 +100,18 @@ internal class Parser(TokenCursor _tokens)
 
     PropertyChain ParseBlockHeader(Position openPosition)
     {
-        var properties = new List<string>();
+        var chain = new PropertyChainBuilder();
         while (true)
         {
             if (_tokens.AtEnd) { throw new TemplateParseException("Unclosed block header", openPosition); }
+
+            if (_tokens.Current is NegationToken)
+            {
+                chain.Negate();
+                _tokens.Advance();
+
+                continue;
+            }
 
             if (_tokens.Current is not LiteralToken literal)
             {
@@ -107,21 +123,16 @@ internal class Parser(TokenCursor _tokens)
             var newlineIndex = literal.Text.IndexOf(NEWLINE);
             if (newlineIndex < 0)
             {
-                properties.Add(NormalizeWhitespace(literal.Text));
+                chain.Add(literal.Text);
                 _tokens.Advance();
 
                 continue;
             }
 
-            var header = literal.Text[..newlineIndex];
-            if (header.Length > 0) { properties.Add(NormalizeWhitespace(header)); }
-
+            chain.Add(literal.Text[..newlineIndex]);
             _tokens.TrimCurrentLiteral(newlineIndex + 1);
 
-            return new(properties);
+            return chain.Build();
         }
     }
-
-    string NormalizeWhitespace(string text) =>
-        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }

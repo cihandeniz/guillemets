@@ -16,8 +16,9 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         {
             if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), out var createToken, out var length))
             {
-                position = position.Next(_template[index]);
-                index++;
+                var unmatchedLength = Math.Max(length, 1);
+                position = position.Next(_template.AsSpan(index, unmatchedLength));
+                index += unmatchedLength;
 
                 continue;
             }
