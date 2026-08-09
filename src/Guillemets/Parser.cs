@@ -1,19 +1,21 @@
 using Guillemets.Ast;
+using Guillemets.Tokenization;
 using Guillemets.Tokens;
 
-using static Guillemets.Tokenizer;
+using static Guillemets.Position;
+using static Guillemets.Tokenization.Symbols;
 
 namespace Guillemets;
 
 internal class Parser(TokenCursor _tokens)
 {
     public List<INode> Parse() =>
-        ParseNodes(closeDepth: null);
+        ParseNodes(insideBlock: false);
 
-    List<INode> ParseNodes(int? closeDepth)
+    List<INode> ParseNodes(bool insideBlock, bool stopAtElse = false)
     {
         var nodes = new List<INode>();
-        while (!_tokens.AtEnd && !ReachedClose(closeDepth))
+        while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse))
         {
             nodes.Add(ParseNext());
         }
@@ -21,18 +23,22 @@ internal class Parser(TokenCursor _tokens)
         return nodes;
     }
 
-    bool ReachedClose(int? closeDepth) =>
-        closeDepth is not null &&
-        _tokens.Current is CloseToken &&
-        _tokens.CountConsecutive<CloseToken>() == closeDepth;
+    bool ReachedClose(bool insideBlock) =>
+        insideBlock && _tokens.Current is CloseBlockToken;
+
+    bool ReachedElse(bool stopAtElse) =>
+        stopAtElse && _tokens.Current is ElseToken;
 
     INode ParseNext()
     {
+        if (_tokens.Current is OpenBlockToken openBlock)
+        {
+            return ParseBlock(openBlock);
+        }
+
         if (_tokens.Current is OpenToken open)
         {
-            var depth = _tokens.CountConsecutive<OpenToken>();
-
-            return depth >= 2 ? ParseBlock(open, depth) : ParseVariable(open);
+            return ParseVariable(open);
         }
 
         if (_tokens.Current is LiteralToken literal)
@@ -40,6 +46,13 @@ internal class Parser(TokenCursor _tokens)
             _tokens.Advance();
 
             return new LiteralNode(literal.Text);
+        }
+
+        if (_tokens.Current is ElseToken elseToken)
+        {
+            _tokens.Advance();
+
+            return new LiteralNode(elseToken.Text);
         }
 
         _tokens.Advance();
@@ -65,19 +78,29 @@ internal class Parser(TokenCursor _tokens)
         return new TokenNode(new PropertyChain(properties));
     }
 
-    INode ParseBlock(OpenToken open, int depth)
+    INode ParseBlock(OpenBlockToken open)
     {
-        _tokens.Skip(depth);
+        _tokens.Advance();
 
         var properties = ParseBlockHeader(open.Position);
-        var body = ParseNodes(closeDepth: depth);
+        var truthy = ParseNodes(insideBlock: true, stopAtElse: true);
 
-        if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {new string(OPEN, depth)}", open.Position); }
+        List<INode>? falsy = null;
+        if (!_tokens.AtEnd && _tokens.Current is ElseToken)
+        {
+            // ElseToken already consumes its trailing newline (see
+            // Symbols.BuildTree), so unlike after »» there's no
+            // leading newline left on the next literal to trim here.
+            _tokens.Advance();
+            falsy = ParseNodes(insideBlock: true);
+        }
 
-        _tokens.Skip(depth);
+        if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {OPEN}{OPEN}", open.Position); }
+
+        _tokens.Advance();
         _tokens.TrimLeadingNewlineIfPresent();
 
-        return new BlockNode(properties, body);
+        return new BlockNode(properties, truthy, falsy);
     }
 
     PropertyChain ParseBlockHeader(Position openPosition)

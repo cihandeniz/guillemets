@@ -1,8 +1,8 @@
 using Guillemets.Tokens;
 
-using static Guillemets.Tokenizer;
+using static Guillemets.Position;
 
-namespace Guillemets;
+namespace Guillemets.Tokenization;
 
 internal class TokenCursor(List<IToken> _tokens)
 {
@@ -13,21 +13,6 @@ internal class TokenCursor(List<IToken> _tokens)
 
     public void Advance() =>
         _position++;
-
-    public void Skip(int count) =>
-        _position += count;
-
-    public int CountConsecutive<TToken>()
-        where TToken : IToken
-    {
-        var count = 0;
-        while (_position + count < _tokens.Count && _tokens[_position + count] is TToken)
-        {
-            count++;
-        }
-
-        return count;
-    }
 
     public void TrimCurrentLiteral(int length)
     {

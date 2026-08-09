@@ -50,10 +50,16 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
   multiple lines — see below); a run of two or more (`««`, `«««`, ...) always
   opens a block, and its close must use the same depth. Beyond depth 2, the
   extra depth is purely for nesting readability (e.g. a block nested inside
-  another block) and behaves identically to `««`/`»»` for parsing purposes —
-  no fixture nests blocks yet, so this is currently unexercised. Tokens may
-  span multiple lines; internal whitespace (including newlines) normalizes to
-  a single space before resolution.
+  another block) and is claimed to behave identically to `««`/`»»` for
+  parsing purposes. Nested blocks themselves *are* exercised now
+  (`02-conditional-blocks/007`–`009`) — the parser balances nesting via its
+  own call stack (recursive-descent `ParseBlock`/`ParseNodes`), not by
+  tracking depth on the tokens, so the fixtures use the *same* `««` depth for
+  both outer and inner block. No fixture yet uses a genuinely deeper depth
+  (`«««`) for an inner block specifically to test that the extra depth is
+  cosmetic — that part of the claim is still unexercised. Tokens may span
+  multiple lines; internal whitespace (including newlines) normalizes to a
+  single space before resolution.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
 - **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type
@@ -123,6 +129,42 @@ default language's localization values is case-insensitive. See
   `dotnet_style_require_accessibility_modifiers`/SA1311-style "static
   readonly fields start uppercase" conventions would otherwise conflict with
   the private-field rule).
+- Write small, single-purpose methods from the start, not as a later
+  cleanup pass — if the same multi-line bookkeeping sequence shows up more
+  than once in a method body, factor it out immediately. Prefer a plain
+  private method over a local function that closes over another method's
+  locals — a local function reading/mutating its enclosing method's state
+  is harder to follow than a named method with its own clear scope.
+- For a class that walks/scans something stateful and sequential (a
+  tokenizer, a parser), give it private instance fields for its working
+  state (position, current index, accumulated output, etc.) instead of
+  threading that state through method parameters and return values. See
+  `Tokenizer.cs`: `_index`/`_position`/`_literalStart`/`_tokens` are fields,
+  set up once per instance (a fresh `Tokenizer` is built per render — see
+  `TemplateEngine.Render` — so there's no cross-call reuse to guard
+  against), and its methods read/mutate them directly. This does not mean
+  "prefer mutable fields in general" — a small pure function taking/
+  returning plain values (`RunLength`, `IsElseMarker`) is still the better
+  fit when there's no ongoing scan state to carry.
+- Avoid tuples (and small one-off DTO/record types) used purely to shuttle
+  two or three values between two methods — e.g. don't write
+  `(int Length, IToken? Token) MatchSymbol(...)`. If a method only needs to
+  report success/failure, return `bool` (mutating instance state as a
+  side effect, per the point above); if it genuinely needs to hand back one
+  meaningful value, return that value directly, typed explicitly.
+- Never use the `!` null-forgiving operator — it silences the compiler's
+  null check instead of resolving it, which defeats the point of having
+  `Nullable` enabled at all (see `Directory.Build.props`) and hides bugs
+  that would otherwise surface at compile time. Follow the house nullable
+  guide instead: <https://github.com/mouseless/learn-dotnet/blob/main/nullable-usage/README.md>.
+  When a value is nullable by type but is a real invariant that it won't
+  actually be null at a given point (e.g. `Tokenizer.FlushLiteral` reading
+  `SymbolNode.Terminal` off the tree's root, which `BuildSymbolTree` always
+  populates), make that explicit with `?? throw new
+  InvalidOperationException(...)` rather than asserting it away with `!` —
+  if the invariant is ever violated by a future change, this fails loudly
+  at the point of use instead of risking a `NullReferenceException`
+  somewhere downstream.
 
 ## Working on this repo
 

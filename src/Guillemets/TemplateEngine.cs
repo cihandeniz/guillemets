@@ -1,5 +1,6 @@
 using Guillemets.Ast;
 using Guillemets.Ast.Rendering;
+using Guillemets.Tokenization;
 using System.Text;
 using System.Text.Json;
 
@@ -9,7 +10,7 @@ public class TemplateEngine : IRenderer
 {
     public static string Render(string template, JsonElement data)
     {
-        var tokens = new Tokenizer(template).Tokenize();
+        var tokens = new Tokenizer(template, Symbols.TREE).Tokenize();
         var nodes = new Parser(tokens).Parse();
         IRenderer engine = new TemplateEngine(new());
 

@@ -8,42 +8,82 @@ and what's next*.
 ## Status
 
 Run `dotnet test` for the current, authoritative count — as of this
-writing: 10 of 31 fixtures implemented (`00-basics`, `01-variables`, and the
-boolean/no-else half of `02-conditional-blocks`), the rest listed in
-`FixtureTests.cs`'s `IGNORED_FIXTURES` set.
+writing: 16 of 34 fixtures implemented (`00-basics`, `01-variables`, and all
+of `02-conditional-blocks`, including the `--` else split and nested
+if/else blocks — `007`–`009`, confirming the recursive-descent parser
+balances nested `««…»»` pairs via the call stack, with no depth-tracking
+needed on the tokens themselves), the rest listed in `FixtureTests.cs`'s
+`IGNORED_FIXTURES` set.
 
 ## Architecture (as built so far)
 
 Pipeline: **`Tokenizer` → `TokenCursor` → `Parser` → self-rendering `Ast`
 nodes → `TemplateEngine`**, in `/src/Guillemets`.
 
-- **`Tokenizer.cs`**: a flat lexer, O(n), single pass. Emits only 4 terminal
-  kinds (`Tokens/OpenToken.cs`, `CloseToken.cs`, `ColonToken.cs`,
-  `LiteralToken.cs`), each carrying a `Position(Line, Column)`. `Tokenize()`
-  returns a `TokenCursor` directly (not a raw list) — the cursor is the
-  tokenizer's real output.
+- **`Tokenizer.cs`**: O(n) scan driven by instance fields
+  (`_index`/`_position`/`_literalStart`/`_literalStartPosition`/`_tokens`)
+  rather than parameters threaded through methods or tuples handed back
+  between them — safe because a fresh `Tokenizer` is built per render (see
+  `TemplateEngine.Render`), so there's no cross-call state to reset.
+  `TryConsumeSymbol()` walks a **`SymbolNode`** trie (`SymbolNode.cs`) built
+  once in `BuildSymbolTree()`: each node optionally carries a `Terminal`
+  (`Func<Position, IToken>?`) plus a `char`-keyed dictionary of children.
+  The walk is textbook **maximal munch with backtracking to the last
+  accepting state** — descend as far as the template keeps matching a
+  child, remember the deepest node that had a `Terminal`, and back off to
+  that point (or report no match at all, letting the character fall back
+  to literal text) once the walk dead-ends. This is what replaced *all* of
+  the previous bespoke per-symbol logic: `«`/`»` resolve to `OpenToken`/
+  `CloseToken` after one character but the trie also has a child under a
+  second `«`/`»` resolving to `OpenBlockToken`/`CloseBlockToken` — no
+  separate depth-counting or run-length code anywhere. `-` has **no**
+  terminal after one or two characters (a lone `-` or a `--` not followed
+  by `\n` is common in ordinary prose, so it must never become a token on
+  its own) — only `--` immediately followed by `\n` resolves, to
+  `ElseToken`, and that resolution **consumes the newline as part of the
+  token** (unlike after `»»`, there's nothing left for `Parser` to trim
+  off the following literal). Emits 6 terminal kinds total (`Tokens/
+  OpenToken.cs`, `OpenBlockToken.cs`, `CloseToken.cs`, `CloseBlockToken.cs`,
+  `ColonToken.cs`, `ElseToken.cs`) plus `LiteralToken.cs` for everything
+  that never resolves through the trie.
 - **`TokenCursor.cs`**: owns the token list + read position. Exposes
-  `AtEnd`/`Current`/`Advance()`/`Skip(n)`/`CountConsecutive<TToken>()` for
-  reading, plus `TrimCurrentLiteral(length)` and
-  `TrimLeadingNewlineIfPresent()` — the *only* two places that mutate a
+  `AtEnd`/`Current`/`Advance()` for reading, plus `TrimCurrentLiteral(length)`
+  and `TrimLeadingNewlineIfPresent()` — the *only* two places that mutate a
   `LiteralToken` in place to consume part of its text (used by block-header
   parsing and by swallowing the newline after a closing `»»`). This exists
-  specifically so `Parser` never touches a raw index — see the "Parser
-  rewrite" note below.
+  specifically so `Parser` never touches a raw index. (`Skip(n)`/
+  `CountConsecutive<TToken>()` existed at various points to count/skip runs
+  of single-char Open/Close tokens for depth — both are gone now that the
+  tokenizer's trie resolves depth itself via distinct token types, so
+  every delimiter is exactly one token and `Advance()` is always enough.)
 - **`Parser.cs`**: recursive-descent over the cursor. `Parse()` →
-  `ParseNodes(closeDepth)` loops calling `ParseNext()`, which dispatches to
-  `ParseVariable` (inline `«token»` → `TokenNode`) or `ParseBlock` (`««name`
-  … `»»` → `BlockNode`, added this session — this was the "first group
-  needing real block parsing" milestone, now built for the boolean/if case).
-  `ParseBlockHeader` reads the header line into a `PropertyChain`, splitting
-  the owning literal token at the first `\n` via
-  `TokenCursor.TrimCurrentLiteral`. Throws `TemplateParseException` (with
-  `Position`) on an unclosed `«`/`««`.
+  `ParseNodes(insideBlock, stopAtElse)` loops calling `ParseNext()`, which
+  dispatches purely on token type now — `OpenBlockToken` → `ParseBlock`,
+  `OpenToken` → `ParseVariable` — no depth counting. `ParseBlockHeader`
+  reads the header line into a `PropertyChain`, splitting the owning
+  literal token at the first `\n` via `TokenCursor.TrimCurrentLiteral`.
+  Throws `TemplateParseException` (with `Position`) on an unclosed `«`/
+  `««`. `ParseBlock` parses the truthy body via `ParseNodes(insideBlock:
+  true, stopAtElse: true)`, which stops the moment `TokenCursor.Current` is
+  an `ElseToken` instead of consuming it as a node — if one was hit,
+  `ParseBlock` advances past it (no trim needed, see `Tokenizer` above) and
+  parses the falsy body the same way. No `ElseToken` found → `Falsy` stays
+  `null`. Outside stop-at-else mode (a bare `--\n` at the top level, not
+  inside any block), `ParseNext` turns the `ElseToken` back into a literal
+  `--\n` (all three original characters — it's the whole consumed span),
+  so the token isn't silently swallowed when it isn't acting as a
+  separator.
 - **`Ast/`**: `INode` has one method — `Render(RenderContext, JsonElement) :
   string` — and each node type (`LiteralNode`, `TokenNode`, `BlockNode`)
   implements it directly. No separate renderer classes, no visitor, no
   switch anywhere: dispatch is plain polymorphism, the node *is* its own
-  renderer.
+  renderer. `BlockNode` carries an optional `ElseBody` (`IReadOnlyList
+  <INode>?`, defaults `null`); `Render` takes the truthy branch only when
+  the resolved value's `ValueKind` is `True` — `False`, `Null`, and
+  unresolved all fall through to `ElseBody` (or empty string if there
+  isn't one). The falsy branch renders against the same `data`/scope as
+  the block itself — there's no object to scope into when the condition
+  is false or null.
   - **`PropertyChain.cs`**: `IList<string>` wrapped as a
     `ReadOnlyCollection<string>` — the property-access chain shared by both
     `TokenNode.Properties` and `BlockNode.Properties` (unified naming; used
@@ -83,10 +123,8 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
 
 In fixture-group order (see `/specs`, numbered simplest → most complex):
 
-1. `02-conditional-blocks` — boolean if/no-else is done (`001`, `002`).
-   Still open: `003`/`004` (`--` else split) and `005` (null-object else) —
-   needs the parser to recognize a `--`-only line inside a block body and
-   split it into truthy/falsy node lists.
+1. `02-conditional-blocks` — done: boolean if/no-else (`001`, `002`), the
+   `--` else split (`003`/`004`), and null-object else (`005`).
 2. `03-loop-blocks` — list loops, empty list, magic `first`/`last`, `!`
    negation, **plus `005-filtered-item-scope`** (new this session): a block
    name whose chain projects a boolean through a list should *filter* the
@@ -115,7 +153,9 @@ In fixture-group order (see `/specs`, numbered simplest → most complex):
 ## Known v1 scope decisions (not gaps to "fix" without discussion)
 
 - **Multi-depth guillemets** (`«««…»»»` for nesting readability) are
-  unimplemented — no fixture exercises them yet.
+  unimplemented — no fixture exercises them yet. Nesting itself *is* now
+  exercised (`02-conditional-blocks/007`–`009`), just via same-depth `««`
+  for both outer and inner block, not a deeper delimiter for the inner one.
 - **True schema/localization remapping** — where a template's business term
   differs lexically from the model's property name (spec's `"quote no"` →
   `OfferNo` example) — is out of scope. Only direct
@@ -137,3 +177,19 @@ In fixture-group order (see `/specs`, numbered simplest → most complex):
   `active`). The intended fix is the filter-and-scope behavior in milestone
   2 above, not a defensive guard — see `03-loop-blocks/005-filtered-item-scope`
   and SPECS.md's "Resolving the Block Name".
+- **`--` only requires a trailing newline, not a leading one.** The
+  `SymbolNode` trie resolves `ElseToken` from `--` followed by `\n`, with
+  no check on what precedes the first `-`. This is a real relaxation of
+  the spec wording ("`--` on its own line" reads as both-sides) — no
+  current fixture distinguishes the two, so this hasn't been confirmed
+  against SPECS.md yet. Revisit if a fixture ever needs a `--` mid-line
+  (e.g. an em dash in real content) to *not* be treated as a separator.
+- **Multi-depth guillemets beyond exactly 2 are unhandled by the trie.**
+  `SymbolTree`'s `«`/`»` paths are exactly 2 levels deep (1 char →
+  `OpenToken`, 2 chars → `OpenBlockToken`, no child under the second `«`
+  for a 3rd) — a run of 3+ `«` in a row now tokenizes as one
+  `OpenBlockToken` (2 chars) followed by a separate `OpenToken` (1 char),
+  rather than collapsing into a single deeper-nesting token. Still
+  unexercised by any fixture (see "Multi-depth guillemets" above); the
+  tree would need a 3rd level added deliberately, not just discovered as a
+  side effect, if that's ever needed.
