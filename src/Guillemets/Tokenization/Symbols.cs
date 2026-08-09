@@ -5,7 +5,7 @@ internal static class Symbols
     public const char OPEN = '«';
     public const char CLOSE = '»';
     public const char COLON = ':';
-    public const char DASH = '-';
+    public const char TILDE = '~';
     public const char BANG = '!';
 
     public static readonly SymbolTree TREE = BuildTree();
@@ -13,11 +13,10 @@ internal static class Symbols
     static SymbolTree BuildTree() =>
         new SymbolTree(Tokens.Literal)
             .Add([OPEN], Tokens.Open)
-            .Add([OPEN, OPEN], Tokens.OpenBlock)
+            .Add([OPEN, OPEN], Tokens.OpenBlock, repeat: true)
             .Add([CLOSE], Tokens.Close)
-            .Add([CLOSE, CLOSE], Tokens.CloseBlock)
-            .Add([CLOSE, CLOSE, Position.NEWLINE], Tokens.CloseBlock)
+            .Add([CLOSE, CLOSE], Tokens.CloseBlock, repeat: true, newline: true)
             .Add([COLON], Tokens.Colon)
-            .Add([DASH, DASH, Position.NEWLINE], Tokens.Else)
+            .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation);
 }

@@ -90,13 +90,12 @@ example.
 ## Blocks
 
 A block opens with `««name` on its own line and closes with `»»` on its own
-line. The double guillemet is what marks this as a block rather than an
-inline variable (see Variables, above, which always use a single `«»`, even
-when its content spans multiple lines) — the closing depth must match the
-opening depth. Deeper consistent depths (`«««`/`»»»`, ...) are available
-purely for nesting readability when a block contains another block, and
-behave identically to `««`/`»»`. Behavior is inferred from the resolved type
-of `name`:
+line — the double guillemet is what marks this as a block rather than an
+inline variable (see Variables, above, which always uses a single `«»`, even
+across multiple lines). The closing depth must match the opening depth
+exactly, or the engine throws `TemplateParseException`. Deeper depths
+(`«««`/`»»»`, ...) behave identically and exist purely for nesting
+readability. Behavior is inferred from the resolved type of `name`:
 
 | Resolved type | Behavior         |
 | ---           | ---              |
@@ -159,13 +158,13 @@ finds the item where `active` is true and renders the body scoped to it —
 
 ### Else
 
-`--` on its own line inside a block separates the truthy and falsy branches.
+`~` on its own line inside a block separates the truthy and falsy branches.
 Used with boolean blocks and variable definitions.
 
 ```markdown
 ««individual
 Dear «full name»,
---
+~
 Dear representatives of «company name»,
 »»
 ```
@@ -175,7 +174,7 @@ Else works also when a given object is null.
 ```markdown
 ««company info
 Company name: «name»
---
+~
 No company information available
 »»
 ```
@@ -215,7 +214,7 @@ rendering inline. Use `= condition` after the variable name.
 ```markdown
 ««contact person = individual
 «full name»
---
+~
 representatives of «company name»
 »»
 ```
@@ -316,7 +315,7 @@ evaluated.
 
 ««Contact Person = individual
 «Full Name»
---
+~
 representatives of «Company Name»
 »»
 

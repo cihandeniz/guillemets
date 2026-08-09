@@ -1,0 +1,3 @@
+««individual
+Dear «full name»,
+»»»

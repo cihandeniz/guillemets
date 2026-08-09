@@ -2,7 +2,7 @@
 
 ««Contact Person = individual
 «Full Name»
---
+~
 representatives of «Company Name»
 »»
 

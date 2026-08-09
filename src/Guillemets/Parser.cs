@@ -93,9 +93,20 @@ internal class Parser(TokenCursor _tokens)
 
         if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {open.Text}", open.Position); }
 
+        ValidateClosingDepth(open, (CloseBlockToken)_tokens.Current);
         _tokens.Advance();
 
         return new BlockNode(properties, truthy, falsy);
+    }
+
+    void ValidateClosingDepth(OpenBlockToken open, CloseBlockToken close)
+    {
+        if (close.Depth == open.Depth) { return; }
+
+        throw new TemplateParseException(
+            $"Block opened with {open.Text} but closed with {close.Text.TrimEnd(NEWLINE)}",
+            close.Position
+        );
     }
 
     PropertyChain ParseBlockHeader(Position openPosition)

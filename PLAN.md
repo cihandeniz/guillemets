@@ -6,7 +6,7 @@ fixture corpus. For *how* to work (TDD discipline, code style), see
 
 ## Status
 
-27 of 40 fixtures pass (`dotnet test` is authoritative). Done: `basics`,
+31 of 44 fixtures pass (`dotnet test` is authoritative). Done: `basics`,
 `variables`, `conditional-blocks`, `loop-blocks`. Remaining fixtures are
 listed in `FixtureTests.cs`'s `IGNORED_FIXTURES` set.
 
@@ -18,7 +18,13 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
 - **`Tokenization/SymbolTree.cs`**: a trie of symbol characters
   (`Symbols.TREE`), maximal munch with backtracking to the last
   accepting state. `ExtendMatch` reports how deep it got even on total
-  failure, so `Tokenizer` can trust that depth directly.
+  failure, so `Tokenizer` can trust that depth directly. `Add(path,
+  createToken, repeat, newline)` builds it: `repeat` loops the terminal
+  node onto itself so any run length `>= 2` matches as one token (how
+  `«`/`»` support arbitrary block depth, exposed as `Depth` on
+  `OpenBlockToken`/`CloseBlockToken`); `newline` chains one more hop
+  through `Position.NEWLINE` before assigning the token (how the else
+  marker requires `~` to be followed by a newline).
 - **`Tokenization/Tokenizer.cs`**: single-pass scan via `Tokens.cs`'s
   static factories; carries no knowledge of symbol shapes itself, just
   advances by whatever `SymbolTree` reports (floored at 1).
@@ -28,7 +34,10 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
 - **`Parser.cs`**: recursive-descent (`Parse` → `ParseNodes` →
   `ParseNext` → `ParseBlock`/`ParseVariable`), nesting via the call
   stack. `»»` is always on its own line (per SPECS.md) — no
-  closing-newline special-casing.
+  closing-newline special-casing. `ParseBlock` requires the closing
+  token's `Depth` to equal the opening token's `Depth`
+  (`ValidateClosingDepth`), throwing `TemplateParseException` on a
+  mismatch — depth beyond 2 is readability-only, but must still balance.
 - **`Ast/PropertyChainBuilder.cs`**: builds a `PropertyChain` from
   tokens; tracks `!`-negation as `PropertyChain.LastSegmentNegated`
   (never encoded into the segment strings) and drops
@@ -71,25 +80,13 @@ name only):
    form.
 7. `parameters` — `format`/`currency`/`length`.
 8. `integration` — the full worked example, combining everything above.
-9. `errors` — currently 2 fixtures (`unclosed-guillemet`,
-   `unclosed-block`). Add more error cases as new failure modes appear —
-   extend `TemplateParseException` usage rather than introducing ad hoc
-   exceptions.
-
-## Known issues (decided, not yet designed/implemented)
-
-- **`--` else syntax collides with Markdown Setext headings/`---`
-  rules.** SPECS.md's own "Full Example" has a bare `---` outside any
-  block. The delimiter itself needs to change; not yet designed (no
-  replacement chosen) — needs a SPECS.md update alongside the code
-  change once one is.
+9. `errors` — currently 3 fixtures (`unclosed-guillemet`,
+   `unclosed-block`, `mismatched-block-depth`). Add more error cases as
+   new failure modes appear — extend `TemplateParseException` usage
+   rather than introducing ad hoc exceptions.
 
 ## Known v1 scope decisions (not gaps to "fix" without discussion)
 
-- **Multi-depth guillemets** (`«««…»»»`) are unimplemented beyond the
-  cosmetic nesting case (`conditional-blocks/nested-blocks`, same-depth
-  `««` on both sides) — `SymbolTree`'s `«`/`»` paths are only 2 levels
-  deep.
 - **True schema/localization remapping** (business term ≠ property name)
   is out of scope — only direct PascalCase-of-space-words resolution via
   Humanizer is implemented.

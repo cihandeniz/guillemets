@@ -11,7 +11,21 @@ internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
     public Func<TokenContext, IToken> CreateToken =>
         _createToken ?? throw new InvalidOperationException("Symbol tree node has no token factory.");
 
-    public SymbolTree Add(ReadOnlySpan<char> path, Func<TokenContext, IToken> createToken)
+    public SymbolTree Add(ReadOnlySpan<char> path, Func<TokenContext, IToken> createToken,
+        bool repeat = false,
+        bool newline = false
+    )
+    {
+        var node = AddPath(path, newline ? null : createToken, repeat);
+        if (newline)
+        {
+            node.AddPath([Position.NEWLINE], createToken, false);
+        }
+
+        return this;
+    }
+
+    SymbolTree AddPath(ReadOnlySpan<char> path, Func<TokenContext, IToken>? createToken, bool repeat)
     {
         if (path.IsEmpty)
         {
@@ -25,10 +39,16 @@ internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
             _children[path[0]] = child = new SymbolTree();
         }
 
-        child.Add(path[1..], createToken);
+        if (repeat && path.Length == 1)
+        {
+            child.Repeat(path[0]);
+        }
 
-        return this;
+        return child.AddPath(path[1..], createToken, repeat);
     }
+
+    void Repeat(char symbol) =>
+        _children[symbol] = this;
 
     public bool TryMatchSymbol(ReadOnlySpan<char> text, [NotNullWhen(true)] out Func<TokenContext, IToken>? createToken, out int length)
     {

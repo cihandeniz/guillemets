@@ -53,20 +53,19 @@ C#/.NET, targeting `net10.0`. Layout:
 
 (Full detail in SPECS.md — this is a map, not a replacement.)
 
-- **Delimiters**: `«»`. A single `«»` is always an inline variable/token
-  (may span multiple lines, normalized to single spaces); a run of two or
-  more (`««`, `«««`, ...) always opens a block, closed at the same depth.
-  Beyond depth 2 the extra depth is cosmetic (nesting readability only) —
-  unexercised by any fixture using a genuinely deeper inner delimiter.
-  Nesting itself works today (`conditional-blocks/nested-blocks`), via the
-  parser's own recursive-descent call stack, not depth-tracking on tokens.
+- **Delimiters**: `«»`. A single `«»` is an inline variable/token; a run
+  of two or more (`««`, `«««`, ...) opens a block, closed by the exact
+  same run length or `TemplateParseException` is thrown — depth beyond 2
+  is cosmetic (fixtures go one guillemet deeper per nesting level, for
+  readability, not because the parser requires it), validated via
+  `OpenBlockToken.Depth`/`CloseBlockToken.Depth` in `Parser.ParseBlock`.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
 - **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved
   type of `name` — boolean → if, list → loop, object → scope. No
   keywords, same syntax for all three. Variable lookup falls back to
   enclosing scopes.
-- **Else**: `--` on its own line splits truthy/falsy (or non-null/null)
+- **Else**: `~` on its own line splits truthy/falsy (or non-null/null)
   branches inside a block.
 - **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
 - **Variable definitions**: `««name = expr` ... `»»` captures a block's
@@ -141,7 +140,10 @@ Localization" in SPECS.md.
   invariants, the guess belongs in that layer instead. Relatedly, a
   method shouldn't reach into a caller's shared/mutable state (e.g.
   casting a cursor's `Current`) to get what it needs — take it as an
-  explicit parameter, even if the caller has to compute it first.
+  explicit parameter, even if the caller has to compute it first. Same
+  principle in reverse: don't get an object back from a call and then
+  poke its fields/methods yourself to finish the job — pass along what
+  the callee needs so it mutates its own state itself.
 - Never use the `!` null-forgiving operator — it silences the compiler
   instead of resolving the issue, defeating the point of `Nullable`
   (`Directory.Build.props`). Follow the house nullable guide:
