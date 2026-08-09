@@ -11,11 +11,11 @@ public class FixtureTests
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
-        "03-loop-blocks/001-list-of-objects",
-        "03-loop-blocks/002-empty-list",
-        "03-loop-blocks/003-magic-loop-vars",
-        "03-loop-blocks/004-negation",
-        "03-loop-blocks/005-filtered-item-scope",
+        "03-loop-blocks/001a-populated",
+        "03-loop-blocks/001b-empty",
+        "03-loop-blocks/002-magic-loop-vars",
+        "03-loop-blocks/003-negation",
+        "03-loop-blocks/004-filtered-item-scope",
         "04-scope-blocks/001-object-scope",
         "04-scope-blocks/002-upper-scope-fallback",
         "05-variable-definitions/001-definition-boolean",
@@ -52,19 +52,14 @@ public class FixtureTests
 
     static IEnumerable<TestCaseData> FixtureCases()
     {
-        foreach (var templatePath in Directory
-                     .EnumerateFiles(SPECS_ROOT, "*.guil.md", SearchOption.AllDirectories)
-                     .OrderBy(p => p, StringComparer.Ordinal))
+        foreach (var dataPath in DataFiles())
         {
-            var basePath = templatePath[..^".guil.md".Length];
-            if (File.Exists(basePath + ".error")) { continue; }
+            if (File.Exists(WithExtension(dataPath, ".error"))) { continue; }
 
-            var dataPath = basePath + ".json";
-            var expectedPath = basePath + ".md";
-            var relativeName = Path.GetRelativePath(SPECS_ROOT, basePath).Replace('\\', '/');
+            var testCase = new TestCaseData(TemplateFor(dataPath), dataPath, WithExtension(dataPath, ".md"))
+                .SetName(FixtureName(dataPath));
 
-            var testCase = new TestCaseData(templatePath, dataPath, expectedPath).SetName(relativeName);
-            if (IGNORED_FIXTURES.Contains(relativeName))
+            if (IGNORED_FIXTURES.Contains(FixtureName(dataPath)))
             {
                 testCase.Ignore("not yet implemented");
             }
@@ -75,20 +70,43 @@ public class FixtureTests
 
     static IEnumerable<TestCaseData> ErrorFixtureCases()
     {
-        foreach (var templatePath in Directory
-                     .EnumerateFiles(SPECS_ROOT, "*.guil.md", SearchOption.AllDirectories)
-                     .OrderBy(p => p, StringComparer.Ordinal))
+        foreach (var dataPath in DataFiles())
         {
-            var basePath = templatePath[..^".guil.md".Length];
-            var errorPath = basePath + ".error";
+            var errorPath = WithExtension(dataPath, ".error");
             if (!File.Exists(errorPath)) { continue; }
 
-            var dataPath = basePath + ".json";
-            var relativeName = Path.GetRelativePath(SPECS_ROOT, basePath).Replace('\\', '/');
-
-            yield return new TestCaseData(templatePath, dataPath, errorPath).SetName(relativeName);
+            yield return new TestCaseData(TemplateFor(dataPath), dataPath, errorPath).SetName(FixtureName(dataPath));
         }
     }
+
+    static IEnumerable<string> DataFiles() =>
+        Directory.EnumerateFiles(SPECS_ROOT, "*.json", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.Ordinal);
+
+    static string WithExtension(string dataPath, string extension) =>
+        dataPath[..^".json".Length] + extension;
+
+    static string FixtureName(string dataPath) =>
+        Path.GetRelativePath(SPECS_ROOT, dataPath[..^".json".Length]).Replace('\\', '/');
+
+    // A case file (e.g. "005a-both-truthy.json") reuses the .guil.md whose
+    // leading number matches its own, so several cases can share one
+    // template without duplicating it -- see "005-nested-blocks.guil.md"
+    // and its "005a"/"005b"/"005c" cases.
+    static string TemplateFor(string dataPath)
+    {
+        var directory = Path.GetDirectoryName(dataPath)
+            ?? throw new InvalidOperationException($"Fixture data path '{dataPath}' has no directory.");
+        var group = LeadingNumber(Path.GetFileName(dataPath));
+
+        return Directory.EnumerateFiles(directory, "*.guil.md")
+            .SingleOrDefault(path => LeadingNumber(Path.GetFileName(path)) == group)
+            ?? throw new InvalidOperationException(
+                $"No template found for fixture data '{dataPath}' (expected a *.guil.md starting with '{group}' in the same folder).");
+    }
+
+    static string LeadingNumber(string fileName) =>
+        new([.. fileName.TakeWhile(char.IsDigit)]);
 
     [TestCaseSource(nameof(FixtureCases))]
     public void Fixture_RendersExpectedOutput(string templatePath, string dataPath, string expectedPath)

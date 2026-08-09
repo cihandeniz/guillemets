@@ -10,10 +10,10 @@ and what's next*.
 Run `dotnet test` for the current, authoritative count — as of this
 writing: 16 of 34 fixtures implemented (`00-basics`, `01-variables`, and all
 of `02-conditional-blocks`, including the `--` else split and nested
-if/else blocks — `007`–`009`, confirming the recursive-descent parser
-balances nested `««…»»` pairs via the call stack, with no depth-tracking
-needed on the tokens themselves), the rest listed in `FixtureTests.cs`'s
-`IGNORED_FIXTURES` set.
+if/else blocks — `005a`–`005c`, sharing one `005-nested-blocks.guil.md`,
+confirming the recursive-descent parser balances nested `««…»»` pairs via
+the call stack, with no depth-tracking needed on the tokens themselves),
+the rest listed in `FixtureTests.cs`'s `IGNORED_FIXTURES` set.
 
 ## Architecture (as built so far)
 
@@ -123,10 +123,10 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
 
 In fixture-group order (see `/specs`, numbered simplest → most complex):
 
-1. `02-conditional-blocks` — done: boolean if/no-else (`001`, `002`), the
-   `--` else split (`003`/`004`), and null-object else (`005`).
+1. `02-conditional-blocks` — done: boolean if/no-else (`001a`/`001b`), the
+   `--` else split (`002a`/`002b`), and null-object else (`003`).
 2. `03-loop-blocks` — list loops, empty list, magic `first`/`last`, `!`
-   negation, **plus `005-filtered-item-scope`** (new this session): a block
+   negation, **plus `004-filtered-item-scope`** (new this session): a block
    name whose chain projects a boolean through a list should *filter* the
    list down to the matching item(s) and scope into the match, rather than
    collapsing multiple projected booleans into one truthy/falsy check (see
@@ -154,7 +154,7 @@ In fixture-group order (see `/specs`, numbered simplest → most complex):
 
 - **Multi-depth guillemets** (`«««…»»»` for nesting readability) are
   unimplemented — no fixture exercises them yet. Nesting itself *is* now
-  exercised (`02-conditional-blocks/007`–`009`), just via same-depth `««`
+  exercised (`02-conditional-blocks/005a`–`005c`), just via same-depth `««`
   for both outer and inner block, not a deeper delimiter for the inner one.
 - **True schema/localization remapping** — where a template's business term
   differs lexically from the model's property name (spec's `"quote no"` →
@@ -170,12 +170,12 @@ In fixture-group order (see `/specs`, numbered simplest → most complex):
   chain doesn't resolve to anything at all (e.g. it projects through an
   empty list), it's treated as falsy, same as an explicit `false`. Fixed via
   `.SingleOrDefault()` in `BlockNode.Render`; see
-  `02-conditional-blocks/006-unresolved-property-no-else`.
+  `02-conditional-blocks/004-unresolved-property-no-else`.
 - **Boolean-through-list block names still crash on 2+ matches**: today
   `BlockNode.Render`'s `.SingleOrDefault()` throws if the chain's projection
   yields more than one value (e.g. `««items: active` where 2+ items have
   `active`). The intended fix is the filter-and-scope behavior in milestone
-  2 above, not a defensive guard — see `03-loop-blocks/005-filtered-item-scope`
+  2 above, not a defensive guard — see `03-loop-blocks/004-filtered-item-scope`
   and SPECS.md's "Resolving the Block Name".
 - **`--` only requires a trailing newline, not a leading one.** The
   `SymbolNode` trie resolves `ElseToken` from `--` followed by `\n`, with

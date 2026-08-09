@@ -25,12 +25,19 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
   fixtures to make a test pass; if one looks wrong, fix it deliberately
   and say why. Fixtures are flat sibling files sharing a number-prefixed
   basename within each numbered group folder (e.g.
-  `02-conditional-blocks/001-boolean-true-no-else.guil.md` +
+  `02-conditional-blocks/003-null-object-else.guil.md` +
   `.json` + `.md`) — not one subdirectory per case. Two triple shapes:
   `.guil.md`/`.json`/`.md` (template / data / expected rendered output)
   for success cases, or `.guil.md`/`.json`/`.error` (template / data /
   expected exception message) for cases that must throw
-  `TemplateParseException` — see `10-errors/`.
+  `TemplateParseException` — see `10-errors/`. When several cases share one
+  template, give the template just the group number (`005-nested-blocks
+  .guil.md`) and suffix each case's `.json`/`.md` with a letter on that
+  same number (`005a-both-truthy.json`/`.md`, `005b-inner-falsy...`) —
+  `FixtureTests.cs` matches a case to its template by leading digits, so
+  don't duplicate template content across cases that only differ in data.
+  A fixture with its own unique template still just uses the plain
+  `NNN-description` form for all three files, as before.
 - `Guillemets.slnx` at repo root ties both projects together (.NET 10
   defaults `dotnet new sln` to the newer XML solution format).
 - Central package management: `Directory.Packages.props` (all `PackageVersion`
@@ -52,10 +59,11 @@ C#/.NET library, targeting `net10.0` (current LTS). Layout:
   extra depth is purely for nesting readability (e.g. a block nested inside
   another block) and is claimed to behave identically to `««`/`»»` for
   parsing purposes. Nested blocks themselves *are* exercised now
-  (`02-conditional-blocks/007`–`009`) — the parser balances nesting via its
-  own call stack (recursive-descent `ParseBlock`/`ParseNodes`), not by
-  tracking depth on the tokens, so the fixtures use the *same* `««` depth for
-  both outer and inner block. No fixture yet uses a genuinely deeper depth
+  (`02-conditional-blocks/005a`–`005c`, sharing one `005-nested-blocks
+  .guil.md`) — the parser balances nesting via its own call stack
+  (recursive-descent `ParseBlock`/`ParseNodes`), not by tracking depth on
+  the tokens, so the fixtures use the *same* `««` depth for both outer and
+  inner block. No fixture yet uses a genuinely deeper depth
   (`«««`) for an inner block specifically to test that the extra depth is
   cosmetic — that part of the claim is still unexercised. Tokens may span
   multiple lines; internal whitespace (including newlines) normalizes to a
@@ -170,7 +178,7 @@ default language's localization values is case-insensitive. See
 
 - Run `dotnet test` from the repo root to run the full fixture suite. Each
   fixture under `/specs` becomes one NUnit test case, named by its relative
-  path (e.g. `02-conditional-blocks/003-else-truthy`), via `FixtureTests.cs`
+  path (e.g. `02-conditional-blocks/002a-truthy`), via `FixtureTests.cs`
   in the test project.
 - Engine work proceeds fixture-group by fixture-group (see the numbered
   `/specs` subfolders, ordered simplest → most complex) — implement one
