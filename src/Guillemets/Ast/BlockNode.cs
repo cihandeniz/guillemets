@@ -1,4 +1,5 @@
 using Guillemets.Ast.Rendering;
+using System.Text.Json;
 
 namespace Guillemets.Ast;
 
@@ -18,6 +19,11 @@ internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
         }
 
         var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault();
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            return new ScopeBehavior(scope, value);
+        }
+
         return new ConditionalBehavior(scope, value);
     }
 }

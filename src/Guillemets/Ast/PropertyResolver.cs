@@ -13,7 +13,7 @@ internal class PropertyResolver
             yield break;
         }
 
-        foreach (var result in Resolve(scope.Data, properties))
+        foreach (var result in Resolve(ResolveScope(scope, properties).Data, properties))
         {
             yield return result;
         }
@@ -26,7 +26,7 @@ internal class PropertyResolver
     {
         if (properties.Count <= 1) { return null; }
 
-        var containers = Resolve(scope.Data, properties.WithoutLast()).ToList();
+        var containers = Resolve(ResolveScope(scope, properties).Data, properties.WithoutLast()).ToList();
         if (containers.Count != 1 || containers[0].ValueKind != JsonValueKind.Array) { return null; }
 
         var lastSegment = new PropertyChain([properties[^1]], properties.LastSegmentNegated);
@@ -43,6 +43,16 @@ internal class PropertyResolver
             ? [.. resolved[0].EnumerateArray()]
             : null;
     }
+
+    Scope ResolveScope(Scope scope, PropertyChain properties)
+    {
+        if (properties.Count == 0 || HasProperty(scope.Data, properties[0])) { return scope; }
+
+        return scope.Parent is not null ? ResolveScope(scope.Parent, properties) : scope;
+    }
+
+    static bool HasProperty(JsonElement data, string property) =>
+        data.ValueKind == JsonValueKind.Object && data.TryGetProperty(property.Dehumanize(), out _);
 
     public IEnumerable<JsonElement> Resolve(JsonElement current, PropertyChain properties)
     {

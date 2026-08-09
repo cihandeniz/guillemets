@@ -19,7 +19,12 @@ internal record LoopBehavior(Scope Scope, IReadOnlyList<JsonElement> Items)
         var result = new StringBuilder();
         for (var i = 0; i < Items.Count; i++)
         {
-            var itemScope = new Scope(Items[i], IsFirst: i == 0, IsLast: i == Items.Count - 1);
+            var itemScope =
+                new Scope(Items[i],
+                    Parent: Scope,
+                    IsFirst: i == 0,
+                    IsLast: i == Items.Count - 1
+                );
             result.Append(context.Renderer.RenderAll(body, itemScope));
         }
 

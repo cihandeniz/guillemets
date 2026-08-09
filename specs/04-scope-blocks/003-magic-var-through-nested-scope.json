@@ -1,0 +1,12 @@
+{
+  "Companies": [
+    {
+      "CompanyName": "Acme Inc.",
+      "Address": { "City": "Springfield" }
+    },
+    {
+      "CompanyName": "Globex Corp.",
+      "Address": { "City": "Shelbyville" }
+    }
+  ]
+}
