@@ -8,13 +8,15 @@ namespace Guillemets;
 
 public class TemplateEngine : IRenderer
 {
+    static readonly JsonElement EMPTY_OBJECT = JsonDocument.Parse("{}").RootElement;
+
     public static string Render(string template, JsonElement data)
     {
         var tokens = new Tokenizer(template, Symbols.TREE).Tokenize();
         var nodes = new Parser(tokens).Parse();
         IRenderer engine = new TemplateEngine(new());
 
-        return engine.RenderAll(nodes, data);
+        return engine.RenderAll(nodes, data.ValueKind == JsonValueKind.Null ? EMPTY_OBJECT : data);
     }
 
     readonly RenderContext _context;

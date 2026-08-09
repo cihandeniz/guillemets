@@ -52,14 +52,12 @@ public class FixtureTests
 
     static IEnumerable<TestCaseData> FixtureCases()
     {
-        foreach (var dataPath in DataFiles())
+        foreach (var expectedPath in CaseFiles(".md"))
         {
-            if (File.Exists(WithExtension(dataPath, ".error"))) { continue; }
+            var testCase = new TestCaseData(TemplateFor(expectedPath), DataPathFor(expectedPath), expectedPath)
+                .SetName(FixtureName(expectedPath));
 
-            var testCase = new TestCaseData(TemplateFor(dataPath), dataPath, WithExtension(dataPath, ".md"))
-                .SetName(FixtureName(dataPath));
-
-            if (IGNORED_FIXTURES.Contains(FixtureName(dataPath)))
+            if (IGNORED_FIXTURES.Contains(FixtureName(expectedPath)))
             {
                 testCase.Ignore("not yet implemented");
             }
@@ -68,54 +66,64 @@ public class FixtureTests
         }
     }
 
-    static IEnumerable<TestCaseData> ErrorFixtureCases()
-    {
-        foreach (var dataPath in DataFiles())
-        {
-            var errorPath = WithExtension(dataPath, ".error");
-            if (!File.Exists(errorPath)) { continue; }
+    static IEnumerable<TestCaseData> ErrorFixtureCases() =>
+        CaseFiles(".error")
+            .Select(errorPath => new TestCaseData(TemplateFor(errorPath), DataPathFor(errorPath), errorPath)
+                .SetName(FixtureName(errorPath)));
 
-            yield return new TestCaseData(TemplateFor(dataPath), dataPath, errorPath).SetName(FixtureName(dataPath));
-        }
-    }
-
-    static IEnumerable<string> DataFiles() =>
-        Directory.EnumerateFiles(SPECS_ROOT, "*.json", SearchOption.AllDirectories)
+    // Case files are discovered by extension (".md" for success, ".error"
+    // for parse errors), excluding *.guil.md templates (which also end in
+    // ".md"). A case's *.json data file is optional -- see ReadData.
+    static IEnumerable<string> CaseFiles(string extension) =>
+        Directory.EnumerateFiles(SPECS_ROOT, $"*{extension}", SearchOption.AllDirectories)
+            .Where(path => !path.EndsWith(".guil.md", StringComparison.Ordinal))
             .OrderBy(path => path, StringComparer.Ordinal);
 
-    static string WithExtension(string dataPath, string extension) =>
-        dataPath[..^".json".Length] + extension;
+    static string DataPathFor(string casePath) =>
+        BasePath(casePath) + ".json";
 
-    static string FixtureName(string dataPath) =>
-        Path.GetRelativePath(SPECS_ROOT, dataPath[..^".json".Length]).Replace('\\', '/');
+    static string BasePath(string path) =>
+        Path.ChangeExtension(path, null);
 
-    // A case file (e.g. "005a-both-truthy.json") reuses the .guil.md whose
+    static string FixtureName(string path) =>
+        Path.GetRelativePath(SPECS_ROOT, BasePath(path)).Replace('\\', '/');
+
+    // A case file (e.g. "005a-both-truthy.md") reuses the .guil.md whose
     // leading number matches its own, so several cases can share one
     // template without duplicating it -- see "005-nested-blocks.guil.md"
     // and its "005a"/"005b"/"005c" cases.
-    static string TemplateFor(string dataPath)
+    static string TemplateFor(string casePath)
     {
-        var directory = Path.GetDirectoryName(dataPath)
-            ?? throw new InvalidOperationException($"Fixture data path '{dataPath}' has no directory.");
-        var group = LeadingNumber(Path.GetFileName(dataPath));
+        var directory = Path.GetDirectoryName(casePath)
+            ?? throw new InvalidOperationException($"Fixture case path '{casePath}' has no directory.");
+        var group = LeadingNumber(Path.GetFileName(casePath));
 
         return Directory.EnumerateFiles(directory, "*.guil.md")
             .SingleOrDefault(path => LeadingNumber(Path.GetFileName(path)) == group)
             ?? throw new InvalidOperationException(
-                $"No template found for fixture data '{dataPath}' (expected a *.guil.md starting with '{group}' in the same folder).");
+                $"No template found for fixture case '{casePath}' (expected a *.guil.md starting with '{group}' in the same folder).");
     }
 
     static string LeadingNumber(string fileName) =>
         new([.. fileName.TakeWhile(char.IsDigit)]);
+
+    // A fixture with no *.json file renders against an empty object rather
+    // than requiring one -- most fixtures (parse-error cases, plain literal
+    // text, etc.) never touch data at all.
+    static JsonElement ReadData(string dataPath)
+    {
+        using var document = JsonDocument.Parse(File.Exists(dataPath) ? File.ReadAllText(dataPath) : "{}");
+
+        return document.RootElement.Clone();
+    }
 
     [TestCaseSource(nameof(FixtureCases))]
     public void Fixture_RendersExpectedOutput(string templatePath, string dataPath, string expectedPath)
     {
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
-        using var dataDoc = JsonDocument.Parse(File.ReadAllText(dataPath));
 
-        var actual = TemplateEngine.Render(template, dataDoc.RootElement);
+        var actual = TemplateEngine.Render(template, ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
@@ -125,9 +133,8 @@ public class FixtureTests
     {
         var template = File.ReadAllText(templatePath);
         var expectedError = File.ReadAllText(errorPath);
-        using var dataDoc = JsonDocument.Parse(File.ReadAllText(dataPath));
 
-        var exception = Should.Throw<TemplateParseException>(() => TemplateEngine.Render(template, dataDoc.RootElement));
+        var exception = Should.Throw<TemplateParseException>(() => TemplateEngine.Render(template, ReadData(dataPath)));
 
         exception.Message.ShouldBe(expectedError);
     }

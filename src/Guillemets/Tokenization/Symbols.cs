@@ -15,6 +15,7 @@ internal static class Symbols
             .Add([OPEN, OPEN], Tokens.OpenBlock)
             .Add([CLOSE], Tokens.Close)
             .Add([CLOSE, CLOSE], Tokens.CloseBlock)
+            .Add([CLOSE, CLOSE, Position.NEWLINE], Tokens.CloseBlock)
             .Add([COLON], Tokens.Colon)
             .Add([DASH, DASH, Position.NEWLINE], Tokens.Else);
 }

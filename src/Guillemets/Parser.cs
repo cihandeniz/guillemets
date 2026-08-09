@@ -41,23 +41,14 @@ internal class Parser(TokenCursor _tokens)
             return ParseVariable(open);
         }
 
-        if (_tokens.Current is LiteralToken literal)
+        if (_tokens.Current is ITextToken textToken)
         {
             _tokens.Advance();
 
-            return new LiteralNode(literal.Text);
+            return new LiteralNode(textToken.Text);
         }
 
-        if (_tokens.Current is ElseToken elseToken)
-        {
-            _tokens.Advance();
-
-            return new LiteralNode(elseToken.Text);
-        }
-
-        _tokens.Advance();
-
-        return new LiteralNode($"{COLON}");
+        throw new TemplateParseException($"Unexpected token '{_tokens.Current.GetType().Name}'", _tokens.Current.Position);
     }
 
     INode ParseVariable(OpenToken open)
@@ -88,17 +79,13 @@ internal class Parser(TokenCursor _tokens)
         List<INode>? falsy = null;
         if (!_tokens.AtEnd && _tokens.Current is ElseToken)
         {
-            // ElseToken already consumes its trailing newline (see
-            // Symbols.BuildTree), so unlike after »» there's no
-            // leading newline left on the next literal to trim here.
             _tokens.Advance();
             falsy = ParseNodes(insideBlock: true);
         }
 
-        if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {OPEN}{OPEN}", open.Position); }
+        if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {open.Text}", open.Position); }
 
         _tokens.Advance();
-        _tokens.TrimLeadingNewlineIfPresent();
 
         return new BlockNode(properties, truthy, falsy);
     }

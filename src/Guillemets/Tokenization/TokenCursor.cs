@@ -1,7 +1,5 @@
 using Guillemets.Tokens;
 
-using static Guillemets.Position;
-
 namespace Guillemets.Tokenization;
 
 internal class TokenCursor(List<IToken> _tokens)
@@ -18,14 +16,5 @@ internal class TokenCursor(List<IToken> _tokens)
     {
         var literal = (LiteralToken)Current;
         _tokens[_position] = literal with { Text = literal.Text[length..] };
-    }
-
-    public void TrimLeadingNewlineIfPresent()
-    {
-        if (AtEnd) { return; }
-        if (Current is not LiteralToken literal) { return; }
-        if (literal.Text.Length == 0 || literal.Text[0] != NEWLINE) { return; }
-
-        TrimCurrentLiteral(1);
     }
 }

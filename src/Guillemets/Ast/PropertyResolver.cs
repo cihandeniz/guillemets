@@ -13,6 +13,11 @@ internal class PropertyResolver
             yield break;
         }
 
+        if (current.ValueKind == JsonValueKind.Null)
+        {
+            yield break;
+        }
+
         if (current.ValueKind == JsonValueKind.Array)
         {
             foreach (var item in current.EnumerateArray())

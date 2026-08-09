@@ -22,12 +22,15 @@ C#/.NET, targeting `net10.0`. Layout:
   test project.
 - `/specs` — the fixture corpus, the acceptance contract. Don't edit
   fixtures to make a test pass; if one looks wrong, fix it deliberately
-  and say why. Each case is a flat file triple sharing a basename in a
-  numbered group folder: `.guil.md`/`.json`/`.md` (template/data/expected
-  output) for success, or `.guil.md`/`.json`/`.error` (expected exception
-  message) for cases that must throw `TemplateParseException`. Several
-  cases can share one template by giving the template just the group
-  number and suffixing each case's `.json`/`.md` with a letter
+  and say why. Each case is a flat file pair or triple sharing a basename
+  in a numbered group folder: `.guil.md`/`.md` (template/expected output)
+  for success, or `.guil.md`/`.error` (expected exception message) for
+  cases that must throw `TemplateParseException`, plus an optional
+  `.json` data file — omit it and the case renders against `{}`, which is
+  the common case for anything that doesn't touch data (parse-error
+  cases, plain literal text). Several cases can share one template by
+  giving the template just the group number and suffixing each case's
+  `.md`/`.error` (and `.json`, if present) with a letter
   (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `FixtureTests.cs`
   matches a case to its template by leading digits. Group folders are
   numbered on disk for sort order only — refer to fixtures by name in

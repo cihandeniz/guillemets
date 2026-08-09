@@ -1,4 +1,4 @@
 namespace Guillemets.Tokens;
 
-internal record CloseBlockToken(Position Position)
+internal record CloseBlockToken(string Text, Position Position)
     : IToken;

@@ -1,4 +1,4 @@
 namespace Guillemets.Tokens;
 
-internal record ColonToken(Position Position)
-    : IToken;
+internal record ColonToken(string Text, Position Position)
+    : ITextToken;
