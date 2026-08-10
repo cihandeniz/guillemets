@@ -7,11 +7,18 @@
 #   group  claudedev
 #   user   claudeuser, secondary group claudedev
 #   owner  the human user (e.g. "cihan"), also a member of claudedev
-#   repo   owned <owner>:claudedev, working tree group-writable (setgid so
-#          new files inherit the group), but .git/ has group+other write
-#          stripped recursively so only <owner> (the directory owner) can
-#          write git internals — claudeuser can read/edit source files but
-#          cannot `git add`/`git commit`/touch .git/hooks.
+#   home   owner's home directory gets a "claudedev:--x" ACL, so claudeuser
+#          can traverse into it (owner's home is typically e.g. 0750 and
+#          claudeuser isn't in the owner's private group — without this,
+#          claudeuser can't reach the repo via an absolute path at all,
+#          which breaks every command Claude Code runs, not just git)
+#   repo   owned <owner>:claudedev, repo root and working tree are setgid +
+#          group-writable (so new files/dirs, including ones Claude Code
+#          creates like .claude/, inherit the group), but .git/ has
+#          group+other write stripped recursively so only <owner> (the
+#          directory owner) can write git internals — claudeuser can
+#          read/edit source files but cannot `git add`/`git commit`/touch
+#          .git/hooks.
 #
 # Must run as root (sudo). Idempotent — safe to re-run.
 #
@@ -48,6 +55,16 @@ done
 if [[ "$(id -u)" -ne 0 ]]; then
     echo "Run as root (sudo)." >&2
     exit 1
+fi
+
+if ! command -v setfacl >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "Installing 'acl' package (needed for setfacl)..."
+        apt-get install -y acl
+    else
+        echo "setfacl not found and apt-get unavailable — install the 'acl' package manually, then re-run." >&2
+        exit 1
+    fi
 fi
 
 if [[ -z "$OWNER_USER" ]]; then
@@ -94,6 +111,18 @@ else
     echo "Added '$OWNER_USER' to '$GROUP_NAME'."
 fi
 
+echo "== Owner home traversal =="
+OWNER_HOME="$(getent passwd "$OWNER_USER" | cut -d: -f6)"
+if [[ -z "$OWNER_HOME" ]]; then
+    echo "  Could not resolve home directory for '$OWNER_USER' — skipping ACL step." >&2
+elif getfacl -p "$OWNER_HOME" 2>/dev/null | grep -qx "group:$GROUP_NAME:--x"; then
+    echo "  '$GROUP_NAME' already has traverse-only ACL on $OWNER_HOME, skipping."
+else
+    setfacl -m "g:$GROUP_NAME:x" "$OWNER_HOME"
+    echo "  Granted '$GROUP_NAME' execute-only ACL on $OWNER_HOME (traversal only,"
+    echo "  not listing) so '$CLAUDE_USER' can reach repos under it."
+fi
+
 repo_ownership_ok() {
     local repo="$1"
     [[ -z "$(find "$repo" \( ! -user "$OWNER_USER" -o ! -group "$GROUP_NAME" \) -print -quit 2>/dev/null)" ]]
@@ -101,6 +130,10 @@ repo_ownership_ok() {
 
 worktree_perms_ok() {
     local repo="$1"
+    # repo root itself must be setgid too, or new top-level entries (e.g.
+    # .claude/, created directly by Claude Code) fall through with the
+    # wrong group
+    [[ -g "$repo" ]] || return 1
     # every non-.git directory should be setgid with group rwx (mode bits 2070)
     [[ -z "$(find "$repo" \( -path "$repo/.git" -prune \) -o \( -type d ! -perm -2070 -print \) -quit 2>/dev/null)" ]]
 }
@@ -133,9 +166,10 @@ harden_repo() {
     if worktree_perms_ok "$repo"; then
         echo "  Working tree already group-writable + setgid, skipping."
     else
+        chmod g+s "$repo"
         find "$repo" -mindepth 1 -maxdepth 1 ! -name .git -type d -exec chmod -R g+rwX,o-w {} \; 2>/dev/null || true
         find "$repo" -mindepth 1 -maxdepth 1 ! -name .git -type d -exec find {} -type d -exec chmod g+s {} \; \; 2>/dev/null || true
-        echo "  Set working tree to group-writable + setgid."
+        echo "  Set working tree (including repo root) to group-writable + setgid."
     fi
 
     # .git internals: strip group and other write recursively. Read/execute
@@ -167,3 +201,4 @@ echo
 echo "Done. Verify with:"
 echo "  id $CLAUDE_USER"
 echo "  ls -ld <repo>/.git <repo>/.git/hooks"
+echo "  sudo -u $CLAUDE_USER bash -c 'cd $OWNER_HOME && echo reachable'"
