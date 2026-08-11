@@ -28,10 +28,9 @@ resolves identically to `«valid until»`.
 ## Schema & Localization
 
 Template authors write variable names using natural, space-separated words —
-whatever terms make sense to them. Developers define the model in English
-using standard naming conventions. A schema bridges the two, since the
-author's business vocabulary won't always match the developer's code
-vocabulary.
+whatever terms make sense to them. Developers define the model in English using
+standard naming conventions. A schema bridges the two, since the author's
+business vocabulary won't always match the developer's code vocabulary.
 
 ### Template
 
@@ -89,13 +88,13 @@ example.
 
 ## Blocks
 
-A block opens with `««name` on its own line and closes with `»»` on its own
-line — the double guillemet is what marks this as a block rather than an
-inline variable (see Variables, above, which always uses a single `«»`, even
-across multiple lines). The closing depth must match the opening depth
-exactly, or the engine throws `TemplateParseException`. Deeper depths
-(`«««`/`»»»`, ...) behave identically and exist purely for nesting
-readability. Behavior is inferred from the resolved type of `name`:
+A block opens with `««name` on its own line and closes with `»»` on its own line
+— the double guillemet is what marks this as a block rather than an inline
+variable (see Variables, above, which always uses a single `«»`, even across
+multiple lines). The closing depth must match the opening depth exactly, or the
+engine throws `TemplateParseException`. Deeper depths (`«««`/`»»»`, ...) behave
+identically and exist purely for nesting readability. Behavior is inferred from
+the resolved type of `name`:
 
 | Resolved type | Behavior         |
 | ---           | ---              |
@@ -138,13 +137,13 @@ month.
 Nested Property Access, above) — including projection over lists.
 
 If the chain does not resolve to anything at all (e.g. it projects through an
-empty list), the block is treated as falsy, same as an explicit `false` —
-this is not an error.
+empty list), the block is treated as falsy, same as an explicit `false` — this
+is not an error.
 
-If the chain's last segment is a boolean property projected through a list,
-the block filters the list down to the item(s) where that property is true
-and scopes into the match, rather than collapsing the projected booleans into
-a single truthy/falsy check:
+If the chain's last segment is a boolean property projected through a list, the
+block filters the list down to the item(s) where that property is true and
+scopes into the match, rather than collapsing the projected booleans into a
+single truthy/falsy check:
 
 ```markdown
 ««items: active
@@ -158,8 +157,8 @@ finds the item where `active` is true and renders the body scoped to it —
 
 ### Else
 
-`~` on its own line inside a block separates the truthy and falsy branches.
-Used with boolean blocks and variable definitions.
+`~` on its own line inside a block separates the truthy and falsy branches. Used
+with boolean blocks and variable definitions.
 
 ```markdown
 ««individual

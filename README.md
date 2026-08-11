@@ -1,7 +1,6 @@
 # Guillemets
 
-A logicless, markdown-aware template engine designed for non-technical users.
-Syntax is minimal, language-neutral, and keyboard-friendly.
+A logicless, markdown-aware template engine for non-technical authors.
 
 ```markdown
 Dear «full name»,
@@ -9,49 +8,42 @@ Dear «full name»,
 Your order **«order id»** is on its way to «company: name».
 ```
 
+rendered against
+
+```json
+{
+  "FullName": "Alice Smith",
+  "OrderId": "A-1024",
+  "Company": { "Name": "Acme Logistics" }
+}
+```
+
+produces
+
+```markdown
+Dear Alice Smith,
+
+Your order **A-1024** is on its way to Acme Logistics.
+```
+
 `«»` (guillemets) are the sole delimiter characters — they never collide with
 standard markdown.
-
-> [!NOTE]
->
-> **Status: early development.** The engine currently resolves plain-text
-> passthrough and scalar/nested/projected variable access (`«token»`, `«a: b»`,
-> list projection & flattening). Blocks (conditionals, loops, scopes), variable
-> definitions, tables, and parameters are specified in [SPECS.md](SPECS.md) but
-> not yet implemented — see `/specs` for the full set of behavior fixtures
-> driving the work.
-
-## Syntax at a glance
-
-- **Variables**: `«full name»` resolves against the data model, converting
-  space-separated words to PascalCase (`FullName`).
-- **Nested access**: `«company: name»` drills into objects; across a list it
-  projects and flattens (`«quotes: prices: amount»`).
-- **Blocks**: `««name` ... `»»` — behavior (if / loop / scope) is inferred
-  from the resolved value's type, no keywords needed.
-- **Inline lists**: a token resolving to a list of scalars auto-joins with
-  `, `.
-
-Full syntax reference: [SPECS.md](SPECS.md).
 
 ## Usage
 
 ```csharp
-using System.Text.Json;
 using Guillemets;
+using System.Text.Json;
 
-var data = JsonDocument.Parse("""{ "FullName": "Alice Smith" }""");
-var output = TemplateEngine.Render("Dear «full name»,", data.RootElement);
+var template = Template.Create("Dear «full name»,");
+var data = JsonDocument.Parse("""{ "FullName": "Alice Smith" }""").RootElement;
+var output = template.Render(data);
 // => "Dear Alice Smith,"
 ```
 
-## Project layout
-
-- `/src/Guillemets` — the class library.
-- `/test/Guillemets.Tests` — NUnit test project.
-- `/specs` — the fixture corpus (`.guil.md` template / `.json` data / `.md`
-  expected output, or `.error` for expected parse failures) that serves as the
-  acceptance contract for the engine.
+`Render`/`RenderObject` also accept plain C# objects
+(`template.RenderObject(new { FullName = "Alice Smith" })`) and
+`Newtonsoft.Json.Linq.JToken`.
 
 ## Development
 
@@ -59,9 +51,10 @@ var output = TemplateEngine.Render("Dear «full name»,", data.RootElement);
 dotnet test
 ```
 
-Each fixture under `/specs` runs as a named test case. See
-[CLAUDE.md](CLAUDE.md) for the coding conventions and implementation approach
-used in this repo.
+## Documentation
+
+- [`docs/specs.md`](docs/specs.md) — full syntax reference and behavior spec.
+- [`docs/architecture.md`](docs/architecture.md) — how the engine is built.
 
 ## License
 
