@@ -290,7 +290,12 @@ Use the `(separator)` filter on the last line of the block:
 (separator = , )»»
 ```
 
-renders as a comma-separated list when used via `«tags»`.
+renders as a comma-separated list when used via `«tags»`. The filter must be
+the only thing on that line, immediately before the block's closing `»»` —
+nothing else may share the line, before or after it. When the block has an
+else branch, the filter goes on the last line of whichever branch is last
+(the truthy body when there's no `~`, the falsy body when there is one); `~`
+itself always stays on its own line and is never adjacent to the filter.
 
 ## Filters
 

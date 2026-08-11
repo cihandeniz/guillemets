@@ -179,6 +179,12 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   regardless of length (`internal class Renderer : IRenderer`) — this rule only
   ever triggers once there's a parameter list to compete with the base type for
   attention.
+- A constructor or record-creation call with more than 2 optional/named
+  parameters is never written on one line, even when it would fit — break to
+  one parameter per line, the same shape a primary constructor's own parameter
+  list uses once it goes multi-line (see above):
+  `new Scope(Items[i],\n    Parent: Scope,\n    IsFirst: i == 0,\n    IsLast: i == Items.Count - 1\n);`
+  in `LoopBehavior`, not all four arguments crammed onto one line.
 - Expression-bodied **methods** (including constructors) put the `=>` at the end
   of the signature line and the expression on its own indented line below, even
   when it would fit on one line (`public bool AsBoolean() =>\n    Value;`, not

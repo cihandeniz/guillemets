@@ -18,27 +18,18 @@ Pluggable data sources (JSON, POCO, and Newtonsoft `JToken`) are done — see
 
 In fixture-group order (see `/specs`, simplest → most complex; group folders are
 numbered on disk purely for sort order — referred to here by name only).
-`variable-definitions` is fully done, including `definition-list-separator`:
-`BlockParser` now recognizes a `(separator = ...)` line as the line
-immediately before a block's own `»»` — whichever branch that falls in, the
-truthy body when there's no `~`, or the falsy body when there is one (`~`
-itself is never adjacent to the separator; it stays on its own line like any
-other block) — and pulls it out as `BlockNode.Separator`, which
-`LoopBehavior` uses to join each iteration's trimmed render instead of
-concatenating them raw.
-`05-variable-definitions/004-definition-list-separator-else` covers both
-branches. That footer form is the only `(name = value)` parsing that exists
-so far — the *inline* form, attached directly inside `«...»`
-after a property chain (`«quote: tags (separator = ; )»`,
-`«date (date = dd/MM/yyyy)»`), is still unimplemented and is what the
-`filters` milestone below has to add.
+`variable-definitions` is fully done.
 
-1. `filters` — `date`/`currency`/`length`, plus inline `(separator = ...)` on a
-   bare variable/property chain (`07-inline-lists/003-custom-separator` needs
-   this too, since it's the same inline attachment point). First milestone
-   that needs typed (`DateTime`/`decimal`) access rather than just display
-   strings/booleans — this is where the deferred `IDataSource` typed-access
-   question (see `docs/architecture.md`) gets decided, test-first.
+1. `filters` — `date`/`currency`/`length`, plus the *inline* `(name = value)`
+   form attached directly inside `«...»` after a property chain
+   (`«quote: tags (separator = ; )»`, `«date (date = dd/MM/yyyy)»`) —
+   `07-inline-lists/003-custom-separator` needs this too, since it's the same
+   attachment point. The block-footer form of `(separator = ...)` is already
+   done (`BlockParser`/`FilterParser`, see `docs/architecture.md`) — this
+   milestone is only about the inline form. First milestone that needs typed
+   (`DateTime`/`decimal`) access rather than just display strings/booleans —
+   this is where the deferred `IDataSource` typed-access question (see
+   `docs/architecture.md`) gets decided, test-first.
 2. `tables` — should mostly fall out of blocks already existing; confirm rather
    than build new.
 3. `inline-lists` — `001-inline-scalar-list`/`002-inline-field-selection` need

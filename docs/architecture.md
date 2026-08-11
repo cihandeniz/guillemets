@@ -41,9 +41,9 @@ Turns raw template text into a flat list of tokens (`OpenToken`,
 `CloseBlockToken`, `LiteralToken`, ...).
 
 - **`SymbolTree`** is a trie of the special characters (`«`, `»`, `~`, `:`, `!`,
-  `=`). It matches the *longest* run it can, then backtracks if that run turns
-  out invalid. This is how `«` vs `««` vs `«««` (block depth) falls out for free
-  — the trie just loops on itself for repeated characters.
+  `=`, `(`, `)`). It matches the *longest* run it can, then backtracks if that
+  run turns out invalid. This is how `«` vs `««` vs `«««` (block depth) falls
+  out for free — the trie just loops on itself for repeated characters.
 - **`Tokenizer`** does a single pass over the text. It doesn't know what the
   symbols mean — it just asks `SymbolTree` "how far does a token extend from
   here?" and advances.
