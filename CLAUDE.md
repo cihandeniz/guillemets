@@ -202,6 +202,12 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   `static` field, regardless of accessibility, is `SCREAMING_CASE` (a custom
   rule, since standard "static fields start uppercase" conventions would
   otherwise conflict with the private-field rule).
+- A character/string literal that carries meaning beyond its own face value —
+  a delimiter, a sentinel, a syntax marker — gets a named `SCREAMING_CASE`
+  constant instead of being inlined at each use site, e.g. `Position.NEWLINE`
+  for `'\n'`, `LoopBehavior.TABLE_ROW_DELIMITER` for the `'|'` that marks a
+  loop body as a markdown table. A literal used only for its own sake (an
+  error message, arbitrary test data) doesn't need this.
 - Write small, single-purpose methods from the start, not as a later cleanup
   pass — factor out a repeated multi-line sequence immediately. Prefer a plain
   private method over a local function closing over another method's locals.

@@ -9,27 +9,33 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-98 of 108 fixture cases pass (`dotnet test` is authoritative, via
+103 of 112 fixture cases pass (`dotnet test` is authoritative, via
 `SpecTests.cs`). Remaining fixtures are listed in `SpecTests.cs`'s
 `IGNORED_FIXTURES` set. Pluggable data sources (JSON, POCO, and Newtonsoft
-`JToken`) are done — see `docs/architecture.md`.
+`JToken`) are done — see `docs/architecture.md`. `tables` is done — see
+`docs/architecture.md` for how `LoopBehavior` detects and renders one.
 
 ## Remaining milestones
 
-In priority order (not disk order — group folders are numbered purely for
-sort order, referred to here by name only). `variable-definitions` is fully
-done. `filters` was originally first but has been pushed to last: it's the
-most speculative milestone (typed `IDataSource` access is still undecided),
-so the simpler, better-understood milestones go first.
+In priority order, matching disk order under `/specs` (`variable-definitions`
+and `tables` are fully done, so the list picks up after them).
 
-1. `tables` — should mostly fall out of blocks already existing; confirm
-   rather than build new.
-2. `inline-lists` — `001-inline-scalar-list`/`002-inline-field-selection`
+1. `inline-lists` — `001-inline-scalar-list`/`002-inline-field-selection`
    need `VariableNode` to join an array's elements with the default `, `
    separator when resolution yields a list (it currently renders the array's
    own `AsDisplayString()` instead, e.g. JSON's raw `["a","b"]`);
    `003-custom-separator` needs the inline `(separator = ...)` parsing from
    the `filters` milestone below, so it can't finish until that lands.
+2. `filters` — `date`/`currency`/`length`, plus the *inline* `(name = value)`
+   form attached directly inside `«...»` after a property chain
+   (`«quote: tags (separator = ; )»`, `«date (date = dd/MM/yyyy)»`) —
+   `07-inline-lists/003-custom-separator` needs this too, since it's the same
+   attachment point. The block-footer form of `(separator = ...)` is already
+   done (`BlockParser`/`FilterParser`, see `docs/architecture.md`) — this
+   milestone is only about the inline form. First milestone that needs typed
+   (`DateTime`/`decimal`) access rather than just display strings/booleans —
+   this is where the deferred `IDataSource` typed-access question (see
+   `docs/architecture.md`) gets decided, test-first.
 3. `integration` — the full worked example, combining everything above.
    Already has dedicated, currently-`[Ignore]`d coverage in
    `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests` —
@@ -41,16 +47,6 @@ so the simpler, better-understood milestones go first.
    `non-separator-filter`). Add more error cases as new failure modes
    appear — extend `TemplateParseException` usage rather than introducing ad
    hoc exceptions.
-5. `filters` — `date`/`currency`/`length`, plus the *inline* `(name = value)`
-   form attached directly inside `«...»` after a property chain
-   (`«quote: tags (separator = ; )»`, `«date (date = dd/MM/yyyy)»`) —
-   `07-inline-lists/003-custom-separator` needs this too, since it's the same
-   attachment point. The block-footer form of `(separator = ...)` is already
-   done (`BlockParser`/`FilterParser`, see `docs/architecture.md`) — this
-   milestone is only about the inline form. First milestone that needs typed
-   (`DateTime`/`decimal`) access rather than just display strings/booleans —
-   this is where the deferred `IDataSource` typed-access question (see
-   `docs/architecture.md`) gets decided, test-first.
 
 ## Known v1 scope decisions (not gaps to "fix" without discussion)
 

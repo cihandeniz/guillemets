@@ -120,6 +120,24 @@ resolved type decides. An optional `(separator = ...)` footer rides along
 and is handed to `LoopBehavior`, which then joins each iteration with that
 separator instead of concatenating them.
 
+### Tables
+
+A loop body that starts and ends each line with `|` is a markdown table, not
+a plain repeating block. `LoopBehavior` checks the body's first line for a
+leading `|` (`TABLE_ROW_DELIMITER`), then splits the whole body into rows on
+each `NEWLINE`-producing `LiteralNode`. Fewer than three rows isn't a real
+table — a heading needs its text row plus its `---` divider, and there must
+be at least one row left over for the item template — so `LoopBehavior` falls
+back to rendering the body as a normal repeating block instead.
+
+With three or more rows, the first two are the heading and render once, the
+third is the per-item template and repeats like any other loop body, and any
+rows after that are a footer that also renders once. Heading and footer rows
+render against the loop's own scope rather than an item's, so a footer row
+can reach past the list to a property on the block's parent (a subtotal
+computed alongside the list, say) the same way any other lookup falls back to
+an enclosing scope.
+
 `PropertyResolver` does the actual property lookup: walking up parent scopes
 to find who owns a property, and handling the "filtered items" case where
 `items: active` loops over only the items whose `active` is true.

@@ -18,7 +18,6 @@ public class SpecTests
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
-        "06-tables/001-table-block",
         "07-inline-lists/001-inline-scalar-list",
         "07-inline-lists/002-inline-field-selection",
         "07-inline-lists/003-custom-separator",
