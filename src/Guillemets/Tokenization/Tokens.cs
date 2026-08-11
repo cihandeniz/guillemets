@@ -22,6 +22,9 @@ internal static class Tokens
     public static ColonToken Colon(TokenContext context) =>
         new(context.Text, context.Position);
 
+    public static NewlineToken Newline(TokenContext context) =>
+        new(context.Text, context.Position);
+
     public static ElseToken Else(TokenContext context) =>
         new(context.Text, context.Position);
 

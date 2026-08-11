@@ -5,8 +5,6 @@ using Guillemets.Tokens;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-using static Guillemets.Position;
-
 namespace Guillemets.Parsing;
 
 internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
@@ -63,7 +61,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
                 return true;
             }
 
-            if (_tokens.Current is not LiteralToken literal || literal.Text.Contains(NEWLINE)) { text = ""; return false; }
+            if (_tokens.Current is not LiteralToken literal) { text = ""; return false; }
 
             builder.Append(literal.Text);
             _tokens.Advance();

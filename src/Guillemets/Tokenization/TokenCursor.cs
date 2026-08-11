@@ -15,7 +15,4 @@ internal class TokenCursor(List<IToken> _tokens)
 
     public void Rewind(int position) =>
         _position = position;
-
-    public void ReplaceCurrent(IToken token) =>
-        _tokens[_position] = token;
 }

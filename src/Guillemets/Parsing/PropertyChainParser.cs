@@ -2,14 +2,21 @@ using Guillemets.Ast;
 using Guillemets.Rendering;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
-
-using static Guillemets.Position;
+using System.Text;
 
 namespace Guillemets.Parsing;
 
 internal class PropertyChainParser(TokenCursor _tokens)
     : IParser
 {
+    static void Flush(StringBuilder buffer, PropertyChainBuilder chain)
+    {
+        if (buffer.Length == 0) { return; }
+
+        chain.Add(buffer.ToString());
+        buffer.Clear();
+    }
+
     INode IParser.Parse(IToken token) =>
         throw new InvalidOperationException($"{nameof(PropertyChainParser)} does not parse tokens directly.");
 
@@ -23,9 +30,10 @@ internal class PropertyChainParser(TokenCursor _tokens)
     {
         variableName = null;
         var chain = new PropertyChainBuilder();
+        var buffer = new StringBuilder();
         while (true)
         {
-            if (_tokens.AtEnd) { break; }
+            if (_tokens.AtEnd) { Flush(buffer, chain); break; }
 
             if (_tokens.Current is NegationToken)
             {
@@ -35,36 +43,43 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
-            if (_tokens.Current is CloseToken) { break; }
+            if (_tokens.Current is CloseToken) { Flush(buffer, chain); break; }
+
+            if (stopAtNewline && _tokens.Current is NewlineToken)
+            {
+                Flush(buffer, chain);
+                _tokens.Advance();
+
+                break;
+            }
 
             if (allowVariableDefinition && _tokens.Current is EqualsToken)
             {
+                Flush(buffer, chain);
                 variableName = chain.PopVariableName();
                 _tokens.Advance();
 
                 continue;
             }
 
-            if (_tokens.Current is not LiteralToken literal)
+            if (_tokens.Current is LiteralToken literal)
             {
+                buffer.Append(literal.Text);
                 _tokens.Advance();
 
                 continue;
             }
 
-            var newlineIndex = stopAtNewline ? literal.Text.IndexOf(NEWLINE) : -1;
-            if (newlineIndex < 0)
+            if (_tokens.Current is NewlineToken)
             {
-                chain.Add(literal.Text);
+                buffer.Append(' ');
                 _tokens.Advance();
 
                 continue;
             }
 
-            chain.Add(literal.Text[..newlineIndex]);
-            _tokens.ReplaceCurrent(literal with { Text = literal.Text[(newlineIndex + 1)..] });
-
-            break;
+            Flush(buffer, chain);
+            _tokens.Advance();
         }
 
         if (_tokens.AtEnd || (!stopAtNewline && _tokens.Current is not CloseToken))

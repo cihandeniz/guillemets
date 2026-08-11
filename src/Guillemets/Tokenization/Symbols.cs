@@ -1,3 +1,5 @@
+using static Guillemets.Position;
+
 namespace Guillemets.Tokenization;
 
 internal static class Symbols
@@ -24,5 +26,6 @@ internal static class Symbols
             .Add([BANG], Tokens.Negation)
             .Add([EQUALS], Tokens.Equals)
             .Add([OPEN_PAREN], Tokens.OpenParen)
-            .Add([CLOSE_PAREN], Tokens.CloseParen);
+            .Add([CLOSE_PAREN], Tokens.CloseParen)
+            .Add([NEWLINE], Tokens.Newline);
 }

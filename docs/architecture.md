@@ -39,16 +39,21 @@ The tokenizer turns raw template text into a flat list of tokens: `OpenToken`,
 `CloseBlockToken`, `LiteralToken`, and so on.
 
 `SymbolTree` is a trie of the special characters (`«`, `»`, `~`, `:`, `!`,
-`=`, `(`, `)`). It always matches the longest run it can, backtracking if
-that run turns out invalid — this is how `«` vs. `««` vs. `«««` (block
-depth) falls out for free, without any special-casing.
+`=`, `(`, `)`, and the newline itself). It always matches the longest run it
+can, backtracking if that run turns out invalid — this is how `«` vs. `««`
+vs. `«««` (block depth) falls out for free, without any special-casing.
 
 `Tokenizer` makes one pass over the text. It doesn't know what the symbols
 mean; it just asks `SymbolTree` how far the next token extends and moves on.
+Every `\n` becomes its own `NewlineToken`, so a `LiteralToken` never spans
+more than one line — line-aware parsers (like `PropertyChainParser` below)
+can just check for a `NewlineToken` instead of scanning literal text for an
+embedded `\n`. The one exception is `»»`/`~`: those still swallow their own
+trailing newline into their own token's text (`SymbolTree`'s `newline: true`
+flag), the same as before this changed.
 
 `TokenCursor` holds the resulting token list plus a read position for the
-parser to walk. It's also the one place a `LiteralToken` gets trimmed, when
-a block header needs to peel a line ending off the text that follows it.
+parser to walk.
 
 ## Parsing
 
@@ -57,31 +62,47 @@ no single giant `switch` doing all the work.
 
 ```mermaid
 flowchart TB
-    Parser -->|builds| ParserBuilder
-    ParserBuilder -->|registers| VariableParser
-    ParserBuilder -->|registers| BlockParser
-    ParserBuilder -->|registers| TextParser
+    Parser -->|builds| ParserRegistry
+    ParserRegistry -->|registers| NodesParser
+    ParserRegistry -->|registers| VariableParser
+    ParserRegistry -->|registers| BlockParser
+    ParserRegistry -->|registers| TextParser
+    ParserRegistry -->|registers| FilterParser
+    ParserRegistry -->|registers| PropertyChainParser
     NodesParser -->|dispatches to| VariableParser
     NodesParser -->|dispatches to| BlockParser
     NodesParser -->|dispatches to| TextParser
+    VariableParser -->|calls| PropertyChainParser
+    BlockParser -->|calls| PropertyChainParser
     BlockParser -->|recurses via| NodesParser
     BlockParser -->|calls| FilterParser
 ```
 
-`Parser` is the composition root: it registers one concrete parser per token
-type, then drives the top-level loop. `NodesParser` is the dispatcher —
-given a token, it finds the parser registered for that token's type and
-calls it. `VariableParser`, `TextParser`, and `BlockParser` each handle one
-node kind; `BlockParser` is the interesting one, since it also checks that a
-block's closing `»»` matches its opening depth, and splits a `name = expr`
-header into a captured variable name plus a condition.
+`Parser` is the composition root: it builds a `ParserRegistry` — a
+`Type → IParser` lookup — registering one concrete parser per token type,
+then drives the top-level loop by resolving each token against that
+registry. `NodesParser` is the dispatcher used everywhere else (inside a
+block, or recursively): given a token, it asks the registry to resolve a
+handler and calls it. `VariableParser`, `TextParser`, and `BlockParser` each
+handle one node kind; `BlockParser` is the interesting one, since it also
+checks that a block's closing `»»` matches its opening depth.
 
-`FilterParser` parses `(name = value)` groups, such as `(separator = , )`,
-into a `FilterNode`. It isn't wired into the normal dispatch table, because
-`(` is ordinary text almost everywhere in a template — instead, `BlockParser`
-asks it to try parsing a filter only in the one place one can legally
-appear: a line of its own, right before a block's closing `»»`. If that
-doesn't pan out, the `(` is treated as plain text instead.
+Two collaborators are registered the same way but are never reached through
+token dispatch — they're only ever fetched by their own type, via
+`ParserRegistry.Get<T>()`:
+
+- `PropertyChainParser` parses a `«...»`/`««...»` property chain. The
+  mechanics are shared — walk `NegationToken`/`LiteralToken`, with an
+  optional `EqualsToken`-triggered capture of a `name = expr` variable
+  definition — but where the chain *stops* differs: `VariableParser` stops
+  at a `CloseToken`; `BlockParser` stops at a `NewlineToken`, since a block
+  header always ends at end-of-line.
+- `FilterParser` parses `(name = value)` groups, such as `(separator = , )`,
+  into a `FilterNode`. It isn't wired into the normal dispatch table either,
+  because `(` is ordinary text almost everywhere in a template — instead,
+  `BlockParser` asks it to try parsing a filter only in the one place one can
+  legally appear: a line of its own, right before a block's closing `»»`. If
+  that doesn't pan out, the `(` is treated as plain text instead.
 
 ## Ast & rendering
 
