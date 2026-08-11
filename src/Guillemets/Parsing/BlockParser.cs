@@ -6,7 +6,7 @@ using static Guillemets.Position;
 
 namespace Guillemets.Parsing;
 
-internal class BlockParser(TokenCursor _tokens, NodesParser _nodesParser)
+internal class BlockParser(TokenCursor _tokens, NodesParser _nodesParser, FilterParser _filterParser)
     : IParser
 {
     public INode Parse(IToken token)
@@ -15,13 +15,14 @@ internal class BlockParser(TokenCursor _tokens, NodesParser _nodesParser)
         _tokens.Advance();
 
         var properties = ParseHeader(open.Position, out var variableName);
-        var truthy = _nodesParser.ParseNodes(insideBlock: true, stopAtElse: true);
+        var truthy = ParseBody(stopAtElse: true, out var truthySeparator);
 
         List<INode>? falsy = null;
+        var falsySeparator = (string?)null;
         if (!_tokens.AtEnd && _tokens.Current is ElseToken)
         {
             _tokens.Advance();
-            falsy = _nodesParser.ParseNodes(insideBlock: true, stopAtElse: false);
+            falsy = ParseBody(stopAtElse: false, out falsySeparator);
         }
 
         if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {open.Text}", open.Position); }
@@ -29,7 +30,49 @@ internal class BlockParser(TokenCursor _tokens, NodesParser _nodesParser)
         ValidateClosingDepth(open, (CloseBlockToken)_tokens.Current);
         _tokens.Advance();
 
-        return new BlockNode(properties, truthy, falsy, variableName);
+        return new BlockNode(properties, truthy, falsy, variableName, falsy is not null ? falsySeparator : truthySeparator);
+    }
+
+    List<INode> ParseBody(bool stopAtElse, out string? separator)
+    {
+        var body = new List<INode>();
+        while (true)
+        {
+            body.AddRange(_nodesParser.ParseNodes(insideBlock: true, stopAtElse, stopAtOpenParen: true));
+            if (_tokens.AtEnd || _tokens.Current is not OpenParenToken openParen) { separator = null; return body; }
+
+            if (AtLineStart(body) && TryParseSeparatorFooter(out var value))
+            {
+                separator = value;
+
+                return body;
+            }
+
+            body.Add(new LiteralNode(openParen.Text));
+            _tokens.Advance();
+        }
+    }
+
+    static bool AtLineStart(List<INode> body) =>
+        body.Count == 0 || (body[^1] is LiteralNode literal && literal.Text.EndsWith(NEWLINE));
+
+    bool TryParseSeparatorFooter(out string value)
+    {
+        value = "";
+        var start = _tokens.Position;
+
+        if (!_filterParser.TryParse(out var filter)
+            || filter.Name != "separator"
+            || (!_tokens.AtEnd && _tokens.Current is not CloseBlockToken))
+        {
+            _tokens.Rewind(start);
+
+            return false;
+        }
+
+        value = filter.Value;
+
+        return true;
     }
 
     void ValidateClosingDepth(OpenBlockToken open, CloseBlockToken close)

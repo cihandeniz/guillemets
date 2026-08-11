@@ -8,7 +8,8 @@ namespace Guillemets.Ast;
 
 internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
     IReadOnlyList<INode>? ElseBody = null,
-    string? VariableName = null
+    string? VariableName = null,
+    string? Separator = null
 ) : INode
 {
     public string Render(RenderContext context, Scope scope)
@@ -26,7 +27,7 @@ internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
         var items = context.PropertyResolver.ResolveLoopItems(scope, Properties);
         if (items is not null)
         {
-            return new LoopBehavior(scope, items);
+            return new LoopBehavior(scope, items, Separator);
         }
 
         var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault() ?? UndefinedDataSource.INSTANCE;

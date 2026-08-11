@@ -25,10 +25,10 @@ internal class NodesParser(TokenCursor _tokens)
         throw new TemplateParseException($"Unexpected token '{token.GetType().Name}'", token.Position);
     }
 
-    public List<INode> ParseNodes(bool insideBlock, bool stopAtElse)
+    public List<INode> ParseNodes(bool insideBlock, bool stopAtElse, bool stopAtOpenParen)
     {
         var nodes = new List<INode>();
-        while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse))
+        while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse) && !ReachedOpenParen(stopAtOpenParen))
         {
             nodes.Add(Parse(_tokens.Current));
         }
@@ -41,4 +41,7 @@ internal class NodesParser(TokenCursor _tokens)
 
     bool ReachedElse(bool stopAtElse) =>
         stopAtElse && _tokens.Current is ElseToken;
+
+    bool ReachedOpenParen(bool stopAtOpenParen) =>
+        stopAtOpenParen && _tokens.Current is OpenParenToken;
 }

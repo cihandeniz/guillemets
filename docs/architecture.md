@@ -65,6 +65,7 @@ flowchart TB
     NodesParser -->|dispatches to| BlockParser
     NodesParser -->|dispatches to| TextParser
     BlockParser -->|recurses via| NodesParser
+    BlockParser -->|calls| FilterParser
 ```
 
 - **`Parser`** is the composition root. It builds a `ParserBuilder`, registers
@@ -79,6 +80,31 @@ flowchart TB
   kind. `BlockParser` is the interesting one: it checks that a block's closing
   `»»` run has the same depth as its opening `««`, and it splits `name = expr`
   headers into a captured variable name plus a condition.
+- **`FilterParser`** is a real `IParser`: its `Parse` parses one
+  `(name = value)` group into a `FilterNode`, throwing if what follows `(`
+  isn't a clean `name = value)`. `«`/`»` got their own reserved symbols from
+  day one, and `(`/`)` now do too (`OpenParenToken`/`CloseParenToken`), rather
+  than this being string-matched out of already-parsed text. Nothing
+  dispatches to it through `NodesParser`, though — `(` is otherwise just
+  literal, and templates use it in ordinary prose constantly, so treating
+  every `(` as the start of a filter would break plain parenthetical text.
+  `FilterParser.TryParse` is the form `BlockParser` actually calls: same
+  parse, but it fails cleanly (`TokenCursor` rewinds) instead of throwing
+  when `(` turns out to be ordinary text.
+  `BlockParser` uses it for the one `(name = value)` position that exists
+  today: a `(separator = ...)` line that is the *only* content on the line
+  immediately before a block's own `»»` — nothing may precede the `(` on that
+  line either, so `Total (separator = , )»»` is rejected as a filter (and
+  falls back to plain literal text), exactly like `(separator = , ) more»»`
+  would be. Since that line can land in either branch (the truthy body when
+  there's no `~`, the falsy body when there is one — `~` itself always stays
+  on its own line, never adjacent to the separator), `BlockParser` tries this
+  on whichever body is parsed last, speculatively:
+  `NodesParser.ParseNodes(stopAtOpenParen: true)` stops at any `(`, and
+  `BlockParser` either commits it as `BlockNode.Separator` (found `separator`,
+  at the start of its line, immediately followed by `»»`) or rewinds and
+  treats that one `(` as literal before resuming — so a stray `(` in ordinary
+  body text (`(head office)`) still renders as-is.
 
 ## Ast & rendering
 
@@ -91,7 +117,11 @@ themselves against a `Scope`.
 - **`BlockNode`** looks at what a block's header resolves to and picks a
   behavior: a list → `LoopBehavior`, an object → `ScopeBehavior`, anything else
   → `ConditionalBehavior`. Same syntax, behavior chosen by the resolved
-  `DataKind`.
+  `DataKind`. A parsed `(separator = ...)` footer rides along as
+  `BlockNode.Separator` and is handed straight to `LoopBehavior`: with no
+  separator it concatenates each iteration's render as before; with one, it
+  renders each iteration separately, trims its trailing newline, and joins the
+  results with the separator instead.
 - **`PropertyResolver`** does the actual property lookup, including the
   "filtered items" case (`items: active` loops over items where `active` is
   true) and walking up parent scopes to find who owns a property.

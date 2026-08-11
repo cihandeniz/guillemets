@@ -8,6 +8,8 @@ internal static class Symbols
     public const char TILDE = '~';
     public const char BANG = '!';
     public const char EQUALS = '=';
+    public const char OPEN_PAREN = '(';
+    public const char CLOSE_PAREN = ')';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -20,5 +22,7 @@ internal static class Symbols
             .Add([COLON], Tokens.Colon)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)
-            .Add([EQUALS], Tokens.Equals);
+            .Add([EQUALS], Tokens.Equals)
+            .Add([OPEN_PAREN], Tokens.OpenParen)
+            .Add([CLOSE_PAREN], Tokens.CloseParen);
 }

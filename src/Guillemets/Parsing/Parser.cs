@@ -8,7 +8,7 @@ internal class Parser(TokenCursor _tokens)
 {
     readonly IParser _parser = new ParserBuilder(_tokens)
         .Register<OpenToken>(_ => new VariableParser(_tokens))
-        .Register<OpenBlockToken>(np => new BlockParser(_tokens, np))
+        .Register<OpenBlockToken>(np => new BlockParser(_tokens, np, new FilterParser(_tokens)))
         .Register<ITextToken>(_ => new TextParser(_tokens))
         .Build();
 

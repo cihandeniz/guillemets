@@ -30,4 +30,10 @@ internal static class Tokens
 
     public static EqualsToken Equals(TokenContext context) =>
         new(context.Text, context.Position);
+
+    public static OpenParenToken OpenParen(TokenContext context) =>
+        new(context.Text, context.Position);
+
+    public static CloseParenToken CloseParen(TokenContext context) =>
+        new(context.Text, context.Position);
 }

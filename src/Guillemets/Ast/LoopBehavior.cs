@@ -1,11 +1,13 @@
 using Guillemets.Ast.Rendering;
 using Guillemets.Data;
-using System.Text;
+
+using static Guillemets.Position;
 
 namespace Guillemets.Ast;
 
-internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items)
-    : IBlockBehavior
+internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items,
+    string? Separator = null
+) : IBlockBehavior
 {
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody)
     {
@@ -16,18 +18,19 @@ internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items)
                 : string.Empty;
         }
 
-        var result = new StringBuilder();
+        var renders = new List<string>(Items.Count);
         for (var i = 0; i < Items.Count; i++)
         {
-            var itemScope =
-                new Scope(Items[i],
-                    Parent: Scope,
-                    IsFirst: i == 0,
-                    IsLast: i == Items.Count - 1
-                );
-            result.Append(context.Renderer.RenderAll(body, itemScope));
+            var itemScope = new Scope(Items[i],
+                Parent: Scope,
+                IsFirst: i == 0,
+                IsLast: i == Items.Count - 1
+            );
+            renders.Add(context.Renderer.RenderAll(body, itemScope));
         }
 
-        return result.ToString();
+        return Separator is null
+            ? string.Concat(renders)
+            : string.Join(Separator, renders.Select(render => render.TrimEnd(NEWLINE)));
     }
 }
