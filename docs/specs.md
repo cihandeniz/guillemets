@@ -236,7 +236,7 @@ if/else, list → loop, object → scope.
 
 ### Tables
 
-A block can be supports beginning and ending `|` to fit into a table without
+A block can support beginning and ending `|` to fit into a table without
 breaking markdown table syntax.
 
 ```markdown

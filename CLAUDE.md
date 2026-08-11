@@ -56,7 +56,7 @@ C#/.NET, targeting `net10.0`. Layout:
   touch data (parse-error cases, plain literal text). Several cases can share
   one template by giving the template just the group number and suffixing each
   case's `.md`/`.error` (and `.json`, if present) with a letter
-  (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `FixtureTests.cs`
+  (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `SpecTests.cs`
   matches a case to its template by leading digits. Group folders are numbered
   on disk for sort order only — refer to fixtures by name in prose, not number.
 - `Guillemets.slnx` at repo root (.NET 10's default `dotnet new sln` format).
@@ -117,11 +117,11 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   explicit `using` (code in `Guillemets.Data.Json` sees `Guillemets.Data` and
   `Guillemets` for free). Exploit this deliberately for a public extension
   method meant to be broadly discoverable: `Template`'s `Render`/`RenderObject`
-  extensions (`/src/Guillemets/JsonElementTemplateExtensions.cs`/
-  `PocoTemplateExtensions.cs`/`JTokenTemplateExtensions.cs`) live in the bare
-  root `Guillemets` namespace, *not* nested under their adapter's own namespace
-  (`Guillemets.Data.Json`/`Guillemets.Data.Poco`/ `Guillemets.Data.Newtonsoft`,
-  where the adapter types
+  extensions (`JsonElementExtensions.cs`/`PocoExtensions.cs`/
+  `JTokenExtensions.cs`, one per adapter folder under `/src/Guillemets/Data`)
+  live in the bare root `Guillemets` namespace, *not* nested under their
+  adapter's own namespace (`Guillemets.Data.Json`/`Guillemets.Data.Poco`/
+  `Guillemets.Data.Newtonsoft`, where the adapter types
   `JsonElementDataSource`/`PocoDataSource`/`JTokenDataSource` themselves stay) —
   so any consumer who already has `using Guillemets;` for `Template` gets the
   extension methods for free, no extra `using` needed. `Render(JsonElement)` and
@@ -144,7 +144,7 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   stream — that's normal parser-writing.
 - Don't call `new SomeType(...)` inside a constructor body unless `SomeType` is
   a DTO or `record`. Real dependencies are constructor-injected and wired up at
-  the composition root (`TemplateEngine.Render`, `Tokenizer.Tokenize()`,
+  the composition root (`Template.Render`, `Tokenizer.Tokenize()`,
   `Parsing/Parser.cs`). When two collaborators need each other (e.g.
   `NodesParser` dispatches to `BlockParser`, `BlockParser` recurses back into
   `NodesParser`), don't resolve the cycle with a mutable/settable field assigned
@@ -156,7 +156,7 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
 - A type whose only externally-relevant contract is a single interface (nothing
   about the concrete type should be called directly from outside it) implements
   that interface explicitly rather than with a `public` method of the same name
-  — e.g. `TemplateEngine : IRenderer`'s `string IRenderer.RenderAll(...)`,
+  — e.g. `Renderer : IRenderer`'s `string IRenderer.RenderAll(...)`,
   `NodesParser : IParser`'s `INode IParser.Parse(IToken token)`. If the type's
   own internals still need to call that logic directly (without going through an
   interface-typed reference), keep a plain private method next to the explicit
@@ -256,7 +256,7 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   above) rather than leaving cleanup for later. Report and let the fixture's
   author/reviewer weigh in before moving to the next one.
 - **No failing tests at commit time.** Unimplemented fixtures are listed in
-  `FixtureTests.cs`'s `IGNORED_FIXTURES` set (`Ignored`, never `Failed`) —
+  `SpecTests.cs`'s `IGNORED_FIXTURES` set (`Ignored`, never `Failed`) —
   remove a fixture's name once its case goes green. When a fixture is
   deliberately left unimplemented, leave a comment above its entry explaining
   what's undecided.
