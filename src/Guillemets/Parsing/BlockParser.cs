@@ -1,6 +1,5 @@
 using Guillemets.Ast;
 using Guillemets.Filters;
-using Guillemets.Rendering;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
 
@@ -42,13 +41,14 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
 
     readonly NodesParser _nodesParser = _registry.Get<NodesParser>();
     readonly FilterParser _filterParser = _registry.Get<FilterParser>();
+    readonly PropertyChainParser _propertyChainParser = _registry.Get<PropertyChainParser>();
 
     public INode Parse(IToken token)
     {
         var open = (OpenBlockToken)token;
         _tokens.Advance();
 
-        var properties = ParseHeader(open.Position, out var variableName);
+        var properties = _propertyChainParser.Parse(open.Position, stopAtNewline: true, out var variableName);
         var truthy = ParseBody(stopAtElse: true, out var separator);
 
         List<INode>? falsy = null;
@@ -64,53 +64,6 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         _tokens.Advance();
 
         return new BlockNode(properties, truthy, falsy, variableName, separator);
-    }
-
-    PropertyChain ParseHeader(Position openPosition, out string? variableName)
-    {
-        var chain = new PropertyChainBuilder();
-        variableName = null;
-        while (true)
-        {
-            if (_tokens.AtEnd) { throw new TemplateParseException("Unclosed block header", openPosition); }
-
-            if (_tokens.Current is NegationToken)
-            {
-                chain.Negate();
-                _tokens.Advance();
-
-                continue;
-            }
-
-            if (_tokens.Current is EqualsToken)
-            {
-                variableName = chain.PopVariableName();
-                _tokens.Advance();
-
-                continue;
-            }
-
-            if (_tokens.Current is not LiteralToken literal)
-            {
-                _tokens.Advance();
-
-                continue;
-            }
-
-            var newlineIndex = literal.Text.IndexOf(NEWLINE);
-            if (newlineIndex < 0)
-            {
-                chain.Add(literal.Text);
-                _tokens.Advance();
-
-                continue;
-            }
-
-            chain.Add(literal.Text[..newlineIndex]);
-            _tokens.TrimCurrentLiteral(newlineIndex + 1);
-
-            return chain.Build();
-        }
     }
 
     List<INode> ParseBody(bool stopAtElse, out FilterNode? separator)

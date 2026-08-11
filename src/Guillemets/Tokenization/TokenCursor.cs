@@ -16,9 +16,6 @@ internal class TokenCursor(List<IToken> _tokens)
     public void Rewind(int position) =>
         _position = position;
 
-    public void TrimCurrentLiteral(int length)
-    {
-        var literal = (LiteralToken)Current;
-        _tokens[_position] = literal with { Text = literal.Text[length..] };
-    }
+    public void ReplaceCurrent(IToken token) =>
+        _tokens[_position] = token;
 }
