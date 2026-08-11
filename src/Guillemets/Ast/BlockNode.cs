@@ -24,8 +24,7 @@ internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
 
     IBlockBehavior ResolveBehavior(RenderContext context, Scope scope)
     {
-        var items = context.PropertyResolver.ResolveLoopItems(scope, Properties);
-        if (items is not null)
+        if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items))
         {
             return new LoopBehavior(scope, items, Separator);
         }

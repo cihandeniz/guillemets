@@ -1,70 +1,12 @@
-// TODO REFACTOR
 using Guillemets.Data;
-using Guillemets.Data.Primitives;
 using Humanizer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Guillemets.Rendering;
 
 internal class PropertyResolver(VariableStore variables)
 {
-    public VariableStore Variables { get; } = variables;
-
-    public IEnumerable<IDataSource> Resolve(Scope scope, PropertyChain properties)
-    {
-        if (properties.Count == 1 && scope.TryGetMagic(properties[0], properties.LastSegmentNegated, out var magic))
-        {
-            yield return magic;
-            yield break;
-        }
-
-        if (properties.Count == 1 && Variables.TryResolve(properties[0], out var defined))
-        {
-            yield return defined;
-            yield break;
-        }
-
-        foreach (var result in Resolve(ResolveScope(scope, properties).Data, properties))
-        {
-            yield return result;
-        }
-    }
-
-    public IReadOnlyList<IDataSource>? ResolveLoopItems(Scope scope, PropertyChain properties) =>
-        ResolveItemsMatchingLastSegment(scope, properties) ?? ResolveArrayItems(scope, properties);
-
-    IReadOnlyList<IDataSource>? ResolveItemsMatchingLastSegment(Scope scope, PropertyChain properties)
-    {
-        if (properties.Count <= 1) { return null; }
-
-        var containers = Resolve(ResolveScope(scope, properties).Data, properties.WithoutLast()).ToList();
-        if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return null; }
-
-        var lastSegment = new PropertyChain([properties[^1]], properties.LastSegmentNegated);
-
-        return [.. containers[0].EnumerateArray()
-            .Where(item => Resolve(item, lastSegment).SingleOrDefault()?.AsBoolean() == true)];
-    }
-
-    IReadOnlyList<IDataSource>? ResolveArrayItems(Scope scope, PropertyChain properties)
-    {
-        var resolved = Resolve(scope, properties).ToList();
-
-        return resolved.Count == 1 && resolved[0].Kind == DataKind.Array
-            ? [.. resolved[0].EnumerateArray()]
-            : null;
-    }
-
-    Scope ResolveScope(Scope scope, PropertyChain properties)
-    {
-        if (properties.Count == 0 || HasProperty(scope.Data, properties[0])) { return scope; }
-
-        return scope.Parent is not null ? ResolveScope(scope.Parent, properties) : scope;
-    }
-
-    static bool HasProperty(IDataSource data, string property) =>
-        data.Kind == DataKind.Object && data.TryGetProperty(property.Dehumanize(), out _);
-
-    public IEnumerable<IDataSource> Resolve(IDataSource current, PropertyChain properties)
+    static IEnumerable<IDataSource> Project(IDataSource current, PropertyChain properties)
     {
         if (properties.Count == 0)
         {
@@ -81,7 +23,7 @@ internal class PropertyResolver(VariableStore variables)
         {
             foreach (var item in current.EnumerateArray())
             {
-                foreach (var result in Resolve(item, properties))
+                foreach (var result in Project(item, properties))
                 {
                     yield return result;
                 }
@@ -94,14 +36,68 @@ internal class PropertyResolver(VariableStore variables)
         var next = current.TryGetProperty(name, out var property)
             ? property
             : throw new InvalidOperationException($"Property '{name}' was not found.");
-        if (properties.Count == 1 && properties.LastSegmentNegated) { next = Negate(next); }
+        if (properties.Count == 1 && properties.LastSegmentNegated) { next = next.Negate(); }
 
-        foreach (var result in Resolve(next, properties.Tail()))
+        foreach (var result in Project(next, properties.Tail()))
         {
             yield return result;
         }
     }
 
-    static IDataSource Negate(IDataSource value) =>
-        value.AsBoolean() ? BooleanDataSource.FALSE : BooleanDataSource.TRUE;
+    static bool TryResolveFilteredItemScope(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    {
+        items = null;
+        if (properties.Count <= 1) { return false; }
+
+        var containers = Project(scope.FindOwner(properties).Data, properties.WithoutLast()).ToList();
+        if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return false; }
+
+        var lastSegment = new PropertyChain([properties[^1]], properties.LastSegmentNegated);
+
+        items = [.. containers[0].EnumerateArray()
+            .Where(item => Project(item, lastSegment).SingleOrDefault()?.AsBoolean() == true)];
+
+        return true;
+    }
+
+    public VariableStore Variables { get; } = variables;
+
+    public IEnumerable<IDataSource> Resolve(Scope scope, PropertyChain properties)
+    {
+        if (properties.Count == 1 && scope.TryGetMagic(properties[0], properties.LastSegmentNegated, out var magic))
+        {
+            yield return magic;
+            yield break;
+        }
+
+        if (properties.Count == 1 && Variables.TryResolve(properties[0], out var defined))
+        {
+            yield return defined;
+            yield break;
+        }
+
+        foreach (var result in Project(scope.FindOwner(properties).Data, properties))
+        {
+            yield return result;
+        }
+    }
+
+    public bool TryResolveLoopItems(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items) =>
+        TryResolveFilteredItemScope(scope, properties, out items) ||
+        TryResolveArrayItems(scope, properties, out items);
+
+    bool TryResolveArrayItems(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    {
+        var resolved = Resolve(scope, properties).ToList();
+        if (resolved.Count != 1 || resolved[0].Kind != DataKind.Array)
+        {
+            items = null;
+
+            return false;
+        }
+
+        items = [.. resolved[0].EnumerateArray()];
+
+        return true;
+    }
 }

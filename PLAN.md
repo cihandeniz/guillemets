@@ -14,41 +14,6 @@ Remaining fixtures are listed in `SpecTests.cs`'s `IGNORED_FIXTURES` set.
 Pluggable data sources (JSON, POCO, and Newtonsoft `JToken`) are done — see
 `docs/architecture.md`.
 
-## Refactor backlog
-
-Surfaced during an architecture review ahead of the `filters` milestone.
-None of these block starting `filters`, but the milestone will make each one
-worse if left alone — resolve alongside the fixture work they touch, not as
-a separate cleanup pass.
-
-Filter application now has a real home: `Guillemets.Filters` holds `IFilter`
-(one polymorphic strategy per filter, e.g. `SeparatorFilter`) and
-`FilterRegistry` (name → `IFilter`, built by `Template.Create` and threaded
-through `Parser` to `FilterParser`). `FilterNode` carries the resolved
-`IFilter` plus `IReadOnlyList<string> Args` instead of a bare name/value
-pair, and `BlockNode.Separator` is a `FilterNode?` rather than a raw
-`string?`. `VariableNode` still has no filter field — that's the inline
-`(name = value)` form already scoped under `filters` below, not separate
-backlog.
-
-- **`PropertyResolver.Resolve(IDataSource, PropertyChain)`'s return value
-  conflates two meanings.** `IEnumerable<IDataSource>` means "several
-  scalar results from projecting through a list" in one caller
-  (`«quotes: prices: amount»`) and "one value that happens to itself be an
-  array" in another (`«tags»`) — nothing today distinguishes them except
-  inspecting `.Kind` on each yielded item, which nothing does. This is
-  likely a prerequisite for the `inline-lists` milestone, not just cleanup
-  — it's why `«tags»` still renders JSON's raw `["a","b"]` instead of
-  joining it. `PropertyResolver.cs` already carries a `// TODO REFACTOR`
-  marker on this.
-- **`PropertyResolver.Resolve` is overloaded twice with different
-  semantics** — `Resolve(Scope, PropertyChain)` (scope-aware, handles
-  magic variables/captured variables/enclosing-scope fallback) vs.
-  `Resolve(IDataSource, PropertyChain)` (a plain scope-free walker) — both
-  `public` under the same name. New callers (filters resolving a value
-  before formatting it) will have to guess which one they want. Worth a
-  rename when this file is next touched.
-
 ## Remaining milestones
 
 In fixture-group order (see `/specs`, simplest → most complex; group folders are

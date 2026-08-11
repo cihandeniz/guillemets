@@ -120,8 +120,13 @@ public interface IDataSource
     IEnumerable<IDataSource> EnumerateArray();
     bool AsBoolean();
     string? AsDisplayString();
+
+    IDataSource Negate() => AsBoolean() ? BooleanDataSource.FALSE : BooleanDataSource.TRUE;
 }
 ```
+
+`Negate` is a default interface method — it's fully derived from
+`AsBoolean()`, so none of the adapters need to implement it themselves.
 
 Anyone can implement this to plug in a new data format. Today there are
 three built-in adapters, plus a few internal sentinel values, all shipped in

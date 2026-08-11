@@ -1,3 +1,5 @@
+using Guillemets.Data.Primitives;
+
 namespace Guillemets.Data;
 
 public interface IDataSource
@@ -7,4 +9,7 @@ public interface IDataSource
     IEnumerable<IDataSource> EnumerateArray();
     bool AsBoolean();
     string? AsDisplayString();
+
+    IDataSource Negate() =>
+        AsBoolean() ? BooleanDataSource.FALSE : BooleanDataSource.TRUE;
 }

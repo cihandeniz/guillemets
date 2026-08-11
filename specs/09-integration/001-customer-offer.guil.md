@@ -20,14 +20,14 @@ your satisfaction at every step.
 
 ## Items
 
+««items
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
-| ««items       |                   |                       |               |
 | «description» | «quantity» «unit» | «unit price»          | «total»       |
-| »»            |                   |                       |               |
 |               |                   | **Subtotal**          | «subtotal»    |
 |               |                   | **Tax (%«tax rate»)** | «tax»         |
 |               |                   | **Grand Total**       | «grand total» |
+»»
 
 ---
 

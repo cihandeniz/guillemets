@@ -236,18 +236,19 @@ if/else, list → loop, object → scope.
 
 ### Tables
 
-A block can support beginning and ending `|` to fit into a table without
-breaking markdown table syntax.
+When a loop block's body is a markdown table, only the third row repeats —
+the first two rows (heading and separator) render once, and any rows after
+the third render once as a footer.
 
 ```markdown
+««items
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
-| ««items       |                   |                       |               |
 | «description» | «quantity» «unit» | «unit price»          | «total»       |
-| »»            |                   |                       |               |
 |               |                   | **Subtotal**          | «subtotal»    |
 |               |                   | **Tax (%«tax rate»)** | «tax»         |
 |               |                   | **Grand Total**       | «grand total» |
+»»
 ```
 
 ## Inline Lists
@@ -337,14 +338,14 @@ your satisfaction at every step.
 
 ## Items
 
+««items
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
-| ««items       |                   |                       |               |
 | «Description» | «Quantity» «Unit» | «Unit Price»          | «Total»       |
-| »»            |                   |                       |               |
 |               |                   | **Subtotal**          | «Subtotal»    |
 |               |                   | **Tax (%«Tax Rate»)** | «Tax»         |
 |               |                   | **Grand Total**       | «Grand Total» |
+»»
 
 ---
 
