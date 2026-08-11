@@ -179,6 +179,38 @@ The actual rendering work happens in `Renderer`, which is built fresh for
 every call to `Render` — so a single `Template` is safe to reuse across many
 renders, even concurrently.
 
+## Pluggable filters
+
+Filters follow the same shape as data sources: one small interface, and
+callers pass instances in from outside rather than the engine hard-coding
+them.
+
+```csharp
+public interface IFilter
+{
+    string Apply(IReadOnlyList<string> values, IReadOnlyList<string> args);
+}
+```
+
+`FilterRegistry` maps a name to an `IFilter`. `Template.Create` builds it
+with the one built-in — `"separator"` → `SeparatorFilter` — then hands it
+to an optional `Action<FilterRegistry>` callback, so a caller can add more
+without ever constructing or holding the registry itself:
+
+```csharp
+var template = Template.Create(text,
+    filters => filters.Register("upper", new UpperFilter())
+);
+```
+
+`SeparatorFilter` does the actual joining behind `(separator = ...)`, both
+the inline form and the loop-block footer. It stays `internal` — callers
+only ever reach it by the name `"separator"`, never by type. That also means
+the loop-block footer position specifically requires the real
+`SeparatorFilter` type, not just a filter registered under that name — a
+custom filter has no template-syntax hook to be invoked from yet, since the
+only place `(name = value)` is recognized today is that one footer position.
+
 ## Tests
 
 `JsonElementDataSourceTests`, `PocoDataSourceTests`, and

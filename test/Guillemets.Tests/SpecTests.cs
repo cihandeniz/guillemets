@@ -1,3 +1,4 @@
+using Guillemets.Filters;
 using Shouldly;
 using System.Text.Json;
 
@@ -5,6 +6,12 @@ namespace Guillemets.Tests;
 
 public class SpecTests
 {
+    // A harmless registered filter besides "separator" -- lets error
+    // fixtures exercise "a filter other than separator isn't allowed as a
+    // block footer" without depending on a real second filter existing.
+    static void ConfigureFilters(FilterRegistry filters) =>
+        filters.Register("dummy", new DummyFilter());
+
     // Fixtures the engine doesn't implement yet. TDD one-case-at-a-time: a
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
@@ -96,7 +103,7 @@ public class SpecTests
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = Template.Create(template).Render(ReadData(dataPath));
+        var actual = Template.Create(template, ConfigureFilters).Render(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
@@ -108,7 +115,7 @@ public class SpecTests
         var expectedError = File.ReadAllText(errorPath).Trim();
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template).Render(ReadData(dataPath))
+            () => Template.Create(template, ConfigureFilters).Render(ReadData(dataPath))
         );
 
         exception.Message.ShouldBe(expectedError);

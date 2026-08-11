@@ -45,6 +45,21 @@ var output = template.Render(data);
 (`template.RenderObject(new { FullName = "Alice Smith" })`) and
 `Newtonsoft.Json.Linq.JToken`.
 
+### Custom filters
+
+`Template.Create` takes an optional callback to register your own filters
+alongside the built-in `separator`:
+
+```csharp
+var template = Template.Create(text,
+    filters => filters.Register("upper", new UpperFilter())
+);
+```
+
+`IFilter` is one method — implement
+`string Apply(IReadOnlyList<string> values, IReadOnlyList<string> args)`
+to add one.
+
 ## Development
 
 ```

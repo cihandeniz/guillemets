@@ -11,13 +11,17 @@ public class Template
 {
     const string CRLF = "\r\n";
 
-    public static Template Create(string template)
+    public static Template Create(string template) =>
+        Create(template, static _ => { });
+
+    public static Template Create(string template, Action<FilterRegistry> configureFilters)
     {
         var lineEnding = template.Contains(CRLF) ? CRLF : Position.NEWLINE.ToString();
         var normalized = template.Replace(CRLF, Position.NEWLINE.ToString());
 
         var tokens = new Tokenizer(normalized, Symbols.TREE).Tokenize();
         var filters = new FilterRegistry().Register("separator", new SeparatorFilter());
+        configureFilters(filters);
         var nodes = new Parser(tokens, filters).Parse();
 
         return new Template(nodes, lineEnding);
