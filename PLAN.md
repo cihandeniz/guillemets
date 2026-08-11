@@ -14,6 +14,55 @@ Remaining fixtures are listed in `SpecTests.cs`'s `IGNORED_FIXTURES` set.
 Pluggable data sources (JSON, POCO, and Newtonsoft `JToken`) are done — see
 `docs/architecture.md`.
 
+## Refactor backlog
+
+Surfaced during an architecture review ahead of the `filters` milestone.
+None of these block starting `filters`, but the milestone will make each one
+worse if left alone — resolve alongside the fixture work they touch, not as
+a separate cleanup pass.
+
+- **`BlockParser.TryParseSeparatorFooter` hardcodes the filter name
+  `"separator"`** (`filter.Name != "separator"`) to decide whether a parsed
+  `(name = value)` belongs to the block footer. `date`/`currency`/`length`
+  will need the same attach-and-validate shape in a different position
+  (inline after a property chain) — decide whether "which filter names are
+  legal where" moves to a shared spot before it's copy-pasted a third time.
+- **No shared shape for "this node has filters attached."** `BlockNode`
+  carries a bespoke `Separator` field (`string?`) fed straight to
+  `LoopBehavior`; `VariableNode` has no filter field at all yet. Once
+  `VariableNode` needs `(date = ...)`/`(currency = ...)`/`(length = ...)`,
+  and `BlockNode` already has `(separator = ...)`, that's two node types
+  independently inventing "optional filter payload." Consider a shared
+  `IReadOnlyList<FilterNode>` both hold, with one "apply filters to a
+  value/rendered string" step.
+- **No concept of *applying* a filter yet, only parsing one.**
+  `FilterNode.Render` throws by design — today's only consumer
+  (`separator`) reads `.Name`/`.Value` directly and never renders it.
+  `date`/`currency`/`length` need real behavior: given a resolved
+  `IDataSource` and a filter value string, produce a formatted string. Per
+  house style (polymorphic dispatch over switch-on-type), this likely wants
+  an `IFilter`-per-filter-name strategy (`DateFilter`, `CurrencyFilter`,
+  `LengthFilter`), not a branch inside `VariableNode.Render`. This is also
+  where the deferred `IDataSource` typed-access question (no `AsDateTime()`/
+  `AsDecimal()` yet) has to actually get resolved.
+- **`PropertyResolver.Resolve(IDataSource, PropertyChain)`'s return value
+  conflates two meanings.** `IEnumerable<IDataSource>` means "several
+  scalar results from projecting through a list" in one caller
+  (`«quotes: prices: amount»`) and "one value that happens to itself be an
+  array" in another (`«tags»`) — nothing today distinguishes them except
+  inspecting `.Kind` on each yielded item, which nothing does. This is
+  likely a prerequisite for the `inline-lists` milestone, not just cleanup
+  — it's why `«tags»` still renders JSON's raw `["a","b"]` instead of
+  joining it. `PropertyResolver.cs` already carries a `// TODO REFACTOR`
+  marker on this.
+- **`PropertyResolver.Resolve` is overloaded twice with different
+  semantics** — `Resolve(Scope, PropertyChain)` (scope-aware, handles
+  magic variables/captured variables/enclosing-scope fallback) vs.
+  `Resolve(IDataSource, PropertyChain)` (a plain scope-free walker) — both
+  `public` under the same name. New callers (filters resolving a value
+  before formatting it) will have to guess which one they want. Worth a
+  rename when this file is next touched.
+
 ## Remaining milestones
 
 In fixture-group order (see `/specs`, simplest → most complex; group folders are

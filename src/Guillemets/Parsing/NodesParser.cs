@@ -4,26 +4,14 @@ using Guillemets.Tokens;
 
 namespace Guillemets.Parsing;
 
-internal class NodesParser(TokenCursor _tokens)
+internal class NodesParser(TokenCursor _tokens, ParserRegistry _registry)
     : IParser
 {
-    readonly Dictionary<Type, IParser> _parsers = [];
-
-    internal void Register(Type tokenType, IParser parser) =>
-        _parsers[tokenType] = parser;
-
     INode IParser.Parse(IToken token) =>
         Parse(token);
 
-    INode Parse(IToken token)
-    {
-        foreach (var (tokenType, parser) in _parsers)
-        {
-            if (tokenType.IsInstanceOfType(token)) { return parser.Parse(token); }
-        }
-
-        throw new TemplateParseException($"Unexpected token '{token.GetType().Name}'", token.Position);
-    }
+    INode Parse(IToken token) =>
+        _registry.Resolve(token).Parse(token);
 
     public List<INode> ParseNodes(bool insideBlock, bool stopAtElse, bool stopAtOpenParen)
     {
