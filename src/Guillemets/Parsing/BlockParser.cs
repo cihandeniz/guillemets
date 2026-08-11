@@ -1,4 +1,5 @@
 using Guillemets.Ast;
+using Guillemets.Filters;
 using Guillemets.Rendering;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
@@ -7,6 +8,7 @@ using static Guillemets.Position;
 
 namespace Guillemets.Parsing;
 
+// TODO REFACTOR
 internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
     : IParser
 {
@@ -22,7 +24,7 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         var truthy = ParseBody(stopAtElse: true, out var truthySeparator);
 
         List<INode>? falsy = null;
-        var falsySeparator = (string?)null;
+        var falsySeparator = (FilterNode?)null;
         if (!_tokens.AtEnd && _tokens.Current is ElseToken)
         {
             _tokens.Advance();
@@ -84,7 +86,7 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         }
     }
 
-    List<INode> ParseBody(bool stopAtElse, out string? separator)
+    List<INode> ParseBody(bool stopAtElse, out FilterNode? separator)
     {
         var body = new List<INode>();
         while (true)
@@ -107,13 +109,13 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
     static bool AtLineStart(List<INode> body) =>
         body.Count == 0 || (body[^1] is LiteralNode literal && literal.Text.EndsWith(NEWLINE));
 
-    bool TryParseSeparatorFooter(out string value)
+    bool TryParseSeparatorFooter(out FilterNode? separator)
     {
-        value = "";
+        separator = null;
         var start = _tokens.Position;
 
         if (!_filterParser.TryParse(out var filter)
-            || filter.Name != "separator"
+            || filter.Filter is not SeparatorFilter
             || (!_tokens.AtEnd && _tokens.Current is not CloseBlockToken))
         {
             _tokens.Rewind(start);
@@ -121,7 +123,7 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
             return false;
         }
 
-        value = filter.Value;
+        separator = filter;
 
         return true;
     }

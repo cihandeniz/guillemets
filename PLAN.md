@@ -21,30 +21,16 @@ None of these block starting `filters`, but the milestone will make each one
 worse if left alone — resolve alongside the fixture work they touch, not as
 a separate cleanup pass.
 
-- **`BlockParser.TryParseSeparatorFooter` hardcodes the filter name
-  `"separator"`** (`filter.Name != "separator"`) to decide whether a parsed
-  `(name = value)` belongs to the block footer. `date`/`currency`/`length`
-  will need the same attach-and-validate shape in a different position
-  (inline after a property chain) — decide whether "which filter names are
-  legal where" moves to a shared spot before it's copy-pasted a third time.
-- **No shared shape for "this node has filters attached."** `BlockNode`
-  carries a bespoke `Separator` field (`string?`) fed straight to
-  `LoopBehavior`; `VariableNode` has no filter field at all yet. Once
-  `VariableNode` needs `(date = ...)`/`(currency = ...)`/`(length = ...)`,
-  and `BlockNode` already has `(separator = ...)`, that's two node types
-  independently inventing "optional filter payload." Consider a shared
-  `IReadOnlyList<FilterNode>` both hold, with one "apply filters to a
-  value/rendered string" step.
-- **No concept of *applying* a filter yet, only parsing one.**
-  `FilterNode.Render` throws by design — today's only consumer
-  (`separator`) reads `.Name`/`.Value` directly and never renders it.
-  `date`/`currency`/`length` need real behavior: given a resolved
-  `IDataSource` and a filter value string, produce a formatted string. Per
-  house style (polymorphic dispatch over switch-on-type), this likely wants
-  an `IFilter`-per-filter-name strategy (`DateFilter`, `CurrencyFilter`,
-  `LengthFilter`), not a branch inside `VariableNode.Render`. This is also
-  where the deferred `IDataSource` typed-access question (no `AsDateTime()`/
-  `AsDecimal()` yet) has to actually get resolved.
+Filter application now has a real home: `Guillemets.Filters` holds `IFilter`
+(one polymorphic strategy per filter, e.g. `SeparatorFilter`) and
+`FilterRegistry` (name → `IFilter`, built by `Template.Create` and threaded
+through `Parser` to `FilterParser`). `FilterNode` carries the resolved
+`IFilter` plus `IReadOnlyList<string> Args` instead of a bare name/value
+pair, and `BlockNode.Separator` is a `FilterNode?` rather than a raw
+`string?`. `VariableNode` still has no filter field — that's the inline
+`(name = value)` form already scoped under `filters` below, not separate
+backlog.
+
 - **`PropertyResolver.Resolve(IDataSource, PropertyChain)`'s return value
   conflates two meanings.** `IEnumerable<IDataSource>` means "several
   scalar results from projecting through a list" in one caller

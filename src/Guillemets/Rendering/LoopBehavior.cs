@@ -1,36 +1,39 @@
 using Guillemets.Ast;
 using Guillemets.Data;
+using Guillemets.Filters;
 
 using static Guillemets.Position;
 
 namespace Guillemets.Rendering;
 
-internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items,
-    string? Separator = null
+internal class LoopBehavior(Scope _scope, IReadOnlyList<IDataSource> _items,
+    FilterNode? separator = null
 ) : IBlockBehavior
 {
+    static readonly FilterNode DEFAULT_SEPARATOR = new(new SeparatorFilter(), [NEWLINE.ToString()]);
+
+    readonly FilterNode _separator = separator ?? DEFAULT_SEPARATOR;
+
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody)
     {
-        if (!Items.Any())
+        if (!_items.Any())
         {
             return elseBody is not null
-                ? context.Renderer.RenderAll(elseBody, Scope)
+                ? context.Renderer.RenderAll(elseBody, _scope)
                 : string.Empty;
         }
 
-        var renders = new List<string>(Items.Count);
-        for (var i = 0; i < Items.Count; i++)
+        var renders = new List<string>(_items.Count);
+        for (var i = 0; i < _items.Count; i++)
         {
-            var itemScope = new Scope(Items[i],
-                Parent: Scope,
+            var itemScope = new Scope(_items[i],
+                Parent: _scope,
                 IsFirst: i == 0,
-                IsLast: i == Items.Count - 1
+                IsLast: i == _items.Count - 1
             );
             renders.Add(context.Renderer.RenderAll(body, itemScope));
         }
 
-        return Separator is null
-            ? string.Concat(renders)
-            : string.Join(Separator, renders.Select(render => render.TrimEnd(NEWLINE)));
+        return _separator.Filter.Apply([.. renders.Select(render => render.TrimEnd(NEWLINE))], _separator.Args) + NEWLINE;
     }
 }

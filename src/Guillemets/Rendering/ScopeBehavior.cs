@@ -3,9 +3,9 @@ using Guillemets.Data;
 
 namespace Guillemets.Rendering;
 
-internal record ScopeBehavior(Scope Scope, IDataSource Value)
+internal class ScopeBehavior(Scope _scope, IDataSource _value)
     : IBlockBehavior
 {
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody) =>
-        context.Renderer.RenderAll(body, new Scope(Value, Parent: Scope));
+        context.Renderer.RenderAll(body, new Scope(_value, Parent: _scope));
 }

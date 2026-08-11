@@ -1,5 +1,6 @@
 using Guillemets.Ast;
 using Guillemets.Data;
+using Guillemets.Filters;
 using Guillemets.Parsing;
 using Guillemets.Rendering;
 using Guillemets.Tokenization;
@@ -8,18 +9,25 @@ namespace Guillemets;
 
 public class Template
 {
-    readonly IReadOnlyList<INode> _nodes;
-
-    internal Template(IReadOnlyList<INode> nodes) =>
-        _nodes = nodes;
+    const string CRLF = "\r\n";
 
     public static Template Create(string template)
     {
-        var tokens = new Tokenizer(template, Symbols.TREE).Tokenize();
-        var nodes = new Parser(tokens).Parse();
+        var lineEnding = template.Contains(CRLF) ? CRLF : Position.NEWLINE.ToString();
+        var normalized = template.Replace(CRLF, Position.NEWLINE.ToString());
 
-        return new Template(nodes);
+        var tokens = new Tokenizer(normalized, Symbols.TREE).Tokenize();
+        var filters = new FilterRegistry().Register("separator", new SeparatorFilter());
+        var nodes = new Parser(tokens, filters).Parse();
+
+        return new Template(nodes, lineEnding);
     }
+
+    readonly IReadOnlyList<INode> _nodes;
+    readonly string _lineEnding;
+
+    internal Template(IReadOnlyList<INode> nodes, string lineEnding) =>
+        (_nodes, _lineEnding) = (nodes, lineEnding);
 
     public string Render(IDataSource data)
     {
@@ -27,6 +35,8 @@ public class Template
         var propertyResolver = new PropertyResolver(variables);
         var renderer = new Renderer(propertyResolver, variables);
 
-        return renderer.Render(_nodes, data);
+        var rendered = renderer.Render(_nodes, data);
+
+        return _lineEnding == CRLF ? rendered.Replace(Position.NEWLINE.ToString(), CRLF) : rendered;
     }
 }

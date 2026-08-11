@@ -1,0 +1,3 @@
+specs/** text eol=lf
+specs/11-line-endings/001-crlf.guil.md text eol=crlf
+specs/11-line-endings/001-crlf.md text eol=crlf

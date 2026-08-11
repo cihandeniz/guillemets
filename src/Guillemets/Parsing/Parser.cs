@@ -1,14 +1,15 @@
 using Guillemets.Ast;
+using Guillemets.Filters;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
 
 namespace Guillemets.Parsing;
 
-internal class Parser(TokenCursor _tokens)
+internal class Parser(TokenCursor _tokens, FilterRegistry _filters)
 {
     readonly ParserRegistry _registry = new ParserRegistry()
         .Register<NodesParser>(pr => new NodesParser(_tokens, pr))
-        .Register<FilterParser>(_ => new FilterParser(_tokens))
+        .Register<FilterParser>(_ => new FilterParser(_tokens, _filters))
         .Register<OpenToken>(_ => new VariableParser(_tokens))
         .Register<OpenBlockToken>(pr => new BlockParser(_tokens, pr))
         .Register<ITextToken>(_ => new TextParser(_tokens))

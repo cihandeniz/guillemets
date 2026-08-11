@@ -9,7 +9,7 @@ namespace Guillemets.Ast;
 internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
     IReadOnlyList<INode>? ElseBody = null,
     string? VariableName = null,
-    string? Separator = null
+    FilterNode? Separator = null
 ) : INode
 {
     public string Render(RenderContext context, Scope scope)

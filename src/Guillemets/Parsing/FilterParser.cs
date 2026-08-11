@@ -1,4 +1,5 @@
 using Guillemets.Ast;
+using Guillemets.Filters;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
 using System.Diagnostics.CodeAnalysis;
@@ -8,7 +9,7 @@ using static Guillemets.Position;
 
 namespace Guillemets.Parsing;
 
-internal class FilterParser(TokenCursor _tokens)
+internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     : IParser
 {
     public INode Parse(IToken token)
@@ -36,7 +37,14 @@ internal class FilterParser(TokenCursor _tokens)
             return false;
         }
 
-        filter = new FilterNode(rawName.Trim(), rawValue.TrimStart());
+        if (!_filters.TryGet(rawName.Trim(), out var resolvedFilter))
+        {
+            _tokens.Rewind(start);
+
+            return false;
+        }
+
+        filter = new FilterNode(resolvedFilter, [rawValue.TrimStart()]);
 
         return true;
     }
