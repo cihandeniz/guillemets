@@ -16,7 +16,7 @@ public class JTokenIntegrationTests
     }
 
     [Test]
-    [Ignore("depends on the tables and parameters fixture groups, not yet implemented")]
+    [Ignore("depends on the tables and filters fixture groups, not yet implemented")]
     public void Render_ProducesCustomerOfferIntegrationOutput()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");

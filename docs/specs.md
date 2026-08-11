@@ -274,7 +274,7 @@ access — whichever the engine encounters at each step.
 
 ### Custom Separator
 
-Pass a separator using inner `()` as a named parameter:
+Pass a separator using inner `()` as a named filter:
 
 ```markdown
 «quote: tags (separator = , )»
@@ -282,7 +282,7 @@ Pass a separator using inner `()` as a named parameter:
 
 ### Loop Block with Separator
 
-Use the `(separator)` parameter on the last line of the block:
+Use the `(separator)` filter on the last line of the block:
 
 ```markdown
 ««tags = quote: tags
@@ -292,19 +292,19 @@ Use the `(separator)` parameter on the last line of the block:
 
 renders as a comma-separated list when used via `«tags»`.
 
-## Parameters
+## Filters
 
-Inner `(name = value)` syntax passes named parameters to the enclosing
-expression. A fixed set of built-in parameters is supported:
+Inner `(name = value)` syntax passes named filters to the enclosing
+expression. A fixed set of built-in filters is supported:
 
 ```markdown
-«date (format = DD/MM/YYYY)»
+«date (date = dd/MM/yyyy)»
 «amount (currency = $)»
 «description (length = 80)»
 «list: name (separator = , )»
 ```
 
-Parameters are positional by name and resolved before the outer expression is
+Filters are positional by name and resolved before the outer expression is
 evaluated.
 
 ## Full Example — Customer Quote
@@ -346,5 +346,5 @@ your satisfaction at every step.
 We look forward to working with you. This quote is valid until
 «valid until». Please don't hesitate to contact us with any questions.
 
-*«Company» — «Date (format = DD/MM/YYYY)»*
+*«Company» — «Date (date = dd/MM/yyyy)»*
 ```

@@ -206,7 +206,7 @@ even concurrently.
   `Template.Create(...).Render(...)`. Each has one test reading the full
   `specs/09-integration/001-customer-offer` fixture. All three are currently
   `[Ignore]`d — confirmed genuinely failing today, waiting on the `tables` and
-  `parameters` milestones.
+  `filters` milestones.
 - **`SpecsRoot`** is a shared helper for finding `/specs` on disk, used by all
   of the above plus `SpecTests`.
 - `/specs` itself stays the one JSON-based contract, run through `SpecTests`.
@@ -226,8 +226,8 @@ even concurrently.
   they already have, rather than picking the right NuGet package first.
 - **Exact-case property matching**, matching how the JSON side already works. No
   case-insensitive or attribute-based remapping.
-- **No typed accessors yet** (no `AsDateTime()`, `AsDecimal()`). `parameters`
-  (`format`/`currency`/`length`) will need real typed values, not just display
+- **No typed accessors yet** (no `AsDateTime()`, `AsDecimal()`). `filters`
+  (`date`/`currency`/`length`) will need real typed values, not just display
   strings — but that shape isn't decided yet. It'll be designed test-first, once
   that milestone actually starts. Guessing at it now would risk designing it
   twice.

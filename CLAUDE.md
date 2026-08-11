@@ -92,8 +92,8 @@ C#/.NET, targeting `net10.0`. Layout:
   valid inside a markdown table row.
 - **Inline lists**: scalar lists auto-join with `, `; override via
   `(separator = ...)`, usable inline or as the last line of a loop block.
-- **Parameters**: `(name = value)` inside a token, resolved before the outer
-  expression evaluates. Built-ins: `format`, `currency`, `length`, `separator`.
+- **Filters**: `(name = value)` inside a token, resolved before the outer
+  expression evaluates. Built-ins: `date`, `currency`, `length`, `separator`.
 
 ## Localization / naming
 

@@ -17,19 +17,20 @@ Pluggable data sources (JSON, POCO, and Newtonsoft `JToken`) are done — see
 ## Remaining milestones
 
 In fixture-group order (see `/specs`, simplest → most complex; group folders are
-numbered on disk purely for sort order — referred to here by name only).
-`parameters` comes before `variable-definitions`: `definition-list-separator`
-(the one remaining `variable-definitions` fixture) needs `(separator = , )`
-parameter parsing, so parameters has to land first regardless of fixture-number
-order on disk (`/specs` is already renumbered to match: `05-parameters` …
-`08-inline-lists`).
+numbered on disk purely for sort order — referred to here by name only). One
+exception: `filters` is numbered last on disk (`08-filters`, after
+`variable-definitions`/`tables`/`inline-lists`) but has to be *implemented*
+first, because `definition-list-separator` (the one remaining
+`variable-definitions` fixture) needs `(separator = , )` filter parsing — leave
+that single fixture for last within the `variable-definitions` milestone rather
+than reordering the milestones themselves.
 
-1. `parameters` — `format`/`currency`/`length`. First milestone that needs typed
+1. `filters` — `date`/`currency`/`length`. First milestone that needs typed
    (`DateTime`/`decimal`) access rather than just display strings/booleans —
    this is where the deferred `IDataSource` typed-access question (see
    `docs/architecture.md`) gets decided, test-first.
 2. `variable-definitions` — `definition-boolean` and `definition-object` done;
-   `definition-list-separator` needs `(separator = , )` parameter parsing from
+   `definition-list-separator` needs `(separator = , )` filter parsing from
    the milestone above, so do it last.
 3. `tables` — should mostly fall out of the above once blocks exist; confirm
    rather than build new.
@@ -52,7 +53,7 @@ order on disk (`/specs` is already renumbered to match: `05-parameters` …
 - **True schema/localization remapping** (business term ≠ property name) is out
   of scope — only direct PascalCase-of-space-words resolution via Humanizer is
   implemented.
-- **Currency/date/truncation formatting** in the `parameters`/ `integration`
+- **Currency/date/truncation formatting** in the `filters`/ `integration`
   fixtures matches the fixtures as authored, not an independently pinned spec —
   don't "correct" it without discussion.
 - **Unresolved block name → falsy, not an error** — see
