@@ -97,7 +97,7 @@ public class SpecTests
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = Template.Create(template).RenderJson(ReadData(dataPath));
+        var actual = Template.Create(template).Render(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
@@ -109,7 +109,7 @@ public class SpecTests
         var expectedError = File.ReadAllText(errorPath);
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template).RenderJson(ReadData(dataPath)));
+            () => Template.Create(template).Render(ReadData(dataPath)));
 
         exception.Message.ShouldBe(expectedError);
     }

@@ -1,14 +1,14 @@
+using Newtonsoft.Json.Linq;
 using Shouldly;
-using System.Text.Json;
 
 namespace Guillemets.Tests;
 
-public class JsonIntegrationTests
+public class JTokenIntegrationTests
 {
     [Test]
-    public void RendersSimplePropertyFromJson()
+    public void RendersSimplePropertyFromJToken()
     {
-        var data = JsonDocument.Parse("""{"Name": "Alice"}""").RootElement;
+        var data = new JObject { ["Name"] = "Alice" };
 
         var actual = Template.Create("Hello «name»!").Render(data);
 
@@ -24,7 +24,7 @@ public class JsonIntegrationTests
         var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.md");
 
         var template = Template.Create(File.ReadAllText(guilPath));
-        var data = JsonDocument.Parse(File.ReadAllText(jsonPath)).RootElement;
+        var data = JToken.Parse(File.ReadAllText(jsonPath));
 
         template.Render(data).ShouldBe(File.ReadAllText(expectedPath));
     }

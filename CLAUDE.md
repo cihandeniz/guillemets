@@ -112,18 +112,29 @@ Localization" in SPECS.md.
   without an explicit `using` (code in `Guillemets.Data.Json` sees
   `Guillemets.Data` and `Guillemets` for free). Exploit this
   deliberately for a public extension method meant to be broadly
-  discoverable: `Template`'s `RenderJson`/`RenderObject` extensions
+  discoverable: `Template`'s `Render`/`RenderObject` extensions
   (`/src/Guillemets/JsonElementTemplateExtensions.cs`/
-  `PocoTemplateExtensions.cs`) live in the bare root `Guillemets`
-  namespace, *not* nested under their adapter's own namespace
-  (`Guillemets.Data.Json`/`Guillemets.Data.Poco`, where the adapter
-  types `JsonElementDataSource`/`PocoDataSource` themselves stay) — so
-  any consumer who already has `using Guillemets;` for `Template` gets
-  the extension methods for free, no extra `using` needed. A future
-  adapter (e.g. a `Guillemets.Newtonsoft` sibling project's
-  `JTokenDataSource`) should follow the same split: adapter type in its
-  own namespace, `Template` extension method in the bare root namespace
-  of whichever project defines it.
+  `PocoTemplateExtensions.cs`/`JTokenTemplateExtensions.cs`) live in the
+  bare root `Guillemets` namespace, *not* nested under their adapter's
+  own namespace (`Guillemets.Data.Json`/`Guillemets.Data.Poco`/
+  `Guillemets.Data.Newtonsoft`, where the adapter types
+  `JsonElementDataSource`/`PocoDataSource`/`JTokenDataSource` themselves
+  stay) — so any consumer who already has `using Guillemets;` for
+  `Template` gets the extension methods for free, no extra `using`
+  needed. `Render(JsonElement)` and `Render(JToken)` are plain overloads
+  of one name — their parameter types are concrete and unrelated, so
+  there's no ambiguity. `RenderObject(object)` keeps its own name
+  instead of also being called `Render`: `object` is broad enough that
+  folding it into the same overload set would blur which one a call
+  actually hits. A future adapter should follow the same split: adapter
+  type in its own `Guillemets.Data.X` namespace, extension method named
+  `Render` in the bare root `Guillemets` namespace if its parameter is a
+  concrete type. All adapters — including
+  Newtonsoft's `JTokenDataSource` — live in the one core `Guillemets`
+  package; there's no per-adapter sibling project (decided when
+  `JTokenDataSource` was added: one package is simpler while there's
+  only a handful of adapters, and `Newtonsoft.Json` isn't a heavy
+  dependency to carry).
 - Prefer polymorphic dispatch (base type + virtual/abstract method, or a
   strategy class per type) over a `switch`/pattern-match implementing
   per-type behavior inline — the behavior must live in its own class, not

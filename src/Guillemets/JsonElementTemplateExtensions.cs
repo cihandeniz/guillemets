@@ -7,6 +7,6 @@ public static class JsonElementTemplateExtensions
 {
     static readonly JsonElement EMPTY_OBJECT = JsonDocument.Parse("{}").RootElement;
 
-    public static string RenderJson(this Template template, JsonElement data) =>
+    public static string Render(this Template template, JsonElement data) =>
         template.Render(new JsonElementDataSource(data.ValueKind == JsonValueKind.Null ? EMPTY_OBJECT : data));
 }

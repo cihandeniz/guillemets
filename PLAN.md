@@ -10,8 +10,8 @@ left*, not a history of what's done. For *how* it's built, see
 
 36 of 45 fixtures pass (`dotnet test` is authoritative, via
 `SpecTests.cs`). Remaining fixtures are listed in `SpecTests.cs`'s
-`IGNORED_FIXTURES` set. Pluggable data sources (JSON + POCO) are done —
-see `ARCHITECTURE.md`.
+`IGNORED_FIXTURES` set. Pluggable data sources (JSON, POCO, and
+Newtonsoft `JToken`) are done — see `ARCHITECTURE.md`.
 
 ## Remaining milestones
 
@@ -39,18 +39,14 @@ already renumbered to match: `05-parameters` … `08-inline-lists`).
    loop-with-separator form.
 5. `integration` — the full worked example, combining everything above.
    Already has dedicated, currently-`[Ignore]`d coverage in
-   `JsonIntegrationTests`/`PocoIntegrationTests` — un-ignore both once
-   this milestone lands, and drop the `09-integration` exclusion note in
-   `SpecTests.cs` if it's ever folded back into the generic sweep.
+   `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests`
+   — un-ignore all three once this milestone lands, and drop the
+   `09-integration` exclusion note in `SpecTests.cs` if it's ever folded
+   back into the generic sweep.
 6. `errors` — currently 3 fixtures (`unclosed-guillemet`,
    `unclosed-block`, `mismatched-block-depth`). Add more error cases as
    new failure modes appear — extend `TemplateParseException` usage
    rather than introducing ad hoc exceptions.
-7. `Guillemets.Newtonsoft` sibling project (`JTokenDataSource` +
-   `RenderJToken` extension) — not started. Should be small once picked
-   up: one adapter file (mirroring `JsonElementDataSource`) + one
-   extension-method file in the new project's own root namespace,
-   following `ARCHITECTURE.md`'s pattern.
 
 ## Known v1 scope decisions (not gaps to "fix" without discussion)
 

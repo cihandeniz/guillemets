@@ -126,7 +126,9 @@ public interface IDataSource
 ```
 
 Anyone can implement this to plug in a new data format. Today there are
-two built-in adapters, plus a few internal sentinel values:
+three built-in adapters, plus a few internal sentinel values, all in the
+one core `Guillemets` package (see "Why it's shaped this way" below for
+why there's no separate package per adapter):
 
 ```mermaid
 classDiagram
@@ -140,12 +142,14 @@ classDiagram
     }
     class JsonElementDataSource
     class PocoDataSource
+    class JTokenDataSource
     class BooleanDataSource
     class StringDataSource
     class UndefinedDataSource
 
     IDataSource <|.. JsonElementDataSource : public
     IDataSource <|.. PocoDataSource : public
+    IDataSource <|.. JTokenDataSource : public
     IDataSource <|.. BooleanDataSource : internal
     IDataSource <|.. StringDataSource : internal
     IDataSource <|.. UndefinedDataSource : internal
@@ -156,6 +160,12 @@ classDiagram
 - **`PocoDataSource`** (`Guillemets.Data.Poco`) adapts any plain C#
   object via reflection. Property lookup is exact-case, same as the
   JSON side — no case-insensitive matching.
+- **`JTokenDataSource`** (`Guillemets.Data.Newtonsoft`) adapts
+  `Newtonsoft.Json.Linq.JToken`. Newtonsoft's `JTokenType` has more
+  members than `DataKind` needs — `Date`/`Raw`/`Bytes`/`Guid`/`Uri`/
+  `TimeSpan` all map to `DataKind.String` (still displayable via
+  `AsDisplayString()`), and the structural/rare kinds (`Constructor`/
+  `Property`/`Comment`/`None`) map to `DataKind.Undefined`.
 - **`BooleanDataSource`**, **`StringDataSource`**, **`UndefinedDataSource`**
   (`Guillemets.Data.Primitives`) are internal sentinel values: negation
   results, magic-variable booleans, captured variable strings, "this
@@ -168,18 +178,27 @@ classDiagram
 you'll rarely call it directly — each adapter brings its own friendlier
 overload as an extension method:
 
-- `template.RenderJson(jsonElement)`
+- `template.Render(jsonElement)`
+- `template.Render(jToken)`
 - `template.RenderObject(poco)`
 
-Both extension classes live in the plain `Guillemets` namespace, not
-nested under `Guillemets.Data`. That's deliberate: C# already lets code
-in a nested namespace see its parent namespace without an extra
+`Render(JsonElement)` and `Render(JToken)` are just overloads — the
+parameter types are concrete and don't overlap, so there's no
+ambiguity. `RenderObject(object)` keeps a distinct name on purpose:
+`object` is broad enough that folding it into the same `Render`
+overload set would make it unclear which one a given call resolves to.
+
+All three extension classes live in the plain `Guillemets` namespace,
+not nested under `Guillemets.Data`. That's deliberate: C# already lets
+code in a nested namespace see its parent namespace without an extra
 `using`. So `Guillemets.Data.Json` can see `Template` for free — and
 by putting the extension method in `Guillemets` too, any caller who
-already wrote `using Guillemets;` gets `RenderJson`/`RenderObject` for
-free as well. A future adapter (say, a `Guillemets.Newtonsoft` package
-adding `JTokenDataSource`) should do the same: adapter type in its own
-namespace, `Render` extension method in the project's root namespace.
+already wrote `using Guillemets;` gets `Render`/`RenderObject` for free
+as well. A future adapter should do the same: adapter type in its own
+`Guillemets.Data.X` namespace, extension method in the root `Guillemets`
+namespace — named `Render` if its parameter is a concrete type, or
+something distinct if the parameter type is broad enough to blur
+overload resolution (as with `object`).
 
 `Renderer` (internal) holds the actual per-call state — it's built
 fresh inside every `Render()` call, so one `Template` is safe to reuse
@@ -187,28 +206,36 @@ across many renders, even concurrently.
 
 ## Tests
 
-- **`JsonElementDataSourceTests`** / **`PocoDataSourceTests`** unit-test
-  `IDataSource` directly — no `Template` involved. `PocoDataSourceTests`
-  covers arrays, `List<T>`, `HashSet<T>`, `Collection<T>`, and a lazy
-  `IEnumerable<T>`, not just `List`.
-- **`JsonIntegrationTests`** / **`PocoIntegrationTests`** are black-box:
-  they go through `Template.Create(...).RenderX(...)`. Each has one test
-  reading the full `specs/09-integration/001-customer-offer` fixture.
-  Both are currently `[Ignore]`d — confirmed genuinely failing today,
-  waiting on `tables` and `parameters` (see `PLAN.md`).
+- **`JsonElementDataSourceTests`** / **`PocoDataSourceTests`** /
+  **`JTokenDataSourceTests`** unit-test `IDataSource` directly — no
+  `Template` involved. `PocoDataSourceTests` covers arrays, `List<T>`,
+  `HashSet<T>`, `Collection<T>`, and a lazy `IEnumerable<T>`, not just
+  `List`.
+- **`JsonIntegrationTests`** / **`PocoIntegrationTests`** /
+  **`JTokenIntegrationTests`** are black-box: they go through
+  `Template.Create(...).Render(...)`. Each has one test reading the
+  full `specs/09-integration/001-customer-offer` fixture. All three are
+  currently `[Ignore]`d — confirmed genuinely failing today, waiting on
+  `tables` and `parameters` (see `PLAN.md`).
 - **`SpecsRoot`** is a shared helper for finding `/specs` on disk, used
   by all of the above plus `SpecTests`.
 - `/specs` itself stays the one JSON-based contract, run through
   `SpecTests`. The other adapters get a small targeted suite instead of
   running the whole corpus three times.
+- All three adapters' tests live in the single `Guillemets.Tests`
+  project — no per-adapter test project, matching the single-package
+  decision below.
 
 ## Why it's shaped this way
 
 - **`IDataSource`, not `IDataNode`.** `Node` would clash with `Ast`'s
   own `INode` tree.
-- **`PocoDataSource` lives in core**, not a separate package. It only
-  needs `System.Reflection` — no extra dependency to justify splitting
-  it out.
+- **One package, not one per adapter.** `PocoDataSource` only needs
+  `System.Reflection`; `JTokenDataSource` needs `Newtonsoft.Json`.
+  Neither is a heavy enough dependency to justify a separate package —
+  simpler for consumers to install one package and call `Render`/
+  `RenderObject` with whatever data they already have, rather than
+  picking the right NuGet package first.
 - **Exact-case property matching**, matching how the JSON side already
   works. No case-insensitive or attribute-based remapping.
 - **No typed accessors yet** (no `AsDateTime()`, `AsDecimal()`).
