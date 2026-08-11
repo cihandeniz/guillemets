@@ -1,5 +1,6 @@
+using Guillemets.Data;
+using Guillemets.Data.Primitives;
 using Humanizer;
-using System.Text.Json;
 
 namespace Guillemets.Ast;
 
@@ -7,7 +8,7 @@ internal class PropertyResolver(VariableStore variables)
 {
     public VariableStore Variables { get; } = variables;
 
-    public IEnumerable<JsonElement> Resolve(Scope scope, PropertyChain properties)
+    public IEnumerable<IDataSource> Resolve(Scope scope, PropertyChain properties)
     {
         if (properties.Count == 1 && scope.TryGetMagic(properties[0], properties.LastSegmentNegated, out var magic))
         {
@@ -27,27 +28,27 @@ internal class PropertyResolver(VariableStore variables)
         }
     }
 
-    public IReadOnlyList<JsonElement>? ResolveLoopItems(Scope scope, PropertyChain properties) =>
+    public IReadOnlyList<IDataSource>? ResolveLoopItems(Scope scope, PropertyChain properties) =>
         ResolveItemsMatchingLastSegment(scope, properties) ?? ResolveArrayItems(scope, properties);
 
-    IReadOnlyList<JsonElement>? ResolveItemsMatchingLastSegment(Scope scope, PropertyChain properties)
+    IReadOnlyList<IDataSource>? ResolveItemsMatchingLastSegment(Scope scope, PropertyChain properties)
     {
         if (properties.Count <= 1) { return null; }
 
         var containers = Resolve(ResolveScope(scope, properties).Data, properties.WithoutLast()).ToList();
-        if (containers.Count != 1 || containers[0].ValueKind != JsonValueKind.Array) { return null; }
+        if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return null; }
 
         var lastSegment = new PropertyChain([properties[^1]], properties.LastSegmentNegated);
 
         return [.. containers[0].EnumerateArray()
-            .Where(item => Resolve(item, lastSegment).SingleOrDefault().ValueKind == JsonValueKind.True)];
+            .Where(item => Resolve(item, lastSegment).SingleOrDefault()?.AsBoolean() == true)];
     }
 
-    IReadOnlyList<JsonElement>? ResolveArrayItems(Scope scope, PropertyChain properties)
+    IReadOnlyList<IDataSource>? ResolveArrayItems(Scope scope, PropertyChain properties)
     {
         var resolved = Resolve(scope, properties).ToList();
 
-        return resolved.Count == 1 && resolved[0].ValueKind == JsonValueKind.Array
+        return resolved.Count == 1 && resolved[0].Kind == DataKind.Array
             ? [.. resolved[0].EnumerateArray()]
             : null;
     }
@@ -59,10 +60,10 @@ internal class PropertyResolver(VariableStore variables)
         return scope.Parent is not null ? ResolveScope(scope.Parent, properties) : scope;
     }
 
-    static bool HasProperty(JsonElement data, string property) =>
-        data.ValueKind == JsonValueKind.Object && data.TryGetProperty(property.Dehumanize(), out _);
+    static bool HasProperty(IDataSource data, string property) =>
+        data.Kind == DataKind.Object && data.TryGetProperty(property.Dehumanize(), out _);
 
-    public IEnumerable<JsonElement> Resolve(JsonElement current, PropertyChain properties)
+    public IEnumerable<IDataSource> Resolve(IDataSource current, PropertyChain properties)
     {
         if (properties.Count == 0)
         {
@@ -70,12 +71,12 @@ internal class PropertyResolver(VariableStore variables)
             yield break;
         }
 
-        if (current.ValueKind == JsonValueKind.Null)
+        if (current.Kind == DataKind.Null)
         {
             yield break;
         }
 
-        if (current.ValueKind == JsonValueKind.Array)
+        if (current.Kind == DataKind.Array)
         {
             foreach (var item in current.EnumerateArray())
             {
@@ -88,7 +89,10 @@ internal class PropertyResolver(VariableStore variables)
             yield break;
         }
 
-        var next = current.GetProperty(properties[0].Dehumanize());
+        var name = properties[0].Dehumanize();
+        var next = current.TryGetProperty(name, out var property)
+            ? property
+            : throw new InvalidOperationException($"Property '{name}' was not found.");
         if (properties.Count == 1 && properties.LastSegmentNegated) { next = Negate(next); }
 
         foreach (var result in Resolve(next, properties.Tail()))
@@ -97,6 +101,6 @@ internal class PropertyResolver(VariableStore variables)
         }
     }
 
-    static JsonElement Negate(JsonElement value) =>
-        value.ValueKind == JsonValueKind.True ? JsonBooleans.FALSE : JsonBooleans.TRUE;
+    static IDataSource Negate(IDataSource value) =>
+        value.AsBoolean() ? BooleanDataSource.FALSE : BooleanDataSource.TRUE;
 }

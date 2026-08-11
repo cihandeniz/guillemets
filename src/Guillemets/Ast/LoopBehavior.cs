@@ -1,10 +1,10 @@
 using Guillemets.Ast.Rendering;
+using Guillemets.Data;
 using System.Text;
-using System.Text.Json;
 
 namespace Guillemets.Ast;
 
-internal record LoopBehavior(Scope Scope, IReadOnlyList<JsonElement> Items)
+internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items)
     : IBlockBehavior
 {
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody)

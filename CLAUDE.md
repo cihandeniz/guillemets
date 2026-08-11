@@ -12,8 +12,18 @@ file — resolve spec ambiguities there alongside the code change, don't
 just patch around them.
 
 **Cold start?** Read `PLAN.md` first for implementation status and
-remaining milestones. This file is the durable *how to work here*;
-`PLAN.md` is the living *what's done and what's next*.
+remaining milestones, then `ARCHITECTURE.md` for how the engine is
+actually built. This file is the durable *how to work here*; `PLAN.md`
+is the living *what's left* (it shrinks as milestones complete);
+`ARCHITECTURE.md` is the durable *how it's built*.
+
+**`ARCHITECTURE.md` is written for humans, not as a terse internal
+note.** Short sentences. A mermaid diagram for any structure that's
+easier to see than to read (a pipeline, an interface with several
+implementations, a dependency direction). When updating it, rewrite the
+affected section in that style rather than appending a dense paragraph
+— don't let it drift back into long compound sentences full of
+parentheticals.
 
 ## Stack
 
@@ -98,6 +108,22 @@ Localization" in SPECS.md.
 - Keep whitespace between statements minimal — no blank-line padding
   between unrelated statements.
 - One type per file.
+- C# namespace lookup already sees a type's *ancestor* namespaces
+  without an explicit `using` (code in `Guillemets.Data.Json` sees
+  `Guillemets.Data` and `Guillemets` for free). Exploit this
+  deliberately for a public extension method meant to be broadly
+  discoverable: `Template`'s `RenderJson`/`RenderObject` extensions
+  (`/src/Guillemets/JsonElementTemplateExtensions.cs`/
+  `PocoTemplateExtensions.cs`) live in the bare root `Guillemets`
+  namespace, *not* nested under their adapter's own namespace
+  (`Guillemets.Data.Json`/`Guillemets.Data.Poco`, where the adapter
+  types `JsonElementDataSource`/`PocoDataSource` themselves stay) — so
+  any consumer who already has `using Guillemets;` for `Template` gets
+  the extension methods for free, no extra `using` needed. A future
+  adapter (e.g. a `Guillemets.Newtonsoft` sibling project's
+  `JTokenDataSource`) should follow the same split: adapter type in its
+  own namespace, `Template` extension method in the bare root namespace
+  of whichever project defines it.
 - Prefer polymorphic dispatch (base type + virtual/abstract method, or a
   strategy class per type) over a `switch`/pattern-match implementing
   per-type behavior inline — the behavior must live in its own class, not
@@ -133,7 +159,28 @@ Localization" in SPECS.md.
   on the same line when the parameter list already spans multiple lines
   (`internal record BlockNode(PropertyChain Properties, ...\n) : INode`)
   — the parameter list dictates whether the type name and the base type
-  can already be told apart at a glance without the extra line.
+  can already be told apart at a glance without the extra line. This
+  applies no matter how short the parameter list is — even a single
+  parameter still forces the inheritance clause onto its own line, and
+  `record` types follow it exactly like `class` types (`public record
+  JsonElementDataSource(JsonElement Element)\n    : IDataSource`, not
+  `public record JsonElementDataSource(JsonElement Element) :
+  IDataSource`). A type with *no* primary constructor keeps `: Base` on
+  the declaration line regardless of length (`internal class Renderer :
+  IRenderer`) — this rule only ever triggers once there's a parameter
+  list to compete with the base type for attention.
+- Expression-bodied **methods** (including constructors) put the `=>` at
+  the end of the signature line and the expression on its own indented
+  line below, even when it would fit on one line (`public bool
+  AsBoolean() =>\n    Value;`, not `public bool AsBoolean() => Value;`)
+  — consistent regardless of expression length. Expression-bodied
+  **properties** are the opposite: keep `=>` and the expression inline
+  on the same line as the property (`public DataKind Kind =>
+  DataKind.Boolean;`), including when the expression itself spans
+  multiple lines via `switch` (`public DataKind Kind => Value switch\n
+  {\n    ...\n};` — the `switch` keyword stays on the `Kind =>` line).
+  The distinguishing signal is the parameter list: has `()` → method
+  formatting; no `()` → property formatting.
 - Never write `sealed` — explicit house style; types stay open for
   inheritance even with no current subtypes.
 - Naming (see `.editorconfig`): private instance fields are `_camelCase`;
@@ -223,14 +270,18 @@ When the user says they're "parking" (wrapping up for the day):
 
 1. Run `dotnet test`, confirm all-green — flag clearly if not; don't park
    on red.
-2. Update `PLAN.md`: refresh status/fixture count, move completed work
-   out of "Remaining milestones," add new "Known v1 scope decisions."
-3. Update `CLAUDE.md` with any durable convention/rule/decision from this
-   session — these two files are what survive to a cold start elsewhere;
-   nothing load-bearing should live only in chat history.
-4. Remind the user of uncommitted changes — don't run git yourself; just
+2. Update `PLAN.md`: refresh status/fixture count, remove completed work
+   from "Remaining milestones" (don't just annotate it done — delete
+   it, this file shrinks), add new "Known v1 scope decisions."
+3. Update `ARCHITECTURE.md` with any structural change from this session
+   (new types, moved namespaces, a resolved design decision) — keep it
+   describing current shape only, not a changelog.
+4. Update `CLAUDE.md` with any durable convention/rule/decision from this
+   session — these three files are what survive to a cold start
+   elsewhere; nothing load-bearing should live only in chat history.
+5. Remind the user of uncommitted changes — don't run git yourself; just
    point out what's pending.
-5. Give a short summary: what's done, what's next, anything to
+6. Give a short summary: what's done, what's next, anything to
    double-check.
 
 ## Git

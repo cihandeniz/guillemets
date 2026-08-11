@@ -1,14 +1,14 @@
 using Guillemets.Ast.Rendering;
-using System.Text.Json;
+using Guillemets.Data;
 
 namespace Guillemets.Ast;
 
-internal record ConditionalBehavior(Scope Scope, JsonElement Value)
+internal record ConditionalBehavior(Scope Scope, IDataSource Value)
     : IBlockBehavior
 {
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody)
     {
-        if (Value.ValueKind == JsonValueKind.True)
+        if (Value.AsBoolean())
         {
             return context.Renderer.RenderAll(body, Scope);
         }

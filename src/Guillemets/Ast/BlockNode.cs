@@ -1,5 +1,6 @@
 using Guillemets.Ast.Rendering;
-using System.Text.Json;
+using Guillemets.Data;
+using Guillemets.Data.Primitives;
 
 using static Guillemets.Position;
 
@@ -28,8 +29,8 @@ internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
             return new LoopBehavior(scope, items);
         }
 
-        var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault();
-        if (value.ValueKind == JsonValueKind.Object)
+        var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault() ?? UndefinedDataSource.INSTANCE;
+        if (value.Kind == DataKind.Object)
         {
             return new ScopeBehavior(scope, value);
         }

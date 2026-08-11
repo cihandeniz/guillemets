@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Guillemets.Tests;
 
-public class FixtureTests
+public class SpecTests
 {
     // Fixtures the engine doesn't implement yet. TDD one-case-at-a-time: a
     // fixture listed here is Ignored (not Failed), so the suite is always
@@ -19,27 +19,7 @@ public class FixtureTests
         "08-inline-lists/001-inline-scalar-list",
         "08-inline-lists/002-inline-field-selection",
         "08-inline-lists/003-custom-separator",
-        "09-integration/001-customer-offer",
     ];
-
-    static readonly string SPECS_ROOT = FindSpecsRoot();
-
-    static string FindSpecsRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Guillemets.slnx")))
-        {
-            dir = dir.Parent;
-        }
-
-        if (dir is null)
-        {
-            throw new InvalidOperationException(
-                "Could not locate repo root (Guillemets.slnx) from test assembly location.");
-        }
-
-        return Path.Combine(dir.FullName, "specs");
-    }
 
     static IEnumerable<TestCaseData> FixtureCases()
     {
@@ -65,9 +45,12 @@ public class FixtureTests
     // Case files are discovered by extension (".md" for success, ".error"
     // for parse errors), excluding *.guil.md templates (which also end in
     // ".md"). A case's *.json data file is optional -- see ReadData.
+    // "09-integration" is excluded here: it's exercised explicitly by each
+    // data source's own *IntegrationTests, not by the generic spec sweep.
     static IEnumerable<string> CaseFiles(string extension) =>
-        Directory.EnumerateFiles(SPECS_ROOT, $"*{extension}", SearchOption.AllDirectories)
+        Directory.EnumerateFiles(SpecsRoot.PATH, $"*{extension}", SearchOption.AllDirectories)
             .Where(path => !path.EndsWith(".guil.md", StringComparison.Ordinal))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}09-integration{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .OrderBy(path => path, StringComparer.Ordinal);
 
     static string DataPathFor(string casePath) =>
@@ -77,7 +60,7 @@ public class FixtureTests
         Path.ChangeExtension(path, null);
 
     static string FixtureName(string path) =>
-        Path.GetRelativePath(SPECS_ROOT, BasePath(path)).Replace('\\', '/');
+        Path.GetRelativePath(SpecsRoot.PATH, BasePath(path)).Replace('\\', '/');
 
     // A case file (e.g. "005a-both-truthy.md") reuses the .guil.md whose
     // leading number matches its own, so several cases can share one
@@ -114,7 +97,7 @@ public class FixtureTests
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = TemplateEngine.Render(template, ReadData(dataPath));
+        var actual = Template.Create(template).RenderJson(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
@@ -125,7 +108,8 @@ public class FixtureTests
         var template = File.ReadAllText(templatePath);
         var expectedError = File.ReadAllText(errorPath);
 
-        var exception = Should.Throw<TemplateParseException>(() => TemplateEngine.Render(template, ReadData(dataPath)));
+        var exception = Should.Throw<TemplateParseException>(
+            () => Template.Create(template).RenderJson(ReadData(dataPath)));
 
         exception.Message.ShouldBe(expectedError);
     }

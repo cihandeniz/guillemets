@@ -1,9 +1,9 @@
 using Guillemets.Ast.Rendering;
-using System.Text.Json;
+using Guillemets.Data;
 
 namespace Guillemets.Ast;
 
-internal record ScopeBehavior(Scope Scope, JsonElement Value)
+internal record ScopeBehavior(Scope Scope, IDataSource Value)
     : IBlockBehavior
 {
     public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody) =>

@@ -6,5 +6,5 @@ internal record VariableNode(PropertyChain Properties)
     : INode
 {
     public string Render(RenderContext context, Scope scope) =>
-        string.Join(", ", context.PropertyResolver.Resolve(scope, Properties).Select(value => value.ToString()));
+        string.Join(", ", context.PropertyResolver.Resolve(scope, Properties).Select(value => value.AsDisplayString()));
 }

@@ -1,26 +1,27 @@
+using Guillemets.Data;
+using Guillemets.Data.Primitives;
 using Humanizer;
-using System.Buffers;
-using System.Text.Json;
 
 namespace Guillemets.Ast;
 
 internal class VariableStore
 {
-    readonly Dictionary<string, JsonElement> _values = [];
+    readonly Dictionary<string, IDataSource> _values = [];
 
     public void Define(string name, string value) =>
-        _values[name.Dehumanize()] = ToJsonElement(value);
+        _values[name.Dehumanize()] = new StringDataSource(value);
 
-    public bool TryResolve(string name, out JsonElement value) =>
-        _values.TryGetValue(name.Dehumanize(), out value);
-
-    static JsonElement ToJsonElement(string value)
+    public bool TryResolve(string name, out IDataSource value)
     {
-        var buffer = new ArrayBufferWriter<byte>();
-        using var writer = new Utf8JsonWriter(buffer);
-        writer.WriteStringValue(value);
-        writer.Flush();
+        if (_values.TryGetValue(name.Dehumanize(), out var found))
+        {
+            value = found;
 
-        return JsonDocument.Parse(buffer.WrittenMemory).RootElement;
+            return true;
+        }
+
+        value = UndefinedDataSource.INSTANCE;
+
+        return false;
     }
 }

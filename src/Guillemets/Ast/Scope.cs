@@ -1,8 +1,9 @@
-using System.Text.Json;
+using Guillemets.Data;
+using Guillemets.Data.Primitives;
 
 namespace Guillemets.Ast;
 
-internal record Scope(JsonElement Data,
+internal record Scope(IDataSource Data,
     Scope? Parent = null,
     bool? IsFirst = null,
     bool? IsLast = null
@@ -13,9 +14,9 @@ internal record Scope(JsonElement Data,
 
     static readonly HashSet<string> MAGIC_NAMES = [FIRST, LAST];
 
-    public bool TryGetMagic(string property, bool negated, out JsonElement value)
+    public bool TryGetMagic(string property, bool negated, out IDataSource value)
     {
-        value = default;
+        value = UndefinedDataSource.INSTANCE;
 
         var name = property.ToLowerInvariant();
         var magic = name switch
@@ -27,7 +28,7 @@ internal record Scope(JsonElement Data,
 
         if (magic is not null)
         {
-            value = (negated ? !magic.Value : magic.Value) ? JsonBooleans.TRUE : JsonBooleans.FALSE;
+            value = (negated ? !magic.Value : magic.Value) ? BooleanDataSource.TRUE : BooleanDataSource.FALSE;
 
             return true;
         }
