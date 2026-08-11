@@ -3,5 +3,4 @@
 ~
 representatives of «company name»
 »»
-
 Dear «contact person»,

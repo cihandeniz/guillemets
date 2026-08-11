@@ -108,7 +108,32 @@ Localization" in SPECS.md.
 - Don't call `new SomeType(...)` inside a constructor body unless
   `SomeType` is a DTO or `record`. Real dependencies are
   constructor-injected and wired up at the composition root
-  (`TemplateEngine.Render`, `Tokenizer.Tokenize()`).
+  (`TemplateEngine.Render`, `Tokenizer.Tokenize()`, `Parsing/Parser.cs`).
+  When two collaborators need each other (e.g. `NodesParser` dispatches
+  to `BlockParser`, `BlockParser` recurses back into `NodesParser`),
+  don't resolve the cycle with a mutable/settable field assigned after
+  construction — prefer deferring construction with a factory
+  (`ParserBuilder.Register<TToken>(Func<NodesParser, IParser> factory)`,
+  invoked only once the composition root has something to hand it) or
+  passing the collaborator as an explicit call parameter instead of a
+  stored field, whichever the actual call shape supports.
+- A type whose only externally-relevant contract is a single interface
+  (nothing about the concrete type should be called directly from
+  outside it) implements that interface explicitly rather than with a
+  `public` method of the same name — e.g. `TemplateEngine : IRenderer`'s
+  `string IRenderer.RenderAll(...)`, `NodesParser : IParser`'s `INode
+  IParser.Parse(IToken token)`. If the type's own internals still need
+  to call that logic directly (without going through an interface-typed
+  reference), keep a plain private method next to the explicit
+  implementation and have the explicit member forward to it.
+- Inheritance clause (`: Base`/`: IInterface`) on a type with a primary
+  constructor: put it on its own indented line when the constructor's
+  parameter list fits on one line (`internal class VariableParser
+  (TokenCursor _tokens)\n    : IParser`); let it trail the closing `)`
+  on the same line when the parameter list already spans multiple lines
+  (`internal record BlockNode(PropertyChain Properties, ...\n) : INode`)
+  — the parameter list dictates whether the type name and the base type
+  can already be told apart at a glance without the extra line.
 - Never write `sealed` — explicit house style; types stay open for
   inheritance even with no current subtypes.
 - Naming (see `.editorconfig`): private instance fields are `_camelCase`;
@@ -128,7 +153,14 @@ Localization" in SPECS.md.
   values between methods. A success/failure method returns `bool`
   (mutating instance state as a side effect); a method that needs to hand
   back one meaningful value returns that value directly, typed
-  explicitly.
+  explicitly. A method with one primary return value plus an optional
+  secondary one uses an `out` parameter for the secondary value instead
+  of wrapping both in a record (`BlockParser.ParseHeader(Position
+  openPosition, out string? variableName)` returns the `PropertyChain`
+  directly and hands the captured variable name back via `out`, rather
+  than a `BlockHeader(string?, PropertyChain)` DTO) — matches the
+  pre-existing `SymbolTree.TryMatchSymbol`/`Scope.TryGetMagic` idiom
+  already in this codebase.
 - No comments in source. If code needs one to be understood, that's a
   signal to restructure — extract a well-named method, turn an encoded
   string/boolean convention into a properly-named type or property — not
@@ -176,7 +208,12 @@ Localization" in SPECS.md.
 - **The build enforces style, not just `dotnet format`.**
   `Directory.Build.props` sets `EnforceCodeStyleInBuild`/
   `TreatWarningsAsErrors`, so `dotnet build`/`dotnet test` fail on any
-  `.editorconfig` violation or compiler warning.
+  `.editorconfig` violation or compiler warning — including `IDE0060`
+  (unused parameter), which `.editorconfig` escalates to `error`. That's
+  a non-issue for a parameter required by an interface signature (Roslyn
+  exempts interface-implementation methods from `IDE0060` automatically,
+  implicit or explicit) — it only bites a parameter that's unused and
+  has no such contractual reason to exist.
 - Known flaky build issue: `MSB3374` (can't set last-write-time on an
   `obj/**/*.Up2Date` file) — not a real problem, just retry once.
 

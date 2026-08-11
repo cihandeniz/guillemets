@@ -6,10 +6,11 @@ fixture corpus. For *how* to work (TDD discipline, code style), see
 
 ## Status
 
-34 of 45 fixtures pass (`dotnet test` is authoritative). Done: `basics`,
+36 of 45 fixtures pass (`dotnet test` is authoritative). Done: `basics`,
 `variables`, `conditional-blocks`, `loop-blocks`, `scope-blocks`.
-Remaining fixtures are listed in `FixtureTests.cs`'s `IGNORED_FIXTURES`
-set.
+`variable-definitions` is partially done — `definition-boolean` and
+`definition-object` pass. Remaining fixtures are listed in
+`FixtureTests.cs`'s `IGNORED_FIXTURES` set.
 
 ## Architecture (as built so far)
 
@@ -32,13 +33,51 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
 - **`Tokenization/TokenCursor.cs`**: token list + read position for
   `Parser`; the only place that mutates a `LiteralToken` in place
   (`TrimCurrentLiteral`).
-- **`Parser.cs`**: recursive-descent (`Parse` → `ParseNodes` →
-  `ParseNext` → `ParseBlock`/`ParseVariable`), nesting via the call
-  stack. `»»` is always on its own line (per SPECS.md) — no
-  closing-newline special-casing. `ParseBlock` requires the closing
-  token's `Depth` to equal the opening token's `Depth`
-  (`ValidateClosingDepth`), throwing `TemplateParseException` on a
-  mismatch — depth beyond 2 is readability-only, but must still balance.
+- **`Parsing/`**: recursive-descent, split by node kind rather than one
+  monolithic `Parser` class. `Parser` (the composition root) builds a
+  `ParserBuilder`, registers a factory per token type (`VariableParser`
+  for `OpenToken`, `BlockParser` for `OpenBlockToken`, `TextParser` for
+  `ITextToken`), calls `.Build()` to get back an `IParser`, then drives
+  the top-level token loop itself (`while (!tokens.AtEnd) nodes.Add(
+  parser.Parse(tokens.Current))`) — `TemplateEngine` only ever sees
+  `Parser.Parse()` returning `List<INode>`.
+  - **`IParser`**: one-method contract, `INode Parse(IToken token)` —
+    shared by every node-level parser so dispatch is uniform regardless
+    of which concrete parser ends up handling a token.
+  - **`ParserBuilder`**: accumulates `Register<TToken>(Func<NodesParser,
+    IParser> factory)` calls (fluent, returns `this`), deferring actual
+    construction to `Build()`. Deferring via a factory — instead of a
+    ready-made `IParser` instance — is what breaks the construction
+    cycle between `NodesParser` (needs the concrete parsers to dispatch
+    to) and `BlockParser` (needs `NodesParser` itself, to recurse into a
+    block's body): `Build()` constructs `NodesParser` first, *then*
+    invokes each factory with that already-built `NodesParser`.
+  - **`NodesParser`**: implements `IParser` explicitly (mirrors
+    `TemplateEngine : IRenderer`'s explicit-implementation style), so
+    the only externally visible surface is `Parse(IToken)`; a private
+    `Parse` does the real token→parser dispatch (linear scan over a
+    `Dictionary<Type, IParser>`, matched via `Type.IsInstanceOfType` so
+    an interface key like `ITextToken` still catches every concrete
+    implementer). `ParseNodes(bool insideBlock, bool stopAtElse)` is the
+    block-recursion entry point — `BlockParser` calls back into it for a
+    block's truthy/falsy body — but those flags never surface outside
+    `Parsing/`; `Parser`'s top-level loop goes through `Parse(IToken)`
+    only, never `ParseNodes`.
+  - **`VariableParser`** / **`TextParser`** / **`BlockParser`**: one
+    class per node kind, each casting the `IToken` it receives to the
+    concrete type it expects. `»»` is always on its own line (per
+    SPECS.md) — no closing-newline special-casing. `BlockParser`
+    requires the closing token's `Depth` to equal the opening token's
+    `Depth` (`ValidateClosingDepth`), throwing `TemplateParseException`
+    on a mismatch — depth beyond 2 is readability-only, but must still
+    balance. Its header parsing (`ParseHeader`) also splits an `=`
+    (tokenized as `EqualsToken`, `Tokenization/Symbols.cs`) into an
+    optional captured variable name and the `PropertyChain` condition
+    after it, via an `out string? variableName` parameter — no DTO type
+    for "a block header." The name itself comes from
+    `PropertyChainBuilder.PopVariableName()`, which pulls the single
+    accumulated segment back out and clears the builder in place, rather
+    than a throwaway `PropertyChain` via `Build()` just to unwrap it.
 - **`Ast/PropertyChainBuilder.cs`**: builds a `PropertyChain` from
   tokens; tracks `!`-negation as `PropertyChain.LastSegmentNegated`
   (never encoded into the segment strings) and drops
@@ -67,6 +106,20 @@ nodes → `TemplateEngine`**, in `/src/Guillemets`.
   top-level property — how upper-scope fallback works.
 - **`TemplateEngine.cs`**: the sole public type; resolves directly
   against `JsonElement` (no reflection/POCO adapter yet).
+- **`Ast/VariableStore.cs`**: constructor-injected into `PropertyResolver`
+  and exposed on `RenderContext.Variables`. `BlockNode.Render` checks
+  `VariableName`: if set, it stores the block's rendered output (trailing
+  newline trimmed, since `»»`/`~` are always on their own line and that
+  structural newline isn't part of the captured value) under the name
+  instead of emitting it inline, returning `string.Empty` at that
+  position. `PropertyResolver.Resolve` checks the store for single-segment
+  property chains the same way it checks `Scope.TryGetMagic` — a defined
+  variable is looked up before falling through to JSON. Values are built
+  directly as string `JsonElement`s (`Utf8JsonWriter.WriteStringValue`
+  into an `ArrayBufferWriter<byte>`, then `JsonDocument.Parse` on those
+  bytes — no `JsonSerializer` round-trip), the same
+  sentinel-construction spirit as `JsonBooleans`, so downstream code
+  (`VariableNode.Render`) doesn't need a separate non-JSON code path.
 
 See `CLAUDE.md`'s C# code style section for the house rules that shaped
 this design.
@@ -75,20 +128,43 @@ this design.
 
 In fixture-group order (see `/specs`, simplest → most complex; group
 folders are numbered on disk purely for sort order — referred to here by
-name only):
+name only). **Reordered**: `parameters` now comes before
+`variable-definitions` (was after `inline-lists`) —
+`definition-list-separator` (the one remaining `variable-definitions`
+fixture) needs `(separator = , )` parameter parsing, so parameters has
+to land first regardless of fixture-number order on disk. The
+pluggable-data-sources refactor below is not a numbered fixture-group
+milestone, but it's sequenced immediately before `parameters` in the
+actual work order (see its section for why):
 
 1. `conditional-blocks` — done.
 2. `loop-blocks` — done.
 3. `scope-blocks` — done.
-4. `variable-definitions` — capturing a block's rendered output into a
-   named, positionally-scoped variable.
-5. `tables` — should mostly fall out of the above once blocks exist;
+4. `parameters` — `format`/`currency`/`length`. Do this once the
+   pluggable-data-sources refactor below lands, not before — it's the
+   first milestone that actually needs typed (`DateTime`/`decimal`)
+   access rather than just display strings/booleans. **TODO**: the
+   `/specs` folder numbers are still on-disk in the old order
+   (`05-variable-definitions`, `06-tables`, `07-inline-lists`,
+   `08-parameters`) — not yet renumbered to match this reordering.
+   Rename `08-parameters` → `05-parameters`, `05-variable-definitions` →
+   `06-variable-definitions`, `06-tables` → `07-tables`,
+   `07-inline-lists` → `08-inline-lists` (`09-integration`/`10-errors`
+   unaffected) when picking this milestone up — purely cosmetic
+   (CLAUDE.md: "numbered on disk for sort order only"), but worth doing
+   before this milestone's fixtures show up in `dotnet test` output
+   out of numeric order.
+5. `variable-definitions` — capturing a block's rendered output into a
+   named, positionally-scoped variable. `definition-boolean` and
+   `definition-object` done. `definition-list-separator` — the group's
+   last remaining fixture — needs `(separator = , )` parameter parsing
+   from the milestone above; do it last, once `parameters` is done.
+6. `tables` — should mostly fall out of the above once blocks exist;
    confirm rather than build new.
-6. `inline-lists` — field-selection projection and custom `(separator)`
+7. `inline-lists` — field-selection projection and custom `(separator)`
    already work for `variables/nested-property-chained-list`-style cases;
    confirm the remaining fixtures, particularly the loop-with-separator
    form.
-7. `parameters` — `format`/`currency`/`length`.
 8. `integration` — the full worked example, combining everything above.
 9. `errors` — currently 3 fixtures (`unclosed-guillemet`,
    `unclosed-block`, `mismatched-block-depth`). Add more error cases as
@@ -100,7 +176,7 @@ name only):
 Today the engine resolves directly against `System.Text.Json.JsonElement`
 end to end — `Scope`, `PropertyResolver`, `JsonBooleans`,
 `ConditionalBehavior`/`LoopBehavior`/`ScopeBehavior`, `BlockNode`,
-`TokenNode` all reference `JsonElement`/`JsonValueKind` by name, and
+`VariableNode` all reference `JsonElement`/`JsonValueKind` by name, and
 `TemplateEngine.Render(string, JsonElement)` is the only entry point.
 SPECS.md's "Schema & Localization" section, though, already describes the
 model in plain-C#-object terms (`model.OfferNo`, `model.Company.Name`),
@@ -110,12 +186,16 @@ spec commitment. Requested: let the engine run against Newtonsoft.Json
 just `System.Text.Json`.
 
 This is an architectural refactor, not a fixture group, so it doesn't
-slot into the numbered milestones above — but it should happen **before**
-`variable-definitions` onward adds more `JsonElement`-typed surface to
-retrofit later. Sequencing proposal: do this refactor next, prove it's
+slot into the numbered milestones above — but it's next up, **before**
+`parameters`: `parameters` is the first remaining milestone that needs
+typed access (real `DateTime`/`decimal`, not just display strings), and
+`IDataNode` as sketched below only exposes `AsDisplayString()`/
+`AsBoolean()` — so this is also where the "Open questions" item about
+growing the interface for `parameters` actually gets decided, not
+deferred again. Sequencing: do this refactor now, prove it's
 behavior-preserving (`dotnet test` stays fully green — the fixture suite
-tests behavior, not `JsonElement` specifically), then resume the
-fixture-group milestones on top of the new abstraction.
+tests behavior, not `JsonElement` specifically), then `parameters`, then
+close out `variable-definitions` with `definition-list-separator`.
 
 ### Shape
 
@@ -129,7 +209,7 @@ internal interface IDataNode
     bool TryGetProperty(string name, out IDataNode value);
     IEnumerable<IDataNode> EnumerateArray();
     bool AsBoolean();
-    string? AsDisplayString();   // backs TokenNode's current `value.ToString()`
+    string? AsDisplayString();   // backs VariableNode's current `value.ToString()`
 }
 ```
 
@@ -144,7 +224,7 @@ same file as the interface.
 Every current internal type keyed on `JsonElement`/`JsonValueKind` swaps
 to `IDataNode`/`DataKind`: `Scope.Data`, `PropertyResolver`'s resolve
 methods, `ConditionalBehavior.Value`, `LoopBehavior.Items`,
-`ScopeBehavior.Value`, `BlockNode`'s type checks, `TokenNode.Render`'s
+`ScopeBehavior.Value`, `BlockNode`'s type checks, `VariableNode.Render`'s
 `.ToString()` call. `PropertyChainBuilder`/`PropertyChain` are untouched
 — they operate on template-side tokens, not the data side.
 
@@ -191,11 +271,12 @@ fourth adapter (XML, a database row, whatever) without waiting on us.
   JSON behavior), or should it support case-insensitive / attribute-based
   remapping now that a real schema-mapping layer might eventually live
   here too (see "True schema/localization remapping" below)?
-- `parameters` (`format`/`currency`/`length`, milestone 7 above) will
-  eventually need typed access (actual `DateTime`/`decimal`, not just
-  string/bool) — `IDataNode` as sketched above only exposes
-  `AsDisplayString()`/`AsBoolean()`. Decide now whether to grow the
-  interface for that later, or fold it into this refactor so it isn't
+- `parameters` (`format`/`currency`/`length`, milestone 4 above, done
+  right after this refactor) will need typed access (actual
+  `DateTime`/`decimal`, not just string/bool) — `IDataNode` as sketched
+  above only exposes `AsDisplayString()`/`AsBoolean()`. Decide now
+  whether to grow the interface for that as part of this refactor
+  (recommended, since `parameters` is next) rather than leaving it to be
   redesigned twice.
 - Test strategy for multi-source parity: full `/specs` corpus per
   adapter (3x fixture count) is probably overkill; more likely a small

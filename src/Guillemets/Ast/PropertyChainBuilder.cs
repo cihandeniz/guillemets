@@ -22,6 +22,15 @@ internal class PropertyChainBuilder
     public PropertyChain Build() =>
         new(_properties, _lastSegmentNegated);
 
+    public string PopVariableName()
+    {
+        var name = _properties.Single();
+        _properties.Clear();
+        _lastSegmentNegated = false;
+
+        return name;
+    }
+
     static string NormalizeWhitespace(string text) =>
         string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }

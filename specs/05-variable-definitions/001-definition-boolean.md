@@ -1,2 +1,1 @@
-
 Dear Alice Smith,

@@ -1,14 +1,24 @@
 using Guillemets.Ast.Rendering;
 using System.Text.Json;
 
+using static Guillemets.Position;
+
 namespace Guillemets.Ast;
 
 internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
-    IReadOnlyList<INode>? ElseBody = null
+    IReadOnlyList<INode>? ElseBody = null,
+    string? VariableName = null
 ) : INode
 {
-    public string Render(RenderContext context, Scope scope) =>
-        ResolveBehavior(context, scope).Render(context, Body, ElseBody);
+    public string Render(RenderContext context, Scope scope)
+    {
+        var rendered = ResolveBehavior(context, scope).Render(context, Body, ElseBody);
+        if (VariableName is null) { return rendered; }
+
+        context.Variables.Define(VariableName, rendered.TrimEnd(NEWLINE));
+
+        return string.Empty;
+    }
 
     IBlockBehavior ResolveBehavior(RenderContext context, Scope scope)
     {

@@ -12,4 +12,5 @@ internal static class Tokens
     public static ColonToken Colon(TokenContext context) => new(context.Text, context.Position);
     public static ElseToken Else(TokenContext context) => new(context.Text, context.Position);
     public static NegationToken Negation(TokenContext context) => new(context.Text, context.Position);
+    public static EqualsToken Equals(TokenContext context) => new(context.Text, context.Position);
 }

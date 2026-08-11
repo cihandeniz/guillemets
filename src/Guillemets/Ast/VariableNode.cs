@@ -2,7 +2,7 @@ using Guillemets.Ast.Rendering;
 
 namespace Guillemets.Ast;
 
-internal record TokenNode(PropertyChain Properties)
+internal record VariableNode(PropertyChain Properties)
     : INode
 {
     public string Render(RenderContext context, Scope scope) =>

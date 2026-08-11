@@ -3,13 +3,21 @@ using System.Text.Json;
 
 namespace Guillemets.Ast;
 
-internal class PropertyResolver
+internal class PropertyResolver(VariableStore variables)
 {
+    public VariableStore Variables { get; } = variables;
+
     public IEnumerable<JsonElement> Resolve(Scope scope, PropertyChain properties)
     {
         if (properties.Count == 1 && scope.TryGetMagic(properties[0], properties.LastSegmentNegated, out var magic))
         {
             yield return magic;
+            yield break;
+        }
+
+        if (properties.Count == 1 && Variables.TryResolve(properties[0], out var defined))
+        {
+            yield return defined;
             yield break;
         }
 

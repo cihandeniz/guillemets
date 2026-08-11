@@ -1,5 +1,6 @@
 using Guillemets.Ast;
 using Guillemets.Ast.Rendering;
+using Guillemets.Parsing;
 using Guillemets.Tokenization;
 using System.Text;
 using System.Text.Json;
@@ -14,7 +15,8 @@ public class TemplateEngine : IRenderer
     {
         var tokens = new Tokenizer(template, Symbols.TREE).Tokenize();
         var nodes = new Parser(tokens).Parse();
-        IRenderer engine = new TemplateEngine(new());
+        var variables = new VariableStore();
+        IRenderer engine = new TemplateEngine(new(variables));
         var scope = new Scope(data.ValueKind == JsonValueKind.Null ? EMPTY_OBJECT : data);
 
         return engine.RenderAll(nodes, scope);
@@ -22,10 +24,8 @@ public class TemplateEngine : IRenderer
 
     readonly RenderContext _context;
 
-    TemplateEngine(PropertyResolver propertyResolver)
-    {
-        _context = new(propertyResolver, this);
-    }
+    TemplateEngine(PropertyResolver propertyResolver) =>
+        _context = new(propertyResolver, this, propertyResolver.Variables);
 
     string IRenderer.RenderAll(IReadOnlyList<INode> nodes, Scope scope)
     {
