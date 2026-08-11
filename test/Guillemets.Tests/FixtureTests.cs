@@ -11,14 +11,14 @@ public class FixtureTests
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
-        "05-variable-definitions/003-definition-list-separator",
-        "06-tables/001-table-block",
-        "07-inline-lists/001-inline-scalar-list",
-        "07-inline-lists/002-inline-field-selection",
-        "07-inline-lists/003-custom-separator",
-        "08-parameters/001-format-date",
-        "08-parameters/002-currency",
-        "08-parameters/003-truncate-length",
+        "05-parameters/001-format-date",
+        "05-parameters/002-currency",
+        "05-parameters/003-truncate-length",
+        "06-variable-definitions/003-definition-list-separator",
+        "07-tables/001-table-block",
+        "08-inline-lists/001-inline-scalar-list",
+        "08-inline-lists/002-inline-field-selection",
+        "08-inline-lists/003-custom-separator",
         "09-integration/001-customer-offer",
     ];
 

@@ -143,17 +143,7 @@ actual work order (see its section for why):
 4. `parameters` — `format`/`currency`/`length`. Do this once the
    pluggable-data-sources refactor below lands, not before — it's the
    first milestone that actually needs typed (`DateTime`/`decimal`)
-   access rather than just display strings/booleans. **TODO**: the
-   `/specs` folder numbers are still on-disk in the old order
-   (`05-variable-definitions`, `06-tables`, `07-inline-lists`,
-   `08-parameters`) — not yet renumbered to match this reordering.
-   Rename `08-parameters` → `05-parameters`, `05-variable-definitions` →
-   `06-variable-definitions`, `06-tables` → `07-tables`,
-   `07-inline-lists` → `08-inline-lists` (`09-integration`/`10-errors`
-   unaffected) when picking this milestone up — purely cosmetic
-   (CLAUDE.md: "numbered on disk for sort order only"), but worth doing
-   before this milestone's fixtures show up in `dotnet test` output
-   out of numeric order.
+   access rather than just display strings/booleans.
 5. `variable-definitions` — capturing a block's rendered output into a
    named, positionally-scoped variable. `definition-boolean` and
    `definition-object` done. `definition-list-separator` — the group's
