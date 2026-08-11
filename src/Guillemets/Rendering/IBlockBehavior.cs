@@ -1,6 +1,6 @@
-using Guillemets.Ast.Rendering;
+using Guillemets.Ast;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal interface IBlockBehavior
 {

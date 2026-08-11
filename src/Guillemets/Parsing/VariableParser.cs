@@ -1,8 +1,7 @@
 using Guillemets.Ast;
+using Guillemets.Rendering;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
-
-using static Guillemets.Tokenization.Symbols;
 
 namespace Guillemets.Parsing;
 
@@ -17,7 +16,7 @@ internal class VariableParser(TokenCursor _tokens)
         var chain = new PropertyChainBuilder();
         while (true)
         {
-            if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {OPEN}{CLOSE}", open.Position); }
+            if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed variable", open.Position); }
             if (_tokens.Current is CloseToken) { break; }
 
             if (_tokens.Current is NegationToken)

@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Guillemets;
 
-public static class JTokenTemplateExtensions
+public static class JTokenExtensions
 {
     public static string Render(this Template template, JToken data) =>
         template.Render(new JTokenDataSource(data));

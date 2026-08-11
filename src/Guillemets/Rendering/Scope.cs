@@ -1,7 +1,7 @@
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal record Scope(IDataSource Data,
     Scope? Parent = null,

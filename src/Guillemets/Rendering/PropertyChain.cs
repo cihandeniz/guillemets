@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal class PropertyChain(IList<string> properties,
     bool lastSegmentNegated = false

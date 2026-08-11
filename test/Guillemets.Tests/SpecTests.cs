@@ -105,10 +105,11 @@ public class SpecTests
     public void Fixture_ThrowsExpectedError(string templatePath, string dataPath, string errorPath)
     {
         var template = File.ReadAllText(templatePath);
-        var expectedError = File.ReadAllText(errorPath);
+        var expectedError = File.ReadAllText(errorPath).Trim();
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template).Render(ReadData(dataPath)));
+            () => Template.Create(template).Render(ReadData(dataPath))
+        );
 
         exception.Message.ShouldBe(expectedError);
     }

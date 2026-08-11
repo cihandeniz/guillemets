@@ -1,8 +1,9 @@
+// TODO REFACTOR
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
 using Humanizer;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal class PropertyResolver(VariableStore variables)
 {

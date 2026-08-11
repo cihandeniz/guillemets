@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Guillemets;
 
-public static class JsonElementTemplateExtensions
+public static class JsonElementExtensions
 {
     static readonly JsonElement EMPTY_OBJECT = JsonDocument.Parse("{}").RootElement;
 

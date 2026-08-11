@@ -2,7 +2,7 @@ using Guillemets.Data;
 using Guillemets.Data.Primitives;
 using Humanizer;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal class VariableStore
 {

@@ -7,7 +7,7 @@ static class SpecsRoot
     static string Find()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(System.IO.Path.Combine(dir.FullName, "Guillemets.slnx")))
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Guillemets.slnx")))
         {
             dir = dir.Parent;
         }
@@ -18,6 +18,6 @@ static class SpecsRoot
                 "Could not locate repo root (Guillemets.slnx) from test assembly location.");
         }
 
-        return System.IO.Path.Combine(dir.FullName, "specs");
+        return Path.Combine(dir.FullName, "specs");
     }
 }

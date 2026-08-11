@@ -1,4 +1,4 @@
-using Guillemets.Ast.Rendering;
+using Guillemets.Rendering;
 
 namespace Guillemets.Ast;
 

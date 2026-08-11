@@ -1,4 +1,4 @@
-namespace Guillemets.Ast.Rendering;
+namespace Guillemets.Rendering;
 
 internal record RenderContext(
     PropertyResolver PropertyResolver,

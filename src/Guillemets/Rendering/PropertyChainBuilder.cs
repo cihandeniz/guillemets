@@ -1,4 +1,4 @@
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal class PropertyChainBuilder
 {

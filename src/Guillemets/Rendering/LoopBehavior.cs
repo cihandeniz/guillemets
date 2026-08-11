@@ -1,9 +1,9 @@
-using Guillemets.Ast.Rendering;
+using Guillemets.Ast;
 using Guillemets.Data;
 
 using static Guillemets.Position;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal record LoopBehavior(Scope Scope, IReadOnlyList<IDataSource> Items,
     string? Separator = null

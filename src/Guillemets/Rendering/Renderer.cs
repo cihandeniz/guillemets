@@ -1,9 +1,8 @@
 using Guillemets.Ast;
-using Guillemets.Ast.Rendering;
 using Guillemets.Data;
 using System.Text;
 
-namespace Guillemets;
+namespace Guillemets.Rendering;
 
 internal class Renderer : IRenderer
 {

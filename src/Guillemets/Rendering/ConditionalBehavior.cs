@@ -1,7 +1,7 @@
-using Guillemets.Ast.Rendering;
+using Guillemets.Ast;
 using Guillemets.Data;
 
-namespace Guillemets.Ast;
+namespace Guillemets.Rendering;
 
 internal record ConditionalBehavior(Scope Scope, IDataSource Value)
     : IBlockBehavior

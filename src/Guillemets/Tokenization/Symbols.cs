@@ -2,14 +2,14 @@ namespace Guillemets.Tokenization;
 
 internal static class Symbols
 {
-    public const char OPEN = '«';
-    public const char CLOSE = '»';
-    public const char COLON = ':';
-    public const char TILDE = '~';
-    public const char BANG = '!';
-    public const char EQUALS = '=';
-    public const char OPEN_PAREN = '(';
-    public const char CLOSE_PAREN = ')';
+    const char OPEN = '«';
+    const char CLOSE = '»';
+    const char COLON = ':';
+    const char TILDE = '~';
+    const char BANG = '!';
+    const char EQUALS = '=';
+    const char OPEN_PAREN = '(';
+    const char CLOSE_PAREN = ')';
 
     public static readonly SymbolTree TREE = BuildTree();
 
