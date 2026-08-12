@@ -21,6 +21,7 @@ public class SpecTests
         "07-inline-lists/001-inline-scalar-list",
         "07-inline-lists/002-inline-field-selection",
         "07-inline-lists/003-custom-separator",
+        "07-inline-lists/004-join-last",
         "08-filters/001-date",
         "08-filters/002-currency",
         "08-filters/003-truncate-length",

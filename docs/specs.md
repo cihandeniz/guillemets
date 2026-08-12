@@ -1,36 +1,33 @@
 # Templating
 
-A logicless, markdown-aware template engine designed for non-technical users.
+A logicless, markdown-aware template engine for non-technical authors.
 Syntax is minimal, language-neutral, and keyboard-friendly.
+
+This document uses MUST and SHOULD in the RFC 2119 sense. MUST marks a rule
+the engine enforces — the parser throws `TemplateParseException` if it's
+broken. SHOULD marks a convention this document recommends, which the parser
+does not enforce.
 
 ---
 
 ## Delimiters
 
-`«»` (guillemets) are the sole delimiter characters. They never appear in
-standard markdown, making them unambiguous in any template context.
+`«»` (guillemets) are the only delimiter characters. They never appear in
+standard markdown, so they are unambiguous in any template context.
 
-On Turkish keyboard: `AltGr+Z` = `«`, `AltGr+X` = `»`.
-
-Multi-quote depth (`««`, `«««`, ...) is used for readability at nesting levels.
-The engine accepts any consistent depth — the author chooses based on
+Multi-guillemet depth (`««`, `«««`, ...) exists for readability at nesting
+levels. The engine accepts any consistent depth — the author chooses based on
 surrounding context.
-
-```markdown
-«valid
-until»
-```
-
-resolves identically to `«valid until»`.
 
 ---
 
 ## Schema & Localization
 
-Template authors write variable names using natural, space-separated words —
-whatever terms make sense to them. Developers define the model in English using
-standard naming conventions. A schema bridges the two, since the author's
-business vocabulary won't always match the developer's code vocabulary.
+Template authors write variable names as natural, space-separated words —
+whatever terms make sense to them. Developers name the underlying model in
+English, using standard code naming conventions. A schema bridges the two,
+since the author's business vocabulary won't always match the developer's
+code vocabulary.
 
 ### Template
 
@@ -57,28 +54,34 @@ Company   = company   = Company
 Name      = name      = Name
 ```
 
-Space-separated words in templates map to PascalCase/camelCase in the model.
-They use localization values (case insensitively) of the default language to
-resolve back to property names.
+A template's space-separated words are matched, case-insensitively, against
+the default language's localized terms in the schema. Whatever property name
+a matched term maps to is what gets resolved.
 
 ## Variables
 
-Single-line or multi-line token resolving to a scalar value.
+A single-line or multi-line token that resolves to a scalar value.
 
 ```markdown
 «full name»
 ```
 
+```markdown
+«full
+name»
+```
+
+resolves identically to `«full name»`.
+
 ### Nested Property Access
 
-`:` is the property accessor. It drills into objects and, when encountered on a
+`:` is the property accessor. It drills into objects and, when it lands on a
 list, applies a projection (equivalent to `.Select()`). Chaining across lists
-uses `.SelectMany()` internally to keep the result flat.
+uses `.SelectMany()` internally, so the result stays flat.
 
-Always write a space after `:` (`company: name`, not `company:name`) —
-whitespace normalizes away during parsing either way, so this is a house style
-for readability, not a parser requirement. Follow it in every fixture and
-example.
+Write a space after `:` (`company: name`, not `company:name`). The parser
+ignores whitespace around `:` either way, so this is a style convention,
+SHOULD, not a requirement.
 
 ```
 «company: name»
@@ -88,13 +91,16 @@ example.
 
 ## Blocks
 
-A block opens with `««name` on its own line and closes with `»»` on its own line
-— the double guillemet is what marks this as a block rather than an inline
-variable (see Variables, above, which always uses a single `«»`, even across
-multiple lines). The closing depth must match the opening depth exactly, or the
-engine throws `TemplateParseException`. Deeper depths (`«««`/`»»»`, ...) behave
-identically and exist purely for nesting readability. Behavior is inferred from
-the resolved type of `name`:
+A block opens with `««name` on its own line and closes with `»»` on its own
+line. The double guillemet marks it as a block, not an inline variable — an
+inline variable always uses a single `«»`, even across multiple lines (see
+Variables, above).
+
+The closing depth MUST match the opening depth exactly. Deeper depths
+(`«««`/`»»»`, and so on) behave identically; they only exist to make nested
+blocks easier to read.
+
+Behavior is inferred from the resolved type of `name`:
 
 | Resolved type | Behavior         |
 | ---           | ---              |
@@ -120,7 +126,8 @@ Tax No: «tax no»
 »»
 ```
 
-When a variable does not exist in existing scope, it looks for upper scopes.
+When a variable doesn't exist in the current scope, the engine looks in the
+enclosing scopes.
 
 ```markdown
 Quote No: «quote no»
@@ -136,14 +143,14 @@ month.
 `name` is a property chain, resolved the same way as an inline variable (see
 Nested Property Access, above) — including projection over lists.
 
-If the chain does not resolve to anything at all (e.g. it projects through an
-empty list), the block is treated as falsy, same as an explicit `false` — this
-is not an error.
+If the chain doesn't resolve to anything at all (for example, it projects
+through an empty list), the block is treated as falsy, the same as an
+explicit `false`. This is not an error.
 
-If the chain's last segment is a boolean property projected through a list, the
-block filters the list down to the item(s) where that property is true and
-scopes into the match, rather than collapsing the projected booleans into a
-single truthy/falsy check:
+If the chain's last segment is a boolean property projected through a list,
+the block filters the list down to the item(s) where that property is true
+and scopes into the match, instead of collapsing the projected booleans into
+a single truthy/falsy check:
 
 ```markdown
 ««items: active
@@ -157,8 +164,8 @@ finds the item where `active` is true and renders the body scoped to it —
 
 ### Else
 
-`~` on its own line inside a block separates the truthy and falsy branches. Used
-with boolean blocks and variable definitions.
+`~` on its own line inside a block separates the truthy and falsy branches.
+It's used with boolean blocks and variable definitions.
 
 ```markdown
 ««individual
@@ -168,7 +175,7 @@ Dear representatives of «company name»,
 »»
 ```
 
-Else works also when a given object is null.
+Else also works when an object is null.
 
 ```markdown
 ««company info
@@ -202,13 +209,15 @@ In a longer property chain, only the final segment can be negated:
 «company: !active»
 ```
 
-Negating an earlier segment (e.g. `company: !active: something`) is not
-supported.
+Negating an earlier segment (for example, `company: !active: something`) is
+not supported.
 
 ## Variable Definitions
 
-A block can capture its rendered output into a named variable instead of
-rendering inline. Use `= condition` after the variable name.
+A block can capture its rendered output in a named variable instead of
+rendering it inline. Add `= expression` after the variable name, where
+`expression` is a property chain resolved the same way as a block header
+(see Blocks, above) — boolean → if/else, list → loop, object → scope.
 
 ```markdown
 ««contact person = individual
@@ -218,8 +227,8 @@ representatives of «company name»
 »»
 ```
 
-The defined variable is then available as a plain variable anywhere below its
-definition:
+The defined variable is then available as a plain variable anywhere below
+its definition:
 
 ```markdown
 Dear «contact person»,
@@ -227,14 +236,15 @@ Dear «contact person»,
 This quote has been prepared for «contact person».
 ```
 
-The right-hand side of `=` follows the same context-aware block rules: boolean →
-if/else, list → loop, object → scope.
+If a defined variable's name matches an existing property in the current
+scope, the variable wins — a reference to that name resolves to what was
+defined, not the scope property it shadows.
 
 > [!TIP]
 >
 > Inline ifs are not supported, use variable definitions instead.
 
-### Tables
+## Tables
 
 When a loop block's body is a markdown table, only the third row repeats —
 the first two rows (heading and separator) render once, and any rows after
@@ -251,10 +261,13 @@ the third render once as a footer.
 »»
 ```
 
+A body with fewer than three rows isn't treated as a table — it renders as a
+normal repeating block instead.
+
 ## Inline Lists
 
-A variable that resolves to a list of scalars is automatically joined with `, `
-(comma space) when used inline:
+A variable that resolves to a list of scalars is automatically joined with
+`, ` (comma space) when used inline:
 
 ```markdown
 Tags: «tags»
@@ -270,8 +283,8 @@ When list items are objects, use `:` to project a field:
 «quotes: prices: amount: dollar price»
 ```
 
-The `:` chain resolves lists via projection and flattening, objects via property
-access — whichever the engine encounters at each step.
+At each step, `:` either projects/flattens a list or accesses an object's
+property, depending on what it encounters.
 
 ### Custom Separator
 
@@ -280,6 +293,20 @@ Pass a separator using inner `()` as a named filter:
 ```markdown
 «quote: tags (separator = , )»
 ```
+
+### Last Separator
+
+Repeat the `separator` filter to give a different value to the join right
+before the list's last item — the classic "A, B, and C" style:
+
+```markdown
+«quote: tags (separator = , )(separator = , and )»
+→ philosophy, wisdom, and ancient-greek
+```
+
+The first `(separator = ...)` joins every item except the last pair; the
+second one, if present, replaces just that last join. With two items, only
+the second value is used; with one item, no separator is used at all.
 
 ### Loop Block with Separator
 
@@ -291,17 +318,26 @@ Use the `(separator)` filter on the last line of the block:
 (separator = , )»»
 ```
 
-renders as a comma-separated list when used via `«tags»`. The filter must be
+renders as a comma-separated list when used via `«tags»`. The filter MUST be
 the only thing on that line, immediately before the block's closing `»»` —
-nothing else may share the line, before or after it. When the block has an
-else branch, the filter goes on the last line of whichever branch is last
-(the truthy body when there's no `~`, the falsy body when there is one); `~`
-itself always stays on its own line and is never adjacent to the filter.
+nothing else may share the line, before or after it.
+
+When the block has an else branch, the filter goes on the last line of
+whichever branch renders last: the truthy body if there is no `~`, the falsy
+body if there is one. `~` itself always stays on its own line and is never
+adjacent to the filter.
 
 ## Filters
 
-Inner `(name = value)` syntax passes named filters to the enclosing
+Inner `(name = value)` syntax passes a named filter to the enclosing
 expression. A fixed set of built-in filters is supported:
+
+| Filter      | Value                                        |
+| ---         | ---                                           |
+| `date`      | a date/time format string, e.g. `dd/MM/yyyy`  |
+| `currency`  | a currency symbol prefix, e.g. `$`            |
+| `length`    | a maximum character length to truncate to     |
+| `separator` | the string used to join a list's items        |
 
 ```markdown
 «date (date = dd/MM/yyyy)»
@@ -310,10 +346,15 @@ expression. A fixed set of built-in filters is supported:
 «list: name (separator = , )»
 ```
 
-Filters are positional by name and resolved before the outer expression is
-evaluated.
+Filters are matched by name and resolved before the outer expression is
+evaluated. Repeating `separator` sets a different join before the list's
+last item — see Last Separator, under Inline Lists, above.
 
 ## Full Example — Customer Quote
+
+Field names below mix casing (`Quote No`, `description`) to show that
+resolution is case-insensitive — the same property resolves however the
+author capitalizes it in the template.
 
 ```markdown
 # Quote #«Quote No»
@@ -352,5 +393,5 @@ your satisfaction at every step.
 We look forward to working with you. This quote is valid until
 «valid until». Please don't hesitate to contact us with any questions.
 
-*«Company» — «Date (date = dd/MM/yyyy)»*
+*«Company» — «Date | date: dd/MM/yyyy»*
 ```
