@@ -9,12 +9,13 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 107 passed, 20 skipped, 127 total, 0 failed.
+`dotnet test` is green: 111 passed, 16 skipped, 127 total, 0 failed.
 Milestone 1 (`filter-syntax-redesign`) is mid-implementation — the
-`: `/` | ` grammar, the global `\` escapes, and the `date`/`join`/
-`currency`/`truncate` filters are live; everything still blocked on it is
-listed in `SpecTests.cs`'s `IGNORED_FIXTURES`. Pluggable data sources
-(JSON, POCO, Newtonsoft `JToken`) and `tables` are both done — see
+`: `/` | ` grammar, the global `\` escapes, and every inline filter
+(`date`/`join`/`currency`/`truncate`/`join last`) are live; only the
+block-footer pipeline remains, listed in `SpecTests.cs`'s
+`IGNORED_FIXTURES`. Pluggable data sources (JSON, POCO, Newtonsoft
+`JToken`), `tables`, and `inline-lists` are all done — see
 `docs/architecture.md`.
 
 ## Remaining milestones
@@ -29,9 +30,8 @@ on its grammar.
    grammar with the no-parens, no-`=`, pipe-style pipeline. Grammar and
    escaping rules are fully specified in `docs/specs.md` (Filters,
    Escaping) — that's the authoritative reference, not this file.
-   Tokenizer, inline filters, `date`, `join`, `currency`, and `truncate`
-   are implemented. Still pending:
-   - `JoinLastFilter`.
+   Tokenizer and every inline filter (`date`, `join`, `currency`,
+   `truncate`, `join last`) are implemented. Still pending:
    - A block-footer filter pipeline, accepting any registered filter (not
      just `join`) on the same grammar as the inline form — `BlockParser`
      currently has *no* footer-parsing at all (the old `(name = value)`
@@ -47,28 +47,18 @@ on its grammar.
      type (distinct from the plain `\«`/`\»`/`\\` literal token) so
      `FilterParser` can tell "already unescaped by the tokenizer" apart
      from "raw text to still reinterpret."
-   - `07-inline-lists/003-custom-separator`/`004-join-last` look like
-     pure grammar fixtures but actually also need milestone 2's fix
-     below — `quote: tags` resolves to a single array-valued
-     `IDataSource`, not one per tag, so the filter pipeline never sees
-     more than one value to join.
-2. `inline-lists` (remainder) — `001-inline-scalar-list`/
-   `002-inline-field-selection` (and, per above, `07-inline-lists/003`/
-   `004`) need `VariableNode` to join a resolved list's elements with the
-   default `, ` separator instead of rendering the array's own
-   `AsDisplayString()` (e.g. JSON's raw `["a","b"]`).
-3. `integration` — the full worked example, combining everything above.
+2. `integration` — the full worked example, combining everything above.
    Already has dedicated, currently-`[Ignore]`d coverage in
    `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests`
    — un-ignore all three once this milestone lands, and drop the
    `09-integration` exclusion note in `SpecTests.cs` if it's ever folded
    back into the generic sweep.
-4. `errors` — currently 5 fixtures (`unclosed-guillemet`,
+3. `errors` — currently 5 fixtures (`unclosed-guillemet`,
    `unclosed-block`, `mismatched-block-depth`, `literal-shares-close-line`,
    plus one retired alongside the old filter grammar). Add more error
    cases as new failure modes appear — extend `TemplateParseException`
    usage rather than introducing ad hoc exceptions.
-5. `schema-localization` — true schema/localization remapping (business
+4. `schema-localization` — true schema/localization remapping (business
    term ≠ property name), per "Schema & Localization" in `docs/specs.md`:
    a mapping table (`Localized Term = template token = PropertyName`)
    resolved case-insensitively against the default language, for cases

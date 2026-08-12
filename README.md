@@ -52,7 +52,7 @@ alongside the built-ins (`join`, `date`):
 
 ```csharp
 var template = Template.Create(text,
-    filters => filters.Register("upper", new UpperFilter())
+    filters => filters.Register<UpperFilter>()
 );
 ```
 
@@ -60,7 +60,10 @@ var template = Template.Create(text,
 `IEnumerable<string> Apply(IEnumerable<string> values, string? arg)` to add
 one. Every filter maps over the current sequence of values and hands back a
 sequence in turn — a single-value filter like `date` returns one string per
-input, while a collapsing filter like `join` returns a shorter sequence.
+input, while a collapsing filter like `join` returns a shorter sequence. The
+name a template uses to invoke a filter is derived from its class name — drop
+the `Filter` suffix and lowercase it, so `UpperFilter` is invoked as
+`«text | upper»`.
 
 ## Development
 

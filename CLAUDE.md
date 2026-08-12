@@ -272,6 +272,14 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   actually refactor (correct layering, remove duplication, apply the style rules
   above) rather than leaving cleanup for later. Report and let the fixture's
   author/reviewer weigh in before moving to the next one.
+- **When the user says "reviewed" (with no further detail), grep the touched
+  files for `TODO` before doing anything else.** The user's review workflow is
+  to read the diff and leave inline `// TODO ...` comments marking what they
+  want changed, rather than typing it all out in chat. If any are found,
+  address each one (the TODO comment itself gets removed once resolved — it's
+  a review note, not documentation) and rerun `dotnet test`; if none are
+  found, say so and move straight to wrapping up/parking or continuing, per
+  what the user asks next.
 - **A redesign spanning multiple fixtures gets its own checkpoint before any
   code changes.** When a change is bigger than one fixture (a grammar
   redesign, a rename, dropping a restriction — anything touching several

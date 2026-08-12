@@ -20,18 +20,11 @@ public class SpecTests
         "05-variable-definitions/004a-populated",
         "05-variable-definitions/004b-empty",
         "05-variable-definitions/006-definition-list-multi-filter-footer",
-        "07-inline-lists/003-custom-separator",
-        "07-inline-lists/004-join-last",
         "08-filters/004-join-default-inline",
         "08-filters/005-join-default-block-footer",
         "08-filters/006-join-escaped-newline",
         "08-filters/007-join-escaped-tab",
         "08-filters/008-join-escaped-pipe",
-
-        // PLAN.md milestone 4, "inline-lists" (remainder): VariableNode
-        // doesn't yet join a resolved list's elements when no filter ran.
-        "07-inline-lists/001-inline-scalar-list",
-        "07-inline-lists/002-inline-field-selection",
     ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
