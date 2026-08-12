@@ -12,6 +12,7 @@ internal static class Symbols
     const char EQUALS = '=';
     const char OPEN_PAREN = '(';
     const char CLOSE_PAREN = ')';
+    const char BACKSLASH = '\\';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -21,6 +22,9 @@ internal static class Symbols
             .Add([OPEN, OPEN], Tokens.OpenBlock, repeat: true)
             .Add([CLOSE], Tokens.Close)
             .Add([CLOSE, CLOSE], Tokens.CloseBlock, repeat: true, newline: true)
+            .Add([BACKSLASH, OPEN], Tokens.Escaped)
+            .Add([BACKSLASH, CLOSE], Tokens.Escaped)
+            .Add([BACKSLASH, BACKSLASH], Tokens.Escaped)
             .Add([COLON], Tokens.Colon)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)

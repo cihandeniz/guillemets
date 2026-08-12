@@ -30,9 +30,6 @@ public class SpecTests
         "08-filters/006-join-escaped-newline",
         "08-filters/007-join-escaped-tab",
         "08-filters/008-join-escaped-pipe",
-        "12-escaping/001-guillemets-and-backslash",
-        "12-escaping/002-close-inside-block",
-        "12-escaping/005-double-backslash-before-guillemet",
 
         // PLAN.md milestone 4, "inline-lists" (remainder): VariableNode
         // doesn't yet join a resolved list's elements when no filter ran.
