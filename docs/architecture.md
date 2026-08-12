@@ -86,6 +86,15 @@ its cursor past it. Anything the tree doesn't recognize accumulates as
 plain text and becomes a `LiteralToken` once a real match (or the end of
 the template) flushes it.
 
+`\«`, `\»`, and `\\` resolve to an `EscapedToken` instead of a plain
+`LiteralToken` — same `Text`, but a distinct type. `EscapedToken`
+inherits `LiteralToken`, so every other parser that pattern-matches on
+`LiteralToken` still sees it. Only `FilterParser` cares about the
+difference: inside a filter value, an *unescaped* `\n`/`\t`/`\|` means
+"literal newline/tab/pipe," but a global escape already resolved to one
+of those characters must not be reinterpreted a second time. The
+distinct type is what lets it tell the two apart.
+
 ## Parsing, in more detail
 
 ```mermaid

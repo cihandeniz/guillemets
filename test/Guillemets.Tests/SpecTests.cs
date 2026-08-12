@@ -22,9 +22,6 @@ public class SpecTests
         "05-variable-definitions/006-definition-list-multi-filter-footer",
         "08-filters/004-join-default-inline",
         "08-filters/005-join-default-block-footer",
-        "08-filters/006-join-escaped-newline",
-        "08-filters/007-join-escaped-tab",
-        "08-filters/008-join-escaped-pipe",
     ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>

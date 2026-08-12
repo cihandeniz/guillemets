@@ -9,14 +9,14 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 111 passed, 16 skipped, 127 total, 0 failed.
+`dotnet test` is green: 114 passed, 13 skipped, 127 total, 0 failed.
 Milestone 1 (`filter-syntax-redesign`) is mid-implementation — the
-`: `/` | ` grammar, the global `\` escapes, and every inline filter
-(`date`/`join`/`currency`/`truncate`/`join last`) are live; only the
-block-footer pipeline remains, listed in `SpecTests.cs`'s
-`IGNORED_FIXTURES`. Pluggable data sources (JSON, POCO, Newtonsoft
-`JToken`), `tables`, and `inline-lists` are all done — see
-`docs/architecture.md`.
+`: `/` | ` grammar, the global `\` escapes, the scoped `\n`/`\t`/`\|`
+filter-value escapes, and every inline filter (`date`/`join`/`currency`/
+`truncate`/`join last`) are live; only the block-footer pipeline remains,
+listed in `SpecTests.cs`'s `IGNORED_FIXTURES`. Pluggable data sources
+(JSON, POCO, Newtonsoft `JToken`), `tables`, and `inline-lists` are all
+done — see `docs/architecture.md`.
 
 ## Remaining milestones
 
@@ -31,7 +31,11 @@ on its grammar.
    escaping rules are fully specified in `docs/specs.md` (Filters,
    Escaping) — that's the authoritative reference, not this file.
    Tokenizer and every inline filter (`date`, `join`, `currency`,
-   `truncate`, `join last`) are implemented. Still pending:
+   `truncate`, `join last`) are implemented, including the scoped
+   `\n`/`\t`/`\|` filter-value escapes (their own `EscapedToken` type,
+   a `LiteralToken` subtype, keeps them distinguishable in `FilterParser`
+   from ordinary unescaped text — see `docs/architecture.md`). Still
+   pending:
    - A block-footer filter pipeline, accepting any registered filter (not
      just `join`) on the same grammar as the inline form — `BlockParser`
      currently has *no* footer-parsing at all (the old `(name = value)`
@@ -43,10 +47,6 @@ on its grammar.
    - How a filter learns whether it's running inline vs. as a block
      footer, for `join`'s bare-name default (`, ` inline, newline as a
      footer) — undecided; needed before `08-filters/004`/`005`.
-   - The scoped `\|`/`\n`/`\t` filter-value escapes need their own token
-     type (distinct from the plain `\«`/`\»`/`\\` literal token) so
-     `FilterParser` can tell "already unescaped by the tokenizer" apart
-     from "raw text to still reinterpret."
 2. `integration` — the full worked example, combining everything above.
    Already has dedicated, currently-`[Ignore]`d coverage in
    `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests`

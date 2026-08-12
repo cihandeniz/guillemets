@@ -1,4 +1,6 @@
 using static Guillemets.Position;
+using static Guillemets.Tokens.EscapedToken;
+using static Guillemets.Tokens.PipeToken;
 
 namespace Guillemets.Tokenization;
 
@@ -10,9 +12,7 @@ internal static class Symbols
     const char TILDE = '~';
     const char BANG = '!';
     const char EQUALS = '=';
-    const char BACKSLASH = '\\';
     const char SPACE = ' ';
-    const char PIPE = '|';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -26,7 +26,7 @@ internal static class Symbols
             .Add([BACKSLASH, CLOSE], Tokens.Escaped)
             .Add([BACKSLASH, BACKSLASH], Tokens.Escaped)
             .Add([COLON, SPACE], Tokens.Colon)
-            .Add([SPACE, PIPE, SPACE], Tokens.Pipe)
+            .Add([SPACE, DELIMITER, SPACE], Tokens.Pipe)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)
             .Add([EQUALS], Tokens.Equals)

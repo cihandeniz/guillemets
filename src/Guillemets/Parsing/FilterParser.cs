@@ -4,10 +4,18 @@ using Guillemets.Tokenization;
 using Guillemets.Tokens;
 using System.Text;
 
+using static Guillemets.Position;
+using static Guillemets.Tokens.EscapedToken;
+using static Guillemets.Tokens.PipeToken;
+
 namespace Guillemets.Parsing;
 
 internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
 {
+    static readonly string ESCAPED_NEWLINE = $"{BACKSLASH}n";
+    static readonly string ESCAPED_TAB = $"{BACKSLASH}t";
+    static readonly string ESCAPED_PIPE = $"{BACKSLASH}{DELIMITER}";
+
     public IReadOnlyList<FilterNode> ParsePipeline()
     {
         var stages = new List<FilterNode>();
@@ -36,20 +44,33 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     }
 
     string ReadName() =>
-        ReadText().Trim();
+        ReadText(unescape: false).Trim();
 
     string ReadValue() =>
-        ReadText();
+        ReadText(unescape: true);
 
-    string ReadText()
+    string ReadText(bool unescape)
     {
         var builder = new StringBuilder();
         while (_tokens.Current is LiteralToken or NewlineToken)
         {
-            builder.Append(_tokens.Current is NewlineToken ? " " : ((LiteralToken)_tokens.Current).Text);
+            builder.Append(SegmentText(_tokens.Current, unescape));
             _tokens.Advance();
         }
 
         return builder.ToString();
     }
+
+    static string SegmentText(IToken token, bool unescape) => token switch
+    {
+        NewlineToken => " ",
+        EscapedToken escaped => escaped.Text,
+        LiteralToken literal => unescape ? Unescape(literal.Text) : literal.Text,
+        _ => throw new InvalidOperationException($"Unexpected token '{token.GetType().Name}' in filter text."),
+    };
+
+    static string Unescape(string text) =>
+        text.Replace(ESCAPED_NEWLINE, NEWLINE.ToString())
+            .Replace(ESCAPED_TAB, TAB.ToString())
+            .Replace(ESCAPED_PIPE, DELIMITER.ToString());
 }

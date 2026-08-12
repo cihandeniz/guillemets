@@ -7,7 +7,7 @@ internal static class Tokens
     public static LiteralToken Literal(TokenContext context) =>
         new(context.Text, context.Position);
 
-    public static LiteralToken Escaped(TokenContext context) =>
+    public static EscapedToken Escaped(TokenContext context) =>
         new(context.Text[1..], context.Position);
 
     public static OpenToken Open(TokenContext context) =>
