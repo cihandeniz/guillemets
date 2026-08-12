@@ -1,263 +1,144 @@
 # Architecture
 
-This describes how the engine is built today.
+This describes how the engine is built, at a high level. For exact
+signatures and algorithms, read the code. For behavior, see
+[specs.md](specs.md).
 
-For the full syntax and behavior spec, see [specs.md](specs.md).
+## The pipeline
 
-## The pipeline, in one picture
-
-A template string becomes a `Template`. A `Template` plus some data becomes
-output.
+A template string becomes a `Template`. A `Template` plus some data
+becomes output.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Create["Template.Create(text)"]
         direction LR
         A[Template text] --> B[Tokenizer]
-        B --> C[TokenCursor]
-        C --> D[Parser]
-        D --> E["Ast nodes"]
+        B --> C[Parser]
+        C --> D["Ast nodes"]
     end
 
     subgraph Render["template.Render(data)"]
         direction LR
-        E --> F[Renderer]
-        G[IDataSource] --> F
-        F --> H[Output string]
+        D --> E[Renderer]
+        F[IDataSource] --> E
+        E --> G[Output string]
     end
 ```
 
-`Template.Create(text)` tokenizes and parses once, giving back a `Template` —
-just the parsed tree, nothing render-specific yet. `template.Render(data)`
-walks that tree against some data and produces a string. You can call
-`Render` as many times as you like, with different data each time; the
-`Template` itself never changes.
+`Template.Create` tokenizes and parses once, giving back a parsed tree
+with nothing render-specific in it. `template.Render(data)` walks that
+tree against some data and produces a string — call it as many times as
+you like, with different data each time; the `Template` itself never
+changes.
 
-## Tokenization
+## Namespaces
 
-The tokenizer turns raw template text into a flat list of tokens: `OpenToken`,
-`CloseBlockToken`, `LiteralToken`, and so on.
+- **`Tokenization`** turns raw text into a flat list of tokens, driven by
+  a trie of the engine's fixed symbols and multi-character runs. It has
+  no idea what any of it means.
+- **`Parsing`** is recursive-descent, one small class per kind of node,
+  wired together through a small type-keyed registry rather than a DI
+  framework.
+- **`Ast`** holds the parsed tree: plain data, mostly `IRenderable` nodes
+  plus a couple of pure data records that never render on their own.
+- **`Rendering`** walks the `Ast` against a `Scope` (the current data plus
+  a link to its parent, for property fallback and loop-relative magic
+  variables) and produces the output string. Property lookup — including
+  scope fallback and the "filtered items" loop case — lives here too.
+- **`Data`** adapts external data formats (JSON, POCO, Newtonsoft) behind
+  one small interface, so the rest of the engine never touches a concrete
+  format.
+- **`Filters`** are the pluggable value-transform pipeline stages behind
+  `«expr | filter: arg»` and the block-footer join.
 
-`SymbolTree` is a trie of the special characters (`«`, `»`, `~`, `:`, `!`,
-`=`, `(`, `)`, and the newline itself). It always matches the longest run it
-can, backtracking if that run turns out invalid — this is how `«` vs. `««`
-vs. `«««` (block depth) falls out for free, without any special-casing.
+## Tokenization, in more detail
 
-`Tokenizer` makes one pass over the text. It doesn't know what the symbols
-mean; it just asks `SymbolTree` how far the next token extends and moves on.
-Every `\n` becomes its own `NewlineToken`, so a `LiteralToken` never spans
-more than one line — line-aware parsers (like `PropertyChainParser` below)
-can just check for a `NewlineToken` instead of scanning literal text for an
-embedded `\n`. The one exception is `»»`/`~`: those still swallow their own
-trailing newline into their own token's text (`SymbolTree`'s `newline: true`
-flag), the same as before this changed.
+`SymbolTree` is a trie: each character read from the template walks one
+level deeper, and reaching a node that has a token factory attached is a
+match. Longest match wins, so `«` vs. `««` vs. `«««` (block depth) falls
+out for free — a `«`-node just loops back to itself, one extra depth per
+repeat, instead of needing separate cases per nesting level.
 
-`TokenCursor` holds the resulting token list plus a read position for the
-parser to walk.
+```mermaid
+flowchart TB
+    Root(("(root)"))
+    Root --> Open["«"] --> OpenToken["Open"]
+    Open --> OpenOpen["« (loops on «)"] --> OpenBlockToken["OpenBlock\n(depth = run length)"]
+    Root --> Close["»"] --> CloseToken["Close"]
+    Close --> CloseClose["» (loops on »)"] --> CloseBlockToken["CloseBlock\n(depth) + trailing newline"]
+    Root --> Esc["backslash"] --> EscChar["« or » or backslash"] --> EscapedToken["Escaped literal"]
+    Root --> ColonSpace[": "] --> ColonToken["Colon"]
+    Root --> SpacePipeSpace[" | "] --> PipeToken["Pipe"]
+    Root -.no match anywhere.-> LiteralToken["Literal (fallback)"]
+```
 
-## Parsing
+Symbols are declared once, in `Symbols.cs`, as named constants fed into a
+fluent tree-builder (`.Add(path, tokenFactory)`, plus a `repeat` flag for
+self-looping runs like `«`/`»`, and a `newline` flag for tokens — `»»`,
+`~` — that also swallow their own trailing line break into the same
+token). Adding a new fixed symbol or multi-character run is one line
+there; nothing else in the tokenizer changes.
 
-Parsing is recursive-descent, with one small parser class per kind of node —
-no single giant `switch` doing all the work.
+`Tokenizer` itself doesn't know what any of this means — it just asks the
+tree how far the next match extends, character by character, and moves
+its cursor past it. Anything the tree doesn't recognize accumulates as
+plain text and becomes a `LiteralToken` once a real match (or the end of
+the template) flushes it.
+
+## Parsing, in more detail
 
 ```mermaid
 flowchart TB
     Parser -->|builds| ParserRegistry
-    ParserRegistry -->|registers| NodesParser
-    ParserRegistry -->|registers| VariableParser
-    ParserRegistry -->|registers| BlockParser
-    ParserRegistry -->|registers| TextParser
-    ParserRegistry -->|registers| FilterParser
-    ParserRegistry -->|registers| PropertyChainParser
-    NodesParser -->|dispatches to| VariableParser
-    NodesParser -->|dispatches to| BlockParser
-    NodesParser -->|dispatches to| TextParser
+    ParserRegistry -->|holds, by type| BodyParser
+    ParserRegistry -->|holds, by type| VariableParser
+    ParserRegistry -->|holds, by type| BlockParser
+    ParserRegistry -->|holds, by type| TextParser
+    ParserRegistry -->|holds, by type| FilterParser
+    ParserRegistry -->|holds, by type| PropertyChainParser
+    BodyParser -->|dispatches to| VariableParser
+    BodyParser -->|dispatches to| BlockParser
+    BodyParser -->|dispatches to| TextParser
     VariableParser -->|calls| PropertyChainParser
+    VariableParser -->|calls| FilterParser
     BlockParser -->|calls| PropertyChainParser
-    BlockParser -->|recurses via| NodesParser
-    BlockParser -->|calls| FilterParser
+    BlockParser -->|recurses via| BodyParser
 ```
 
-`Parser` is the composition root: it builds a `ParserRegistry` — a
-`Type → IParser` lookup — registering one concrete parser per token type,
-then drives the top-level loop by resolving each token against that
-registry. `NodesParser` is the dispatcher used everywhere else (inside a
-block, or recursively): given a token, it asks the registry to resolve a
-handler and calls it. `VariableParser`, `TextParser`, and `BlockParser` each
-handle one node kind; `BlockParser` is the interesting one, since it also
-checks that a block's closing `»»` matches its opening depth.
+`ParserRegistry` has no opinion on what a "parser" is — each class exposes
+whatever shape actually fits it, rather than all being forced through one
+common interface. `BodyParser` is the one place that switches on a
+token's type to pick a handler; everything else either gets dispatched to
+by it, or is a plain collaborator fetched by type. Collaborators that need
+each other are wired lazily, so registration order never becomes a
+hazard.
 
-Two collaborators are registered the same way but are never reached through
-token dispatch — they're only ever fetched by their own type, via
-`ParserRegistry.Get<T>()`:
-
-- `PropertyChainParser` parses a `«...»`/`««...»` property chain. The
-  mechanics are shared — walk `NegationToken`/`LiteralToken`, with an
-  optional `EqualsToken`-triggered capture of a `name = expr` variable
-  definition — but where the chain *stops* differs: `VariableParser` stops
-  at a `CloseToken`; `BlockParser` stops at a `NewlineToken`, since a block
-  header always ends at end-of-line.
-- `FilterParser` parses `(name = value)` groups, such as `(separator = , )`,
-  into a `FilterNode`. It isn't wired into the normal dispatch table either,
-  because `(` is ordinary text almost everywhere in a template — instead,
-  `BlockParser` asks it to try parsing a filter only in the one place one can
-  legally appear: a line of its own, right before a block's closing `»»`. If
-  that doesn't pan out, the `(` is treated as plain text instead.
-
-## Ast & rendering
-
-Once parsed, the template is a tree of `INode`s that render themselves
-against a `Scope`.
-
-`Scope` wraps the current `IDataSource` plus a link to its parent scope.
-That parent link is how a property lookup falls back to an enclosing scope,
-and how `«first»`/`«last»` reach back to the nearest enclosing loop.
+## Rendering behavior
 
 `BlockNode` looks at what a block's header resolves to and picks a
-behavior: a list becomes a `LoopBehavior`, an object a `ScopeBehavior`,
-anything else a `ConditionalBehavior`. Same syntax every time — only the
-resolved type decides. An optional `(separator = ...)` footer rides along
-and is handed to `LoopBehavior`, which then joins each iteration with that
-separator instead of concatenating them.
+behavior — a list becomes a loop, an object a scope, anything else a
+conditional. Same syntax every time; only the resolved type decides. A
+loop body that starts and ends each line with `|` renders as a markdown
+table instead of a plain repeat, with a heading/divider/footer split out
+from the one row that actually repeats.
 
-### Tables
+## Pluggable data sources & filters
 
-A loop body that starts and ends each line with `|` is a markdown table, not
-a plain repeating block. `LoopBehavior` checks the body's first line for a
-leading `|` (`TABLE_ROW_DELIMITER`), then splits the whole body into rows on
-each `NEWLINE`-producing `LiteralNode`. Fewer than three rows isn't a real
-table — a heading needs its text row plus its `---` divider, and there must
-be at least one row left over for the item template — so `LoopBehavior` falls
-back to rendering the body as a normal repeating block instead.
+`IDataSource` is the one interface the engine talks to for external
+data — object/array/scalar shape, property lookup, boolean coercion,
+display string. JSON, POCO, and Newtonsoft `JToken` are the three
+built-in adapters, all shipped in the one package; anyone can add
+another.
 
-With three or more rows, the first two are the heading and render once, the
-third is the per-item template and repeats like any other loop body, and any
-rows after that are a footer that also renders once. Heading and footer rows
-render against the loop's own scope rather than an item's, so a footer row
-can reach past the list to a property on the block's parent (a subtotal
-computed alongside the list, say) the same way any other lookup falls back to
-an enclosing scope.
-
-`PropertyResolver` does the actual property lookup: walking up parent scopes
-to find who owns a property, and handling the "filtered items" case where
-`items: active` loops over only the items whose `active` is true.
-
-`VariableStore` backs `««name = ...»»` definitions. A captured value is just
-the rendered string, wrapped as a `StringDataSource` — no round-trip through
-JSON needed.
-
-## Pluggable data sources
-
-The Ast layer never talks to `JsonElement` or reflection directly. It only
-knows about one small interface:
-
-```csharp
-public interface IDataSource
-{
-    DataKind Kind { get; }   // Object, Array, String, Number, Boolean, Null, Undefined
-    bool TryGetProperty(string name, out IDataSource value);
-    IEnumerable<IDataSource> EnumerateArray();
-    bool AsBoolean();
-    string? AsDisplayString();
-
-    IDataSource Negate() => AsBoolean() ? BooleanDataSource.FALSE : BooleanDataSource.TRUE;
-}
-```
-
-`Negate` is a default interface method — it's fully derived from
-`AsBoolean()`, so none of the adapters need to implement it themselves.
-
-Anyone can implement this to plug in a new data format. Today there are
-three built-in adapters, plus a few internal sentinel values, all shipped in
-the one `Guillemets` package:
-
-```mermaid
-classDiagram
-    class IDataSource {
-        <<interface>>
-        +Kind DataKind
-        +TryGetProperty(name) bool
-        +EnumerateArray() IEnumerable
-        +AsBoolean() bool
-        +AsDisplayString() string
-    }
-    class JsonElementDataSource
-    class PocoDataSource
-    class JTokenDataSource
-    class BooleanDataSource
-    class StringDataSource
-    class UndefinedDataSource
-
-    IDataSource <|.. JsonElementDataSource : public
-    IDataSource <|.. PocoDataSource : public
-    IDataSource <|.. JTokenDataSource : public
-    IDataSource <|.. BooleanDataSource : internal
-    IDataSource <|.. StringDataSource : internal
-    IDataSource <|.. UndefinedDataSource : internal
-```
-
-`JsonElementDataSource` adapts `System.Text.Json.JsonElement`.
-`PocoDataSource` adapts any plain C# object via reflection, exact-case, the
-same as the JSON side. `JTokenDataSource` adapts
-`Newtonsoft.Json.Linq.JToken` — the handful of `JTokenType` kinds that
-`DataKind` has no equivalent for collapse into `String` (still displayable)
-or `Undefined` (structural/rare tokens like comments).
-
-`BooleanDataSource`, `StringDataSource`, and `UndefinedDataSource` are
-internal sentinel values used inside the engine itself — negation results,
-magic loop variables, captured variable strings, "this property doesn't
-exist." They aren't adapters, so unlike the three above they stay internal.
-
-Each adapter also brings a friendlier way to call `Render`, as an extension
-method on `Template`: `template.Render(jsonElement)`,
-`template.Render(jToken)`, `template.RenderObject(poco)`. These live
-alongside their adapter's data source but sit in the plain `Guillemets`
-namespace, so anyone who already has `using Guillemets;` gets them for free.
-
-The actual rendering work happens in `Renderer`, which is built fresh for
-every call to `Render` — so a single `Template` is safe to reuse across many
-renders, even concurrently.
-
-## Pluggable filters
-
-Filters follow the same shape as data sources: one small interface, and
-callers pass instances in from outside rather than the engine hard-coding
-them.
-
-```csharp
-public interface IFilter
-{
-    string Apply(IReadOnlyList<string> values, IReadOnlyList<string> args);
-}
-```
-
-`FilterRegistry` maps a name to an `IFilter`. `Template.Create` builds it
-with the one built-in — `"separator"` → `SeparatorFilter` — then hands it
-to an optional `Action<FilterRegistry>` callback, so a caller can add more
-without ever constructing or holding the registry itself:
-
-```csharp
-var template = Template.Create(text,
-    filters => filters.Register("upper", new UpperFilter())
-);
-```
-
-`SeparatorFilter` does the actual joining behind `(separator = ...)`, both
-the inline form and the loop-block footer. It stays `internal` — callers
-only ever reach it by the name `"separator"`, never by type. That also means
-the loop-block footer position specifically requires the real
-`SeparatorFilter` type, not just a filter registered under that name — a
-custom filter has no template-syntax hook to be invoked from yet, since the
-only place `(name = value)` is recognized today is that one footer position.
+`IFilter` is the one interface behind `«expr | filter: arg»` — a
+sequence-in, sequence-out pipeline stage. `Template.Create` takes an
+optional callback so callers can register their own alongside the
+built-ins (see `README.md`'s Custom filters section).
 
 ## Tests
 
-`JsonElementDataSourceTests`, `PocoDataSourceTests`, and
-`JTokenDataSourceTests` unit-test each `IDataSource` adapter directly,
-without going through `Template` at all. `JsonIntegrationTests`,
-`PocoIntegrationTests`, and `JTokenIntegrationTests` are black-box instead,
-going through `Template.Create(...).Render(...)`.
-
-The `/specs` fixture corpus itself is the main acceptance suite, run once
-through `SpecTests` against JSON data — the other two adapters get a small
-targeted suite each rather than re-running the whole corpus three times.
+The `/specs` fixture corpus is the main acceptance suite, run once
+through `SpecTests` against JSON data. Each other data-source adapter
+gets a smaller, targeted test suite instead of re-running the whole
+corpus.

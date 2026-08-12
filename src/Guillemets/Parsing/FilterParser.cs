@@ -2,69 +2,54 @@ using Guillemets.Ast;
 using Guillemets.Filters;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Guillemets.Parsing;
 
 internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
-    : IParser
 {
-    public INode Parse(IToken token)
+    public IReadOnlyList<FilterNode> ParsePipeline()
     {
-        if (!TryParse(out var filter))
+        var stages = new List<FilterNode>();
+        while (_tokens.Current is PipeToken)
         {
-            throw new TemplateParseException("Expected a filter in the form (name = value)", token.Position);
+            _tokens.Advance();
+            stages.Add(ParseStage());
         }
 
-        return filter;
+        return stages;
     }
 
-    public bool TryParse([NotNullWhen(true)] out FilterNode? filter)
+    FilterNode ParseStage()
     {
-        filter = null;
-        var start = _tokens.Position;
+        var position = _tokens.Current.Position;
+        var name = ReadName();
+        if (!_filters.TryGet(name, out var filter))
+        {
+            throw new TemplateParseException($"Unknown filter '{name}'", position);
+        }
 
-        if (_tokens.Current is not OpenParenToken) { return false; }
+        if (_tokens.Current is not ColonToken) { return new FilterNode(filter, null); }
         _tokens.Advance();
 
-        if (!TryReadUntil<EqualsToken>(out var rawName) || !TryReadUntil<CloseParenToken>(out var rawValue))
-        {
-            _tokens.Rewind(start);
-
-            return false;
-        }
-
-        if (!_filters.TryGet(rawName.Trim(), out var resolvedFilter))
-        {
-            _tokens.Rewind(start);
-
-            return false;
-        }
-
-        filter = new FilterNode(resolvedFilter, [rawValue.TrimStart()]);
-
-        return true;
+        return new FilterNode(filter, ReadValue());
     }
 
-    bool TryReadUntil<TTerminator>(out string text) where TTerminator : IToken
+    string ReadName() =>
+        ReadText().Trim();
+
+    string ReadValue() =>
+        ReadText();
+
+    string ReadText()
     {
         var builder = new StringBuilder();
-        while (true)
+        while (_tokens.Current is LiteralToken or NewlineToken)
         {
-            if (_tokens.AtEnd) { text = ""; return false; }
-            if (_tokens.Current is TTerminator)
-            {
-                _tokens.Advance();
-                text = builder.ToString();
-
-                return true;
-            }
-
-            if (_tokens.Current is not LiteralToken literal) { text = ""; return false; }
-
-            builder.Append(literal.Text);
+            builder.Append(_tokens.Current is NewlineToken ? " " : ((LiteralToken)_tokens.Current).Text);
             _tokens.Advance();
         }
+
+        return builder.ToString();
     }
 }

@@ -4,6 +4,16 @@ namespace Guillemets.Filters;
 
 public class FilterRegistry
 {
+    public static FilterRegistry CreateDefault(Action<FilterRegistry> configureFilters)
+    {
+        var result = new FilterRegistry()
+            .Register("join", new JoinFilter())
+            .Register("date", new DateFilter());
+        configureFilters(result);
+
+        return result;
+    }
+
     readonly Dictionary<string, IFilter> _filters = [];
 
     public FilterRegistry Register(string name, IFilter filter)

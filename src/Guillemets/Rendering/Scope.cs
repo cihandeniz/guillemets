@@ -1,3 +1,4 @@
+using Guillemets.Ast;
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
 using Humanizer;
@@ -37,7 +38,7 @@ internal record Scope(IDataSource Data,
         return MAGIC_NAMES.Contains(name) && Parent is not null && Parent.TryGetMagic(property, negated, out value);
     }
 
-    public Scope FindOwner(PropertyChain properties)
+    public Scope FindOwner(PropertyChainNode properties)
     {
         if (properties.Count == 0 || HasProperty(properties[0])) { return this; }
 

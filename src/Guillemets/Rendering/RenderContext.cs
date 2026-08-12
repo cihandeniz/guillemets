@@ -2,6 +2,6 @@ namespace Guillemets.Rendering;
 
 internal record RenderContext(
     PropertyResolver PropertyResolver,
-    IRenderer Renderer,
+    Renderer Renderer,
     VariableStore Variables
 );

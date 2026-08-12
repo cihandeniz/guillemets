@@ -4,5 +4,5 @@ namespace Guillemets.Rendering;
 
 internal interface IBlockBehavior
 {
-    string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody);
+    string Render(RenderContext context, IReadOnlyList<IRenderable> body, IReadOnlyList<IRenderable>? elseBody);
 }

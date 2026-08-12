@@ -22,7 +22,6 @@ public class SpecTests
         "05-variable-definitions/006-definition-list-multi-filter-footer",
         "07-inline-lists/003-custom-separator",
         "07-inline-lists/004-join-last",
-        "08-filters/001-date",
         "08-filters/002-currency",
         "08-filters/003-truncate-length",
         "08-filters/004-join-default-inline",

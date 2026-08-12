@@ -5,9 +5,8 @@ using Guillemets.Tokens;
 namespace Guillemets.Parsing;
 
 internal class TextParser(TokenCursor _tokens)
-    : IParser
 {
-    public INode Parse(IToken token)
+    public IRenderable Parse(IToken token)
     {
         var textToken = (ITextToken)token;
         _tokens.Advance();

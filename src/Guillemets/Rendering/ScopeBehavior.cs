@@ -6,6 +6,6 @@ namespace Guillemets.Rendering;
 internal class ScopeBehavior(Scope _scope, IDataSource _value)
     : IBlockBehavior
 {
-    public string Render(RenderContext context, IReadOnlyList<INode> body, IReadOnlyList<INode>? elseBody) =>
-        context.Renderer.RenderAll(body, new Scope(_value, Parent: _scope));
+    public string Render(RenderContext context, IReadOnlyList<IRenderable> body, IReadOnlyList<IRenderable>? elseBody) =>
+        context.Renderer.Render(body, new(_value, Parent: _scope));
 }

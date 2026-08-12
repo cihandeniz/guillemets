@@ -10,9 +10,9 @@ internal static class Symbols
     const char TILDE = '~';
     const char BANG = '!';
     const char EQUALS = '=';
-    const char OPEN_PAREN = '(';
-    const char CLOSE_PAREN = ')';
     const char BACKSLASH = '\\';
+    const char SPACE = ' ';
+    const char PIPE = '|';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -25,11 +25,10 @@ internal static class Symbols
             .Add([BACKSLASH, OPEN], Tokens.Escaped)
             .Add([BACKSLASH, CLOSE], Tokens.Escaped)
             .Add([BACKSLASH, BACKSLASH], Tokens.Escaped)
-            .Add([COLON], Tokens.Colon)
+            .Add([COLON, SPACE], Tokens.Colon)
+            .Add([SPACE, PIPE, SPACE], Tokens.Pipe)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)
             .Add([EQUALS], Tokens.Equals)
-            .Add([OPEN_PAREN], Tokens.OpenParen)
-            .Add([CLOSE_PAREN], Tokens.CloseParen)
             .Add([NEWLINE], Tokens.Newline);
 }

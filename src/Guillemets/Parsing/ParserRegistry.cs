@@ -1,15 +1,13 @@
-using Guillemets.Tokens;
-
 namespace Guillemets.Parsing;
 
 internal class ParserRegistry
 {
-    readonly Dictionary<Type, Func<ParserRegistry, IParser>> _factories = [];
-    readonly Dictionary<Type, IParser> _parsers = [];
+    readonly Dictionary<Type, Func<ParserRegistry, object>> _factories = [];
+    readonly Dictionary<Type, object> _parsers = [];
 
-    public ParserRegistry Register<T>(Func<ParserRegistry, IParser> factory)
+    public ParserRegistry Register<T>(Func<ParserRegistry, T> factory) where T : notnull
     {
-        _factories[typeof(T)] = factory;
+        _factories[typeof(T)] = pr => factory(pr);
 
         return this;
     }
@@ -24,16 +22,9 @@ internal class ParserRegistry
         return this;
     }
 
-    public T Get<T>() where T : IParser =>
+    public T Get<T>() where T : notnull =>
         (T)_parsers[typeof(T)];
 
-    public IParser Resolve(IToken token)
-    {
-        foreach (var (type, parser) in _parsers)
-        {
-            if (type.IsInstanceOfType(token)) { return parser; }
-        }
-
-        throw new TemplateParseException($"Unexpected token '{token.GetType().Name}'", token.Position);
-    }
+    public Lazy<T> GetLazy<T>() where T : notnull =>
+        new(() => Get<T>());
 }

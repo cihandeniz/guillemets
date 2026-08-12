@@ -25,6 +25,9 @@ internal static class Tokens
     public static ColonToken Colon(TokenContext context) =>
         new(context.Text, context.Position);
 
+    public static PipeToken Pipe(TokenContext context) =>
+        new(context.Text, context.Position);
+
     public static NewlineToken Newline(TokenContext context) =>
         new(context.Text, context.Position);
 
@@ -35,11 +38,5 @@ internal static class Tokens
         new(context.Text, context.Position);
 
     public static EqualsToken Equals(TokenContext context) =>
-        new(context.Text, context.Position);
-
-    public static OpenParenToken OpenParen(TokenContext context) =>
-        new(context.Text, context.Position);
-
-    public static CloseParenToken CloseParen(TokenContext context) =>
         new(context.Text, context.Position);
 }

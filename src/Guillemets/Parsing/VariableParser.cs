@@ -5,16 +5,25 @@ using Guillemets.Tokens;
 namespace Guillemets.Parsing;
 
 internal class VariableParser(TokenCursor _tokens, ParserRegistry _registry)
-    : IParser
 {
-    readonly PropertyChainParser _propertyChainParser = _registry.Get<PropertyChainParser>();
+    readonly Lazy<PropertyChainParser> _lazyPropertyChainParser = _registry.GetLazy<PropertyChainParser>();
+    readonly Lazy<FilterParser> _lazyFilterParser = _registry.GetLazy<FilterParser>();
 
-    public INode Parse(IToken token)
+    PropertyChainParser PropertyChainParser => _lazyPropertyChainParser.Value;
+    FilterParser FilterParser => _lazyFilterParser.Value;
+
+    public IRenderable Parse(IToken token)
     {
         var open = (OpenToken)token;
         _tokens.Advance();
-        var chain = _propertyChainParser.Parse(open.Position, stopAtNewline: false);
+        var chain = PropertyChainParser.Parse(open.Position, stopAtNewline: false, stopAtPipe: true);
+        var filters = FilterParser.ParsePipeline();
+        if (_tokens.AtEnd || _tokens.Current is not CloseToken)
+        {
+            throw new TemplateParseException("Unclosed variable", open.Position);
+        }
+        _tokens.Advance();
 
-        return new VariableNode(chain);
+        return new VariableNode(chain, filters);
     }
 }

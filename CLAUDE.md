@@ -150,39 +150,45 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   a DTO or `record`. Real dependencies are constructor-injected and wired up at
   the composition root (`Template.Render`, `Tokenizer.Tokenize()`,
   `Parsing/Parser.cs`). When two collaborators need each other (e.g.
-  `NodesParser` dispatches to `BlockParser`, `BlockParser` recurses back into
-  `NodesParser`), don't resolve the cycle with a mutable/settable field assigned
-  after construction — prefer deferring construction with a factory
-  (`ParserBuilder.Register<TToken>(Func<NodesParser, IParser> factory)`, invoked
-  only once the composition root has something to hand it) or passing the
-  collaborator as an explicit call parameter instead of a stored field,
-  whichever the actual call shape supports.
+  `BodyParser` dispatches to `BlockParser`, `BlockParser` recurses back into
+  `BodyParser`), don't resolve the cycle with a mutable/settable field assigned
+  after construction — use a `Lazy<T>`-backed field resolved through
+  `ParserRegistry.GetLazy<T>()` (a private property of the same name exposes
+  `.Value`), applied uniformly to *every* registry-sourced collaborator, not
+  just the ones that are actually circular, so registration order in
+  `Parser.cs` never becomes a hazard. (`TokenCursor.Rewind`-based speculative
+  parsing — try an interpretation, rewind and fall back if it doesn't pan
+  out — is a legitimate alternative for this general class of problem too;
+  don't treat its absence from the current code as a decision against it.)
 - A type whose only externally-relevant contract is a single interface (nothing
   about the concrete type should be called directly from outside it) implements
   that interface explicitly rather than with a `public` method of the same name
-  — e.g. `Renderer : IRenderer`'s `string IRenderer.RenderAll(...)`,
-  `NodesParser : IParser`'s `INode IParser.Parse(IToken token)`. If the type's
-  own internals still need to call that logic directly (without going through an
-  interface-typed reference), keep a plain private method next to the explicit
-  implementation and have the explicit member forward to it.
+  (`string ISomeInterface.Method(...)`, not `public string Method(...)`). If
+  the type's own internals still need to call that logic directly (without
+  going through an interface-typed reference), keep a plain private method next
+  to the explicit implementation and have the explicit member forward to it.
+  Don't keep an interface around once nothing actually needs it
+  polymorphically — a single-implementation interface that exists only to
+  hand a not-yet-fully-constructed `this` to a collaborator is unnecessary,
+  since `this` is already a valid, fully-typed reference at that point.
 - Inheritance clause (`: Base`/`: IInterface`) on a type with a primary
-  constructor: put it on its own indented line when the constructor's parameter
-  list fits on one line
-  (`internal class VariableParser (TokenCursor _tokens)\n    : IParser`); let it
-  trail the closing `)` on the same line when the parameter list already spans
-  multiple lines
-  (`internal record BlockNode(PropertyChain Properties, ...\n) : INode`) — the
-  parameter list dictates whether the type name and the base type can already be
-  told apart at a glance without the extra line. This applies no matter how
-  short the parameter list is — even a single parameter still forces the
-  inheritance clause onto its own line, and `record` types follow it exactly
-  like `class` types
+  constructor: put it on its own indented line when the constructor's
+  parameter list fits on one line
+  (`internal class LoopBehavior(Scope _scope, IReadOnlyList<IDataSource> _items)\n    : IBlockBehavior`);
+  let it trail the closing `)` on the same line when the parameter list
+  already spans multiple lines
+  (`internal record BlockNode(PropertyChainNode Properties, ...\n) : IRenderable`)
+  — the parameter list dictates whether the type name and the base type can
+  already be told apart at a glance without the extra line. This applies no
+  matter how short the parameter list is — even a single parameter still
+  forces the inheritance clause onto its own line, and `record` types follow
+  it exactly like `class` types
   (`public record JsonElementDataSource(JsonElement Element)\n    : IDataSource`,
   not `public record JsonElementDataSource(JsonElement Element) : IDataSource`).
   A type with *no* primary constructor keeps `: Base` on the declaration line
-  regardless of length (`internal class Renderer : IRenderer`) — this rule only
-  ever triggers once there's a parameter list to compete with the base type for
-  attention.
+  regardless of length (`internal class UndefinedDataSource : IDataSource`) —
+  this rule only ever triggers once there's a parameter list to compete with
+  the base type for attention.
 - A constructor or record-creation call with more than 2 optional/named
   parameters is never written on one line, even when it would fit — break to
   one parameter per line, the same shape a primary constructor's own parameter
@@ -226,11 +232,12 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   returns that value directly, typed explicitly. A method with one primary
   return value plus an optional secondary one uses an `out` parameter for the
   secondary value instead of wrapping both in a record
-  (`BlockParser.ParseHeader(Position openPosition, out string? variableName)`
-  returns the `PropertyChain` directly and hands the captured variable name back
-  via `out`, rather than a `BlockHeader(string?, PropertyChain)` DTO) — matches
-  the pre-existing `SymbolTree.TryMatchSymbol`/`Scope.TryGetMagic` idiom already
-  in this codebase.
+  (`PropertyChainParser.Parse(Position openPosition, bool stopAtNewline, out
+  string? variableName)` returns the `PropertyChainNode` directly and hands
+  the captured variable name back via `out`, rather than a
+  `BlockHeader(string?, PropertyChainNode)` DTO) — matches the pre-existing
+  `SymbolTree.TryMatchSymbol`/`Scope.TryGetMagic` idiom already in this
+  codebase.
 - No comments in source. If code needs one to be understood, that's a signal to
   restructure — extract a well-named method, turn an encoded string/boolean
   convention into a properly-named type or property — not to narrate it in

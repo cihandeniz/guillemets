@@ -1,5 +1,4 @@
 using Guillemets.Ast;
-using Guillemets.Rendering;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
 using System.Text;
@@ -7,9 +6,8 @@ using System.Text;
 namespace Guillemets.Parsing;
 
 internal class PropertyChainParser(TokenCursor _tokens)
-    : IParser
 {
-    static void Flush(StringBuilder buffer, PropertyChainBuilder chain)
+    static void Flush(StringBuilder buffer, PropertyChainNode.Builder chain)
     {
         if (buffer.Length == 0) { return; }
 
@@ -17,19 +15,16 @@ internal class PropertyChainParser(TokenCursor _tokens)
         buffer.Clear();
     }
 
-    INode IParser.Parse(IToken token) =>
-        throw new InvalidOperationException($"{nameof(PropertyChainParser)} does not parse tokens directly.");
+    public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe = false) =>
+        Parse(openPosition, stopAtNewline, stopAtPipe, allowVariableDefinition: false, out _);
 
-    public PropertyChain Parse(Position openPosition, bool stopAtNewline) =>
-        Parse(openPosition, stopAtNewline, allowVariableDefinition: false, out _);
+    public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, out string? variableName) =>
+        Parse(openPosition, stopAtNewline, stopAtPipe: false, allowVariableDefinition: true, out variableName);
 
-    public PropertyChain Parse(Position openPosition, bool stopAtNewline, out string? variableName) =>
-        Parse(openPosition, stopAtNewline, allowVariableDefinition: true, out variableName);
-
-    PropertyChain Parse(Position openPosition, bool stopAtNewline, bool allowVariableDefinition, out string? variableName)
+    PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe, bool allowVariableDefinition, out string? variableName)
     {
         variableName = null;
-        var chain = new PropertyChainBuilder();
+        var chain = new PropertyChainNode.Builder();
         var buffer = new StringBuilder();
         while (true)
         {
@@ -43,7 +38,17 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
-            if (_tokens.Current is CloseToken) { Flush(buffer, chain); break; }
+            if (_tokens.Current is CloseToken)
+            {
+                Flush(buffer, chain);
+
+                break;
+            }
+
+            if (stopAtPipe && _tokens.Current is PipeToken)
+            {
+                Flush(buffer, chain); break;
+            }
 
             if (stopAtNewline && _tokens.Current is NewlineToken)
             {
@@ -82,12 +87,25 @@ internal class PropertyChainParser(TokenCursor _tokens)
             _tokens.Advance();
         }
 
-        if (_tokens.AtEnd || (!stopAtNewline && _tokens.Current is not CloseToken))
+        if (_tokens.AtEnd || (stopAtPipe && _tokens.Current is not (CloseToken or PipeToken)))
+        {
+            throw new TemplateParseException("Unclosed variable", openPosition);
+        }
+
+        if (stopAtPipe)
+        {
+            return chain.Build();
+        }
+
+        if (!stopAtNewline && _tokens.Current is not CloseToken)
         {
             throw new TemplateParseException(stopAtNewline ? "Unclosed block header" : "Unclosed variable", openPosition);
         }
 
-        if (!stopAtNewline) { _tokens.Advance(); }
+        if (!stopAtNewline)
+        {
+            _tokens.Advance();
+        }
 
         return chain.Build();
     }

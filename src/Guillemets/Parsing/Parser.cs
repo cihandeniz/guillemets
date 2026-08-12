@@ -1,29 +1,20 @@
 using Guillemets.Ast;
 using Guillemets.Filters;
 using Guillemets.Tokenization;
-using Guillemets.Tokens;
 
 namespace Guillemets.Parsing;
 
 internal class Parser(TokenCursor _tokens, FilterRegistry _filters)
 {
     readonly ParserRegistry _registry = new ParserRegistry()
-        .Register<NodesParser>(pr => new NodesParser(_tokens, pr))
-        .Register<FilterParser>(_ => new FilterParser(_tokens, _filters))
-        .Register<PropertyChainParser>(_ => new PropertyChainParser(_tokens))
-        .Register<OpenToken>(pr => new VariableParser(_tokens, pr))
-        .Register<OpenBlockToken>(pr => new BlockParser(_tokens, pr))
-        .Register<ITextToken>(_ => new TextParser(_tokens))
+        .Register<TextParser>(_ => new(_tokens))
+        .Register<FilterParser>(_ => new(_tokens, _filters))
+        .Register<PropertyChainParser>(_ => new(_tokens))
+        .Register<VariableParser>(pr => new(_tokens, pr))
+        .Register<BodyParser>(pr => new(_tokens, pr))
+        .Register<BlockParser>(pr => new(_tokens, pr))
         .Build();
 
-    public List<INode> Parse()
-    {
-        var nodes = new List<INode>();
-        while (!_tokens.AtEnd)
-        {
-            nodes.Add(_registry.Resolve(_tokens.Current).Parse(_tokens.Current));
-        }
-
-        return nodes;
-    }
+    public List<IRenderable> Parse() =>
+        _registry.Get<BodyParser>().ParseNodes(insideBlock: false, stopAtElse: false);
 }

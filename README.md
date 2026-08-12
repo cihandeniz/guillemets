@@ -48,7 +48,7 @@ var output = template.Render(data);
 ### Custom filters
 
 `Template.Create` takes an optional callback to register your own filters
-alongside the built-in `separator`:
+alongside the built-ins (`join`, `date`):
 
 ```csharp
 var template = Template.Create(text,
@@ -57,8 +57,10 @@ var template = Template.Create(text,
 ```
 
 `IFilter` is one method — implement
-`string Apply(IReadOnlyList<string> values, IReadOnlyList<string> args)`
-to add one.
+`IEnumerable<string> Apply(IEnumerable<string> values, string? arg)` to add
+one. Every filter maps over the current sequence of values and hands back a
+sequence in turn — a single-value filter like `date` returns one string per
+input, while a collapsing filter like `join` returns a shorter sequence.
 
 ## Development
 

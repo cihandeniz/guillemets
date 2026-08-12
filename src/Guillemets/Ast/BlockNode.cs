@@ -6,11 +6,10 @@ using static Guillemets.Position;
 
 namespace Guillemets.Ast;
 
-internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
-    IReadOnlyList<INode>? ElseBody = null,
-    string? VariableName = null,
-    FilterNode? Separator = null
-) : INode
+internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderable> Body,
+    IReadOnlyList<IRenderable>? ElseBody = null,
+    string? VariableName = null
+) : IRenderable
 {
     public string Render(RenderContext context, Scope scope)
     {
@@ -26,7 +25,7 @@ internal record BlockNode(PropertyChain Properties, IReadOnlyList<INode> Body,
     {
         if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items))
         {
-            return new LoopBehavior(scope, items, Separator);
+            return new LoopBehavior(scope, items);
         }
 
         var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault() ?? UndefinedDataSource.INSTANCE;

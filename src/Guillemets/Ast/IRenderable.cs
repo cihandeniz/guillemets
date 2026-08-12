@@ -2,7 +2,7 @@ using Guillemets.Rendering;
 
 namespace Guillemets.Ast;
 
-internal interface INode
+internal interface IRenderable
 {
     string Render(RenderContext context, Scope scope);
 }

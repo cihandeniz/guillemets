@@ -3,7 +3,7 @@ using Guillemets.Rendering;
 namespace Guillemets.Ast;
 
 internal record LiteralNode(string Text)
-    : INode
+    : IRenderable
 {
     public string Render(RenderContext context, Scope scope) =>
         Text;

@@ -1,3 +1,4 @@
+using Guillemets.Ast;
 using Guillemets.Data;
 using Humanizer;
 using System.Diagnostics.CodeAnalysis;
@@ -6,7 +7,7 @@ namespace Guillemets.Rendering;
 
 internal class PropertyResolver(VariableStore variables)
 {
-    static IEnumerable<IDataSource> Project(IDataSource current, PropertyChain properties)
+    static IEnumerable<IDataSource> Project(IDataSource current, PropertyChainNode properties)
     {
         if (properties.Count == 0)
         {
@@ -44,7 +45,7 @@ internal class PropertyResolver(VariableStore variables)
         }
     }
 
-    static bool TryResolveFilteredItemScope(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    static bool TryResolveFilteredItemScope(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         items = null;
         if (properties.Count <= 1) { return false; }
@@ -52,7 +53,7 @@ internal class PropertyResolver(VariableStore variables)
         var containers = Project(scope.FindOwner(properties).Data, properties.WithoutLast()).ToList();
         if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return false; }
 
-        var lastSegment = new PropertyChain([properties[^1]], properties.LastSegmentNegated);
+        var lastSegment = new PropertyChainNode([properties[^1]], properties.LastSegmentNegated);
 
         items = [.. containers[0].EnumerateArray()
             .Where(item => Project(item, lastSegment).SingleOrDefault()?.AsBoolean() == true)];
@@ -62,7 +63,7 @@ internal class PropertyResolver(VariableStore variables)
 
     public VariableStore Variables { get; } = variables;
 
-    public IEnumerable<IDataSource> Resolve(Scope scope, PropertyChain properties)
+    public IEnumerable<IDataSource> Resolve(Scope scope, PropertyChainNode properties)
     {
         if (properties.Count == 1 && scope.TryGetMagic(properties[0], properties.LastSegmentNegated, out var magic))
         {
@@ -82,11 +83,11 @@ internal class PropertyResolver(VariableStore variables)
         }
     }
 
-    public bool TryResolveLoopItems(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items) =>
+    public bool TryResolveLoopItems(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items) =>
         TryResolveFilteredItemScope(scope, properties, out items) ||
         TryResolveArrayItems(scope, properties, out items);
 
-    bool TryResolveArrayItems(Scope scope, PropertyChain properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    bool TryResolveArrayItems(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         var resolved = Resolve(scope, properties).ToList();
         if (resolved.Count != 1 || resolved[0].Kind != DataKind.Array)
