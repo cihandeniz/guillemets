@@ -1,4 +1,3 @@
-using Guillemets.Filters;
 using Shouldly;
 using System.Text.Json;
 
@@ -6,18 +5,17 @@ namespace Guillemets.Tests;
 
 public class SpecTests
 {
-    // A harmless registered filter besides "separator" -- lets error
-    // fixtures exercise "a filter other than separator isn't allowed as a
-    // block footer" without depending on a real second filter existing.
-    static void ConfigureFilters(FilterRegistry filters) =>
-        filters.Register("dummy", new DummyFilter());
-
     // Fixtures the engine doesn't implement yet. TDD one-case-at-a-time: a
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
+        "02-conditional-blocks/009-corrupted-filter-syntax-in-body",
+        "05-variable-definitions/003-definition-list-join",
+        "05-variable-definitions/004a-populated",
+        "05-variable-definitions/004b-empty",
+        "05-variable-definitions/006-definition-list-multi-filter-footer",
         "07-inline-lists/001-inline-scalar-list",
         "07-inline-lists/002-inline-field-selection",
         "07-inline-lists/003-custom-separator",
@@ -25,28 +23,28 @@ public class SpecTests
         "08-filters/001-date",
         "08-filters/002-currency",
         "08-filters/003-truncate-length",
+        "08-filters/004-join-default-inline",
+        "08-filters/005-join-default-block-footer",
+        "08-filters/006-join-escaped-newline",
+        "08-filters/007-join-escaped-tab",
+        "08-filters/008-join-escaped-pipe",
+        "12-escaping/001-guillemets-and-backslash",
+        "12-escaping/002-close-inside-block",
+        "12-escaping/005-double-backslash-before-guillemet",
     ];
 
-    static IEnumerable<TestCaseData> FixtureCases()
-    {
-        foreach (var expectedPath in CaseFiles(".md"))
-        {
-            var testCase = new TestCaseData(TemplateFor(expectedPath), DataPathFor(expectedPath), expectedPath)
-                .SetName(FixtureName(expectedPath));
-
-            if (IGNORED_FIXTURES.Contains(FixtureName(expectedPath)))
-            {
-                testCase.Ignore("not yet implemented");
-            }
-
-            yield return testCase;
-        }
-    }
+    static IEnumerable<TestCaseData> FixtureCases() =>
+        CaseFiles(".md").Select(TestCaseFor);
 
     static IEnumerable<TestCaseData> ErrorFixtureCases() =>
-        CaseFiles(".error")
-            .Select(errorPath => new TestCaseData(TemplateFor(errorPath), DataPathFor(errorPath), errorPath)
-                .SetName(FixtureName(errorPath)));
+        CaseFiles(".error").Select(TestCaseFor);
+
+    static TestCaseData TestCaseFor(string path)
+    {
+        var testCase = new TestCaseData(TemplateFor(path), DataPathFor(path), path).SetName(FixtureName(path));
+
+        return IGNORED_FIXTURES.Contains(FixtureName(path)) ? testCase.Ignore("not yet implemented") : testCase;
+    }
 
     // Case files are discovered by extension (".md" for success, ".error"
     // for parse errors), excluding *.guil.md templates (which also end in
@@ -103,7 +101,7 @@ public class SpecTests
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = Template.Create(template, ConfigureFilters).Render(ReadData(dataPath));
+        var actual = Template.Create(template).Render(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
@@ -115,7 +113,7 @@ public class SpecTests
         var expectedError = File.ReadAllText(errorPath).Trim();
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template, ConfigureFilters).Render(ReadData(dataPath))
+            () => Template.Create(template).Render(ReadData(dataPath))
         );
 
         exception.Message.ShouldBe(expectedError);

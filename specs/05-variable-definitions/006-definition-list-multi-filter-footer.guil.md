@@ -1,4 +1,4 @@
 ««tags = quote: tags
 «name»
-(separator = , )»»
+length: 5 | join: , »»
 Tags: «tags»

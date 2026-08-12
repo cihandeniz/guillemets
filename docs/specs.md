@@ -21,6 +21,38 @@ surrounding context.
 
 ---
 
+## Escaping
+
+Only a character that starts an interpretation needs an escape — `\` has no
+general "make whatever follows literal" meaning. It only does something
+when immediately followed by one of a small, fixed set of symbols;
+everywhere else, `\` is just a literal backslash and whatever follows it is
+read completely normally.
+
+`\«`, `\»`, and `\\` are recognized in ordinary template text. Every `«`
+unconditionally tries to open a token or block, so a literal one always
+needs escaping; a literal `»` only ever needs it inside a block's body,
+where an unescaped `»»` would close the block early — outside any open
+block, `»` was already just text. `\\` is a literal backslash.
+
+```markdown
+Use \« and \» to show guillemets literally, like this: \«full name\».
+→ Use « and » to show guillemets literally, like this: «full name».
+```
+
+Inside a filter's value specifically (see Filters, below), three more
+sequences are recognized: `\|` for a literal `|` (a bare ` | ` would
+otherwise end the value and start the next pipeline stage), and `\n`/`\t`
+for an actual newline/tab character — the only way to put one in a value,
+since it's otherwise confined to a single line. None of the three mean
+anything outside a filter's value — `\n` there is just the two characters
+`\` and `n`.
+
+There's no `\:` — a filter clause only ever looks for the *first* `: `, so
+nothing after it is re-scanned for another one.
+
+---
+
 ## Schema & Localization
 
 Template authors write variable names as natural, space-separated words —
@@ -79,9 +111,9 @@ resolves identically to `«full name»`.
 list, applies a projection (equivalent to `.Select()`). Chaining across lists
 uses `.SelectMany()` internally, so the result stays flat.
 
-Write a space after `:` (`company: name`, not `company:name`). The parser
-ignores whitespace around `:` either way, so this is a style convention,
-SHOULD, not a requirement.
+`: ` (colon immediately followed by exactly one space) MUST be written
+together — `company: name`, not `company:name`. A colon with no following
+space isn't recognized as the property accessor at all.
 
 ```
 «company: name»
@@ -286,69 +318,82 @@ When list items are objects, use `:` to project a field:
 At each step, `:` either projects/flattens a list or accesses an object's
 property, depending on what it encounters.
 
-### Custom Separator
+Override the default `, ` join with the `join`/`join last` filters — see
+Filters, below.
 
-Pass a separator using inner `()` as a named filter:
+## Filters
 
-```markdown
-«quote: tags (separator = , )»
-```
-
-### Last Separator
-
-Repeat the `separator` filter to give a different value to the join right
-before the list's last item — the classic "A, B, and C" style:
+`name: value` attaches a filter to a property chain, chained with ` | `:
 
 ```markdown
-«quote: tags (separator = , )(separator = , and )»
-→ philosophy, wisdom, and ancient-greek
+«date | date: dd/MM/yyyy»
+«amount | currency: $»
+«description | length: 80»
+«list: name | join: , »
 ```
 
-The first `(separator = ...)` joins every item except the last pair; the
-second one, if present, replaces just that last join. With two items, only
-the second value is used; with one item, no separator is used at all.
+`: ` (colon immediately followed by exactly one space) MUST be written
+together, same as property access above — it marks where a filter's value
+starts. Whatever follows, up to the next ` | ` or the end of the token, is
+the value exactly as written — nothing is trimmed automatically. Use `\`
+(see Escaping, above) for a value that needs to contain `|` or `»`
+literally, or an actual newline/tab (`\n`/`\t`) — the last two are only
+recognized inside a filter's value.
 
-### Loop Block with Separator
+A filter's value is optional — write the bare name, with no `: value` at
+all, to use its default. `join`'s default is `, ` when used inline, and a
+newline when used as a block footer (see Block Footer, below) — a bare
+`join` in a footer is a natural fit for joining loop output that already
+looks like separate lines, e.g. a list of `- «name»` rows.
 
-Use the `(separator)` filter on the last line of the block:
+A fixed set of built-in filters is supported:
+
+| Filter      | Value                                             |
+| ---         | ---                                                |
+| `date`      | a date/time format string, e.g. `dd/MM/yyyy`       |
+| `currency`  | a currency symbol prefix, e.g. `$`                 |
+| `length`    | a maximum character length to truncate to          |
+| `join`      | the string used to join the whole list into one    |
+| `join last` | the string used to join just the list's last pair  |
+
+Filters chain into a pipeline, applied left to right. A filter that acts on
+a single value (`date`, `currency`, `length`) maps over every item when its
+input is still a list; `join`/`join last` act on the whole list at once and
+produce a single string.
+
+`join last` merges the last two items of the current list into one, joined
+by its value; fewer than two items is a no-op. `join` collapses the entire
+current list into a single string, joined by its value; zero or one items is
+a no-op. Order matters — they're genuinely sequential stages, not a paired
+configuration:
+
+```markdown
+«quote: tags | join last:  and  | join: , »
+→ philosophy, wisdom and ancient-greek
+```
+
+The default auto-join (`, `, see Inline Lists, above) still applies if the
+pipeline ends without fully collapsing the list to a string, so `join last`
+alone is enough for the common "A, B and C" case.
+
+### Block Footer
+
+The same pipeline attaches to a block's last line, right before its closing
+`»»`, applying to the block's own accumulated output instead of a property
+chain:
 
 ```markdown
 ««tags = quote: tags
 «name»
-(separator = , )»»
+join: , »»
 ```
 
-renders as a comma-separated list when used via `«tags»`. The filter MUST be
-the only thing on that line, immediately before the block's closing `»»` —
-nothing else may share the line, before or after it.
-
-When the block has an else branch, the filter goes on the last line of
+renders as a comma-separated list when used via `«tags»`. The pipeline MUST
+be the only thing on that line — nothing else may share it, before or
+after. When the block has an else branch, it goes on the last line of
 whichever branch renders last: the truthy body if there is no `~`, the falsy
 body if there is one. `~` itself always stays on its own line and is never
-adjacent to the filter.
-
-## Filters
-
-Inner `(name = value)` syntax passes a named filter to the enclosing
-expression. A fixed set of built-in filters is supported:
-
-| Filter      | Value                                        |
-| ---         | ---                                           |
-| `date`      | a date/time format string, e.g. `dd/MM/yyyy`  |
-| `currency`  | a currency symbol prefix, e.g. `$`            |
-| `length`    | a maximum character length to truncate to     |
-| `separator` | the string used to join a list's items        |
-
-```markdown
-«date (date = dd/MM/yyyy)»
-«amount (currency = $)»
-«description (length = 80)»
-«list: name (separator = , )»
-```
-
-Filters are matched by name and resolved before the outer expression is
-evaluated. Repeating `separator` sets a different join before the list's
-last item — see Last Separator, under Inline Lists, above.
+adjacent to it.
 
 ## Full Example — Customer Quote
 

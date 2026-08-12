@@ -90,10 +90,14 @@ C#/.NET, targeting `net10.0`. Layout:
   type-inferred if/loop/scope rules.
 - **Tables**: a block may open/close with a leading/trailing `|` so it stays
   valid inside a markdown table row.
-- **Inline lists**: scalar lists auto-join with `, `; override via
-  `(separator = ...)`, usable inline or as the last line of a loop block.
-- **Filters**: `(name = value)` inside a token, resolved before the outer
-  expression evaluates. Built-ins: `date`, `currency`, `length`, `separator`.
+- **Inline lists**: scalar lists auto-join with `, `; override via the
+  `join`/`join last` filters, usable inline or as the last line of a loop
+  block.
+- **Filters**: `name: value` chained with ` | ` after a property chain or
+  another filter, no parens — `«expr | filter: value»`. `: ` (colon+space)
+  is a fixed token, same as property access; nothing after it is trimmed.
+  `\` escapes a reserved character. Built-ins: `date`, `currency`, `length`,
+  `join`, `join last`.
 
 ## Localization / naming
 

@@ -1,1 +1,1 @@
-Amount: «amount (currency = $)»
+Amount: «amount | currency: $»

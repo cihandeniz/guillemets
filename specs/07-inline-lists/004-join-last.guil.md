@@ -1,1 +1,1 @@
-Tags: «quote: tags (separator = ", " " and ")»
+Tags: «quote: tags | join last:  and  | join: , »

@@ -1,1 +1,1 @@
-Tags: «quote: tags (separator = ; )»
+Tags: «quote: tags | join: ; »

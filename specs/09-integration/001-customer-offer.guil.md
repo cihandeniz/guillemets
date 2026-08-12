@@ -34,4 +34,4 @@ your satisfaction at every step.
 We look forward to working with you. This quote is valid until
 «valid until». Please don't hesitate to contact us with any questions.
 
-*«Company» — «Date (date = dd/MM/yyyy)»*
+*«Company» — «Date | date: dd/MM/yyyy»*

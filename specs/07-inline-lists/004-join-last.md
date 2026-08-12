@@ -1,1 +1,1 @@
-Tags: philosophy, wisdom, and ancient-greek
+Tags: philosophy, wisdom and ancient-greek

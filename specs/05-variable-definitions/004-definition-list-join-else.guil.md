@@ -2,5 +2,5 @@
 «name»
 ~
 No tags
-(separator = , )»»
+join: , »»
 Tags: «tags»

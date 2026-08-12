@@ -1,1 +1,1 @@
-Date: «date (date = dd/MM/yyyy)»
+Date: «date | date: dd/MM/yyyy»

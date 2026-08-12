@@ -28,4 +28,18 @@ public class JTokenIntegrationTests
 
         template.Render(data).ShouldBe(File.ReadAllText(expectedPath));
     }
+
+    [Test]
+    [Ignore("depends on the filters fixture group, not yet implemented")]
+    public void Render_ProducesAlmostErrorsIntegrationOutput()
+    {
+        var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");
+        var jsonPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.json");
+        var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.md");
+
+        var template = Template.Create(File.ReadAllText(guilPath));
+        var data = JToken.Parse(File.ReadAllText(jsonPath));
+
+        template.Render(data).ShouldBe(File.ReadAllText(expectedPath));
+    }
 }

@@ -1,0 +1,12 @@
+{
+  "Author": "Alice",
+  "Reviewer": null,
+  "Reviewers": [],
+  "Approvers": [
+    { "Name": "Bob", "Approved": false },
+    { "Name": "Carol", "Approved": false }
+  ],
+  "SingleTag": ["urgent"],
+  "NoTags": [],
+  "Tags": ["philosophy", "wisdom"]
+}

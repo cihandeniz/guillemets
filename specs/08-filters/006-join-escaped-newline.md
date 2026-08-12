@@ -1,0 +1,2 @@
+Tags: philosophy
+wisdom

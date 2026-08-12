@@ -43,4 +43,31 @@ public class PocoIntegrationTests
 
         template.RenderObject(data).ShouldBe(File.ReadAllText(expectedPath));
     }
+
+    [Test]
+    [Ignore("depends on the filters fixture group, not yet implemented")]
+    public void Render_ProducesAlmostErrorsIntegrationOutput()
+    {
+        var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");
+        var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.md");
+
+        var data = new
+        {
+            Author = "Alice",
+            Reviewer = (object?)null,
+            Reviewers = Array.Empty<object>(),
+            Approvers = new[]
+            {
+                new { Name = "Bob", Approved = false },
+                new { Name = "Carol", Approved = false },
+            },
+            SingleTag = new[] { "urgent" },
+            NoTags = Array.Empty<string>(),
+            Tags = new[] { "philosophy", "wisdom" },
+        };
+
+        var template = Template.Create(File.ReadAllText(guilPath));
+
+        template.RenderObject(data).ShouldBe(File.ReadAllText(expectedPath));
+    }
 }
