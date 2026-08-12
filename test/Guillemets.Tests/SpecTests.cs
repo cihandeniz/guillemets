@@ -11,13 +11,15 @@ public class SpecTests
     // green; this set is empty once the engine is complete.
     static readonly HashSet<string> IGNORED_FIXTURES =
     [
+        // PLAN.md milestone 1, "filter-syntax-redesign": spec/test/doc work
+        // is done (see PLAN.md for the full grammar), engine still speaks
+        // the old `(name = value)` syntax. Comes out of this set one
+        // fixture at a time as each is implemented.
         "02-conditional-blocks/009-corrupted-filter-syntax-in-body",
         "05-variable-definitions/003-definition-list-join",
         "05-variable-definitions/004a-populated",
         "05-variable-definitions/004b-empty",
         "05-variable-definitions/006-definition-list-multi-filter-footer",
-        "07-inline-lists/001-inline-scalar-list",
-        "07-inline-lists/002-inline-field-selection",
         "07-inline-lists/003-custom-separator",
         "07-inline-lists/004-join-last",
         "08-filters/001-date",
@@ -31,6 +33,11 @@ public class SpecTests
         "12-escaping/001-guillemets-and-backslash",
         "12-escaping/002-close-inside-block",
         "12-escaping/005-double-backslash-before-guillemet",
+
+        // PLAN.md milestone 4, "inline-lists" (remainder): VariableNode
+        // doesn't yet join a resolved list's elements when no filter ran.
+        "07-inline-lists/001-inline-scalar-list",
+        "07-inline-lists/002-inline-field-selection",
     ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>

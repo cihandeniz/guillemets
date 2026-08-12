@@ -265,6 +265,15 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   actually refactor (correct layering, remove duplication, apply the style rules
   above) rather than leaving cleanup for later. Report and let the fixture's
   author/reviewer weigh in before moving to the next one.
+- **A redesign spanning multiple fixtures gets its own checkpoint before any
+  code changes.** When a change is bigger than one fixture (a grammar
+  redesign, a rename, dropping a restriction — anything touching several
+  fixtures/docs at once), do the *entire* spec/fixture/doc rewrite first,
+  confirm it's red against the still-old engine, then move every touched
+  fixture into `IGNORED_FIXTURES` (grouped under one comment pointing at the
+  `PLAN.md` milestone, not one comment per fixture) so `dotnet test` is green
+  again — and stop there for review. Only after that's confirmed does
+  implementation start, back to the normal one-fixture-at-a-time loop above.
 - **No failing tests at commit time.** Unimplemented fixtures are listed in
   `SpecTests.cs`'s `IGNORED_FIXTURES` set (`Ignored`, never `Failed`) —
   remove a fixture's name once its case goes green. When a fixture is
