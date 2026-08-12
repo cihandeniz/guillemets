@@ -269,7 +269,7 @@ Filters, below.
 ```markdown
 «date | date: dd/MM/yyyy»
 «amount | currency: $»
-«description | length: 80»
+«description | truncate: 80»
 «list: name | join: , »
 ```
 
@@ -291,14 +291,14 @@ A fixed set of built-in filters is supported:
 | ---         | ---                                                |
 | `date`      | a date/time format string, e.g. `dd/MM/yyyy`       |
 | `currency`  | a currency symbol prefix, e.g. `$`                 |
-| `length`    | a maximum character length to truncate to          |
+| `truncate`  | a maximum character length to truncate to          |
 | `join`      | the string used to join the whole list into one    |
 | `join last` | the string used to join just the list's last pair  |
 
 Filters chain into a pipeline, applied left to right. A filter that acts on a
-single value (`date`, `currency`, `length`) maps over every item when its input
-is still a list; `join`/`join last` act on the whole list at once and produce a
-single string.
+single value (`date`, `currency`, `truncate`) maps over every item when its
+input is still a list; `join`/`join last` act on the whole list at once and
+produce a single string.
 
 `join last` merges the last two items of the current list into one, joined by
 its value; fewer than two items is a no-op. `join` collapses the entire current

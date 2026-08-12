@@ -9,12 +9,13 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 105 passed, 22 skipped, 127 total, 0 failed.
+`dotnet test` is green: 107 passed, 20 skipped, 127 total, 0 failed.
 Milestone 1 (`filter-syntax-redesign`) is mid-implementation — the
-`: `/` | ` grammar, the global `\` escapes, and the `date`/`join` filters
-are live; everything still blocked on it is listed in `SpecTests.cs`'s
-`IGNORED_FIXTURES`. Pluggable data sources (JSON, POCO, Newtonsoft
-`JToken`) and `tables` are both done — see `docs/architecture.md`.
+`: `/` | ` grammar, the global `\` escapes, and the `date`/`join`/
+`currency`/`truncate` filters are live; everything still blocked on it is
+listed in `SpecTests.cs`'s `IGNORED_FIXTURES`. Pluggable data sources
+(JSON, POCO, Newtonsoft `JToken`) and `tables` are both done — see
+`docs/architecture.md`.
 
 ## Remaining milestones
 
@@ -28,9 +29,9 @@ on its grammar.
    grammar with the no-parens, no-`=`, pipe-style pipeline. Grammar and
    escaping rules are fully specified in `docs/specs.md` (Filters,
    Escaping) — that's the authoritative reference, not this file.
-   Tokenizer, inline filters, `date`, and `join` are implemented. Still
-   pending:
-   - `CurrencyFilter`, `LengthFilter`, `JoinLastFilter`.
+   Tokenizer, inline filters, `date`, `join`, `currency`, and `truncate`
+   are implemented. Still pending:
+   - `JoinLastFilter`.
    - A block-footer filter pipeline, accepting any registered filter (not
      just `join`) on the same grammar as the inline form — `BlockParser`
      currently has *no* footer-parsing at all (the old `(name = value)`

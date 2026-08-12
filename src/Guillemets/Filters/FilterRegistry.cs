@@ -8,7 +8,9 @@ public class FilterRegistry
     {
         var result = new FilterRegistry()
             .Register("join", new JoinFilter())
-            .Register("date", new DateFilter());
+            .Register("date", new DateFilter())
+            .Register("currency", new CurrencyFilter())
+            .Register("truncate", new TruncateFilter());
         configureFilters(result);
 
         return result;

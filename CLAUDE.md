@@ -96,7 +96,7 @@ C#/.NET, targeting `net10.0`. Layout:
 - **Filters**: `name: value` chained with ` | ` after a property chain or
   another filter, no parens — `«expr | filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
-  `\` escapes a reserved character. Built-ins: `date`, `currency`, `length`,
+  `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
   `join`, `join last`.
 
 ## Localization / naming

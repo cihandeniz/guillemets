@@ -1,1 +1,1 @@
-Description: «description | length: 10»
+Description: «description | truncate: 10»
