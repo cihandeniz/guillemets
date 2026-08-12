@@ -16,14 +16,26 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     static readonly string ESCAPED_TAB = $"{BACKSLASH}t";
     static readonly string ESCAPED_PIPE = $"{BACKSLASH}{DELIMITER}";
 
+    // TODO merge this and ParseFooterPipeline via a flag that states don't expect pipe token
+    // TODO this will use TryParse and if false it will throw
     public IReadOnlyList<FilterNode> ParsePipeline()
     {
         var stages = new List<FilterNode>();
-        while (_tokens.Current is PipeToken)
+        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
         {
             _tokens.Advance();
+            if (_tokens.AtEnd) { break; }
+
             stages.Add(ParseStage());
         }
+
+        return stages;
+    }
+
+    public IReadOnlyList<FilterNode> ParseFooterPipeline()
+    {
+        var stages = new List<FilterNode> { ParseStage() };
+        stages.AddRange(ParsePipeline());
 
         return stages;
     }
@@ -37,7 +49,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
             throw new TemplateParseException($"Unknown filter '{name}'", position);
         }
 
-        if (_tokens.Current is not ColonToken) { return new FilterNode(filter, null); }
+        if (_tokens.AtEnd || _tokens.Current is not ColonToken) { return new FilterNode(filter, null); }
         _tokens.Advance();
 
         return new FilterNode(filter, ReadValue());
@@ -52,7 +64,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     string ReadText(bool unescape)
     {
         var builder = new StringBuilder();
-        while (_tokens.Current is LiteralToken or NewlineToken)
+        while (!_tokens.AtEnd && _tokens.Current is LiteralToken or NewlineToken)
         {
             builder.Append(SegmentText(_tokens.Current, unescape));
             _tokens.Advance();

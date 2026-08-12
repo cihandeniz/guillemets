@@ -13,7 +13,6 @@ public class PocoIntegrationTests
     }
 
     [Test]
-    [Ignore("depends on the tables and filters fixture groups, not yet implemented")]
     public void Render_ProducesCustomerOfferIntegrationOutput()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");
@@ -45,7 +44,7 @@ public class PocoIntegrationTests
     }
 
     [Test]
-    [Ignore("depends on the filters fixture group, not yet implemented")]
+    [Ignore("depends on a block header naming a truly-missing property resolving to falsy instead of throwing — see PropertyResolver.Project, not yet implemented")]
     public void Render_ProducesAlmostErrorsIntegrationOutput()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");

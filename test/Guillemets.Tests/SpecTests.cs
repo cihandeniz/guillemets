@@ -16,12 +16,6 @@ public class SpecTests
         // the old `(name = value)` syntax. Comes out of this set one
         // fixture at a time as each is implemented.
         "02-conditional-blocks/009-corrupted-filter-syntax-in-body",
-        "05-variable-definitions/003-definition-list-join",
-        "05-variable-definitions/004a-populated",
-        "05-variable-definitions/004b-empty",
-        "05-variable-definitions/006-definition-list-multi-filter-footer",
-        "08-filters/004-join-default-inline",
-        "08-filters/005-join-default-block-footer",
     ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>

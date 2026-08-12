@@ -20,15 +20,10 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
 
     static void ValidateNotSharingCloseLine(List<IRenderable> body, IToken close)
     {
-        if (AtLineStart(body)) { return; }
+        if (BodyParser.AtLineStart(body)) { return; }
 
         throw new TemplateParseException("A literal may not share a line with the block's closing »»", close.Position);
     }
-
-    static bool AtLineStart(List<IRenderable> body) =>
-        body.Count == 0
-        || body[^1] is BlockNode
-        || (body[^1] is LiteralNode literal && literal.Text.EndsWith(NEWLINE));
 
     readonly Lazy<BodyParser> _lazyBodyParser = _registry.GetLazy<BodyParser>();
     readonly Lazy<PropertyChainParser> _lazyPropertyChainParser = _registry.GetLazy<PropertyChainParser>();
@@ -42,13 +37,13 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         _tokens.Advance();
 
         var properties = PropertyChainParser.Parse(open.Position, stopAtNewline: true, out var variableName);
-        var truthy = ParseBody(stopAtElse: true);
+        var truthy = ParseBody(stopAtElse: true, out var footer);
 
         List<IRenderable>? falsy = null;
         if (!_tokens.AtEnd && _tokens.Current is ElseToken)
         {
             _tokens.Advance();
-            falsy = ParseBody(stopAtElse: false);
+            falsy = ParseBody(stopAtElse: false, out footer);
         }
 
         if (_tokens.AtEnd) { throw new TemplateParseException($"Unclosed {open.Text}", open.Position); }
@@ -56,12 +51,16 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         ValidateClosingDepth(open, (CloseBlockToken)_tokens.Current);
         _tokens.Advance();
 
-        return new BlockNode(properties, truthy, falsy, variableName);
+        return new BlockNode(properties, truthy,
+            ElseBody: falsy,
+            VariableName: variableName,
+            Footer: footer
+        );
     }
 
-    List<IRenderable> ParseBody(bool stopAtElse)
+    List<IRenderable> ParseBody(bool stopAtElse, out IReadOnlyList<FilterNode> footer)
     {
-        var body = BodyParser.ParseNodes(insideBlock: true, stopAtElse);
+        var body = BodyParser.ParseNodes(insideBlock: true, stopAtElse: stopAtElse, out footer);
         if (!_tokens.AtEnd && _tokens.Current is CloseBlockToken)
         {
             ValidateNotSharingCloseLine(body, _tokens.Current);

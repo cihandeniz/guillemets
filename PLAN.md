@@ -9,14 +9,18 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 114 passed, 13 skipped, 127 total, 0 failed.
-Milestone 1 (`filter-syntax-redesign`) is mid-implementation — the
+`dotnet test` is green: 124 passed, 4 skipped, 128 total, 0 failed.
+Milestone 1 (`filter-syntax-redesign`) is behaviorally complete — the
 `: `/` | ` grammar, the global `\` escapes, the scoped `\n`/`\t`/`\|`
-filter-value escapes, and every inline filter (`date`/`join`/`currency`/
-`truncate`/`join last`) are live; only the block-footer pipeline remains,
-listed in `SpecTests.cs`'s `IGNORED_FIXTURES`. Pluggable data sources
-(JSON, POCO, Newtonsoft `JToken`), `tables`, and `inline-lists` are all
-done — see `docs/architecture.md`.
+filter-value escapes, every inline filter (`date`/`join`/`currency`/
+`truncate`/`join last`), and the block-footer pipeline (including
+`join`'s context-dependent bare default, `, ` inline vs. newline in a
+footer) are all live. Two implementation cleanups are flagged as
+`// TODO`s in place (see below) and one narrow fixture case remains.
+Pluggable data sources (JSON, POCO, Newtonsoft `JToken`), `tables`, and
+`inline-lists` are all done — see `docs/architecture.md`. As a side
+effect, the `integration` milestone's `001-customer-offer` fixture now
+passes across all three data sources too.
 
 ## Remaining milestones
 
@@ -26,38 +30,69 @@ after them) — except milestone 1, promoted to the top: it changes
 already-shipped parsing behavior and every other milestone below depends
 on its grammar.
 
-1. `filter-syntax-redesign` — replace the shipped `(name = value)` filter
-   grammar with the no-parens, no-`=`, pipe-style pipeline. Grammar and
-   escaping rules are fully specified in `docs/specs.md` (Filters,
-   Escaping) — that's the authoritative reference, not this file.
-   Tokenizer and every inline filter (`date`, `join`, `currency`,
-   `truncate`, `join last`) are implemented, including the scoped
-   `\n`/`\t`/`\|` filter-value escapes (their own `EscapedToken` type,
-   a `LiteralToken` subtype, keeps them distinguishable in `FilterParser`
-   from ordinary unescaped text — see `docs/architecture.md`). Still
-   pending:
-   - A block-footer filter pipeline, accepting any registered filter (not
-     just `join`) on the same grammar as the inline form — `BlockParser`
-     currently has *no* footer-parsing at all (the old `(name = value)`
-     footer support was deleted, not migrated), so this needs building
-     from scratch. Telling a footer line apart from ordinary body text
-     with no distinguishing lead token is a real parsing problem;
-     `TokenCursor.Rewind`-based speculative parsing (see `CLAUDE.md`) is
-     a legitimate option for it, not a smell to avoid.
-   - How a filter learns whether it's running inline vs. as a block
-     footer, for `join`'s bare-name default (`, ` inline, newline as a
-     footer) — undecided; needed before `08-filters/004`/`005`.
+1. `filter-syntax-redesign` — behaviorally complete; two implementation
+   cleanups left in place as `// TODO` comments (pick up via the
+   "reviewed" grep-for-TODOs workflow in `CLAUDE.md`), plus one narrow
+   fixture case:
+   - `BodyParser.TryParseFooter` rewinds via a `catch
+     (TemplateParseException)` around `FilterParser.ParseFooterPipeline`
+     — control flow via exception. Wants a real `TryParse`-style API
+     instead: `ParsePipeline`/`ParseFooterPipeline` merge into one method
+     behind a flag for "leading pipe token expected or not," and gain a
+     non-throwing `TryParse` so `TryParseFooter` can rewind in a
+     plain `if`/`else` instead of a `catch`. Feasible per the TODO's own
+     note: a filter pipeline always ends at a `CloseBlockToken` or
+     `CloseToken`, so success/failure is decidable without throwing.
+   - `IBlockBehavior.Render` returns one joined `string`, so only
+     `LoopBehavior` (which naturally has multiple items) can sensibly
+     apply the footer pipeline — `ConditionalBehavior`/`ScopeBehavior`
+     never see it, and `LoopBehavior` has to immediately re-join by
+     newline after applying it, "defeating the purpose of join filter in
+     a loop" per the TODO. Wants `IBlockBehavior.Render` to return
+     `IEnumerable<string>` (unjoined) instead, so `BlockNode` can apply
+     the footer pipeline once, uniformly, to whatever any behavior
+     produces — a single item for `Conditional`/`Scope` (where
+     `join`/`join last` are then natural no-ops per spec, other filters
+     still apply), N items for `Loop`. The markdown-table path inside
+     `LoopBehavior` is the one exception: it still needs to return a
+     single already-newline-joined item, since heading/divider/rows/table
+     -footer must stay one merged block.
+   `02-conditional-blocks/009-corrupted-filter-syntax-in-body` wants a
+   filter name immediately followed by a bare `:` (no space — e.g.
+   `join:oops`) to raise `Expected a space after ':'` instead of silently
+   falling back to literal text. Today `:` only ever tokenizes as part of
+   the fixed `: ` (colon+space) symbol, so `join:oops` is just one
+   undifferentiated `LiteralToken` — nothing distinguishes "an attempted,
+   malformed filter invocation" from "a colon that happens to appear in
+   prose" (e.g. `Time: 10:30am`). The signal to use is narrower than "any
+   bare colon": `FilterParser.ParseStage`, when the name it just read is a
+   *registered* filter name and the next raw character is `:` not
+   followed by a space, is where this should raise — not a general
+   tokenizer-level change, which would misfire on ordinary prose.
 2. `integration` — the full worked example, combining everything above.
-   Already has dedicated, currently-`[Ignore]`d coverage in
-   `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests`
-   — un-ignore all three once this milestone lands, and drop the
-   `09-integration` exclusion note in `SpecTests.cs` if it's ever folded
-   back into the generic sweep.
-3. `errors` — currently 5 fixtures (`unclosed-guillemet`,
+   `001-customer-offer` now passes on all three data sources (un-ignored
+   in `JsonIntegrationTests`/`PocoIntegrationTests`/`JTokenIntegrationTests`).
+   `002-almost-errors` is still `[Ignore]`d — it surfaced a real gap,
+   not a filters/footer gap: `««missing thing»»` (a block header naming a
+   property absent from the data entirely) throws
+   `InvalidOperationException: Property 'MissingThing' was not found`
+   instead of resolving falsy. The "Known v1 scope decisions" entry below
+   ("unresolved block name → falsy") only actually holds today when the
+   *container* resolves (e.g. an empty array whose items are never
+   individually visited, as in
+   `conditional-blocks/unresolved-property-no-else`) — a name with no
+   container at all still throws, from `PropertyResolver.Project`'s
+   `TryGetProperty` failure, reached via
+   `BlockNode.ResolveBehavior`'s call to `TryResolveLoopItems` before the
+   object/conditional fallback path ever gets a chance to run. Fixing
+   this is a `PropertyResolver` change, not a filters one — worth its own
+   pass rather than folding into filter work.
+3. `errors` — currently 6 fixtures (`unclosed-guillemet`,
    `unclosed-block`, `mismatched-block-depth`, `literal-shares-close-line`,
-   plus one retired alongside the old filter grammar). Add more error
-   cases as new failure modes appear — extend `TemplateParseException`
-   usage rather than introducing ad hoc exceptions.
+   `unclosed-block-dangling-filter-pipe`, plus one retired alongside the
+   old filter grammar). Add more error cases as new failure modes
+   appear — extend `TemplateParseException` usage rather than introducing
+   ad hoc exceptions.
 4. `schema-localization` — true schema/localization remapping (business
    term ≠ property name), per "Schema & Localization" in `docs/specs.md`:
    a mapping table (`Localized Term = template token = PropertyName`)
@@ -74,8 +109,11 @@ on its grammar.
 - **Currency/date/truncation formatting** in the `filters`/`integration`
   fixtures matches the fixtures as authored, not an independently pinned
   spec — don't "correct" it without discussion.
-- **Unresolved block name → falsy, not an error** — see
-  `conditional-blocks/unresolved-property-no-else`.
+- **Unresolved block name → falsy, not an error** — the *decision*, per
+  `conditional-blocks/unresolved-property-no-else`. Not yet fully the
+  *behavior*: still throws for a name with no resolvable container at
+  all, rather than an existing-but-empty one — see milestone 2
+  (`integration`) above.
 - **Negating a non-last property-chain segment** (e.g. `people: !male:
   !parent`) is documented as unsupported (`docs/specs.md`, Negation), but
   isn't enforced yet — `PropertyChainNode.LastSegmentNegated` silently

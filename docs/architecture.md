@@ -109,6 +109,7 @@ flowchart TB
     BodyParser -->|dispatches to| VariableParser
     BodyParser -->|dispatches to| BlockParser
     BodyParser -->|dispatches to| TextParser
+    BodyParser -->|tries, may rewind| FilterParser
     VariableParser -->|calls| PropertyChainParser
     VariableParser -->|calls| FilterParser
     BlockParser -->|calls| PropertyChainParser
@@ -122,6 +123,20 @@ token's type to pick a handler; everything else either gets dispatched to
 by it, or is a plain collaborator fetched by type. Collaborators that need
 each other are wired lazily, so registration order never becomes a
 hazard.
+
+`BodyParser` also owns block-footer detection. There's no lead token that
+marks a footer line — `join: , »»` looks, up to its last two characters,
+like it could just be body text. So at the start of every line inside a
+block, `BodyParser` speculatively asks `FilterParser` to parse a filter
+pipeline from that position. Two outcomes both mean "not a footer, keep
+going": the pipeline fails to parse (unknown filter name — ordinary body
+text almost never doubles as one), or it parses but isn't immediately
+followed by the block's closing `»»` (there's more body content on the
+line, or on lines after it). Either way, `TokenCursor.Rewind` puts the
+cursor back and normal body parsing continues untouched. Only when the
+pipeline parses *and* lands exactly on `»»` — matching the spec's "MUST
+be the only thing on that line" rule — does `BodyParser` commit to it as
+the block's footer instead of a body node.
 
 ## Rendering behavior
 
@@ -144,6 +159,25 @@ another.
 sequence-in, sequence-out pipeline stage. `Template.Create` takes an
 optional callback so callers can register their own alongside the
 built-ins (see `README.md`'s Custom filters section).
+
+A bare filter stage (no `: value` at all) can mean something different
+depending on where it's written — `join`'s default is `, ` inline but a
+newline in a block footer. `IFilter.DefaultArg(FilterContext)` is a
+default interface method for this: most filters don't override it and
+stay context-free, `JoinFilter` does. `FilterNode.ResolveArg(context)`
+is what actually applies it — an explicit `: value` always wins, and
+only a bare stage falls through to `DefaultArg`. Both `VariableNode`
+(inline) and `LoopBehavior` (block footer) call `ResolveArg`, passing
+their own `FilterContext`, so a bare `join` reads correctly in either
+spot.
+
+`LoopBehavior` applies the block's footer pipeline (if any) to the
+per-iteration renders exactly the way `VariableNode` applies an inline
+pipeline to resolved property values — each stage narrows the list, then
+a final `string.Join` collapses whatever's left. The only difference is
+the separator: `, ` for `VariableNode`, a newline for `LoopBehavior`, so
+a loop with no footer at all still reads as one item per line, same as
+before footers existed.
 
 ## Tests
 

@@ -1,4 +1,5 @@
 using Guillemets.Data;
+using Guillemets.Filters;
 using Guillemets.Rendering;
 
 namespace Guillemets.Ast;
@@ -13,7 +14,7 @@ internal record VariableNode(PropertyChainNode Properties, IReadOnlyList<FilterN
         var values = context.PropertyResolver.Resolve(scope, Properties).SelectMany(AsDisplayStrings);
         foreach (var filter in Filters)
         {
-            values = filter.Filter.Apply(values, filter.Arg);
+            values = filter.Apply(values, FilterContext.Inline);
         }
 
         return string.Join(DEFAULT_JOIN, values);
