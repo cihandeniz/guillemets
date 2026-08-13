@@ -102,6 +102,9 @@ C#/.NET, targeting `net10.0`. Layout:
   `OpenBlockToken.Depth`/`CloseBlockToken.Depth` in `Parser.ParseBlock`.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
+- **Scope navigation**: `.: name` pins resolution to the current scope only,
+  skipping magic-var shadowing; `..: name` climbs to the enclosing scope,
+  chainable (`..: ..: name`) and composable with `.: ` (`..: .: name`).
 - **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type of
   `name` — boolean → if, list → loop, object → scope. No keywords, same syntax
   for all three. Variable lookup falls back to enclosing scopes.

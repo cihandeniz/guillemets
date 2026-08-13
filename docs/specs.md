@@ -173,8 +173,9 @@ Inside a nested loop, `«first»`/`«last»` always refer to the *innermost*
 loop's position — the same shadowing rule as any other name lookup falling
 back to an enclosing scope (see Blocks, above), except `first`/`last` are
 always defined the moment you're inside any loop, so they never fall back
-to an outer loop. There's no way to reach an outer loop's `first`/`last`
-from inside a nested one.
+to an outer loop. There's no *automatic* fallback to an outer loop's
+`first`/`last` — reaching one deliberately requires explicit scope
+navigation (`..: `, see Scope Navigation, below).
 
 ### Filtering Out Items in Lists
 
@@ -220,6 +221,91 @@ text of its own.
 >
 > Negating an earlier segment (for example, `company: !active: something`) is
 > invalid.
+
+## Scope Navigation
+
+Resolving a property chain (see Nested Property Access, above) normally
+searches the current scope, then falls back through each enclosing scope in
+turn (see Blocks, above) — but only when the name isn't found locally; a
+property that already exists in the current scope shadows same-named
+properties further out, and, inside a loop, the magic `«first»`/`«last»`
+variables always win over an item property of the same name (see Magic Loop
+Variables, above). `.: ` and `..: ` are two markers, written at the very
+start of a property chain, that override this default and pin resolution to
+an exact scope instead.
+
+`.: ` and `..: ` (dot(s), colon, exactly one space) follow the same
+fixed-token rule as `: ` (see Nested Property Access, above) — written
+without the trailing space, neither is recognized as a navigator at all.
+
+### This Scope Only
+
+`.: name` resolves `name` against the current scope's own data only — no
+falling back to an enclosing scope, and no magic-var shadowing, so `.: first`
+/`.: last` reach the current scope's own `first`/`last` property even where
+the magic `«first»`/`«last»` would otherwise shadow it:
+
+```markdown
+««items
+«first»    → the magic variable
+«.: first» → the item's own "first" property, ignoring the magic variable
+»»
+```
+
+If the current scope has no such property at all, the chain resolves to
+nothing — the same as any other unresolved chain (see Resolving the Block
+Name, above).
+
+### Climbing to a Parent Scope
+
+`..: name` starts resolution one scope higher than usual — at the enclosing
+scope rather than the current one — then applies the normal
+fallback/shadowing rules again from there, including a further fallback
+beyond it if `name` isn't found at that level either. Repeating the marker
+climbs one further level per repetition, so `..: ..: name` climbs two levels
+before resolving `name`.
+
+```markdown
+««quotes
+Quote: «name»
+««items
+Item: «name», quote: «..: name»
+»»
+»»
+```
+
+Given each item has its own `name` as well as the enclosing quote, `«name»`
+inside the items loop resolves to the item's own name (it shadows the
+quote's), while `«..: name»` climbs past that shadow to reach the quote's.
+
+Climbing past the outermost scope is a parse error: how many `..: ` markers
+a chain can carry is capped by how many scopes actually enclose it in the
+template, which is fixed by the template's own block nesting and so is
+already known at parse time, not left to fail at render time.
+
+### Combining Both
+
+`..: ` and `.: ` compose: zero or more `..: ` climbs, followed by at most
+one `.: `, then the property chain itself. The `.: ` applies at whichever
+scope the climbs land on, pinning resolution to exactly that scope —
+including skipping *that* scope's own magic-var shadowing:
+
+```markdown
+«..: .: first»
+```
+
+climbs one level, then reads that parent scope's own `first` property,
+ignoring the parent's own magic `«first»` too. A `.: ` marker MUST be the
+last one before the property chain — `.: ..: name` and `.: .: name` are
+both invalid.
+
+Negation and filters both apply to the chain as a whole, after scope
+navigation has resolved it, exactly as they do without any navigator:
+
+```markdown
+«..: !active»
+«..: name | upper»
+```
 
 ## Variable Definitions
 

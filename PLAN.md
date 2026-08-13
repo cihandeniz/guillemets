@@ -37,6 +37,8 @@ than tracking it here).
    distinct from the existing `: ` property accessor, how far a `..: `
    chain can climb before erroring past the root scope, and how it
    interacts with `!` negation and filters.
+   - stopped during creating specs under .specs.md/Scope Navigation
+   - will continue to write specs and then create spec cases
 2. Rehumanize `docs/specs.md` and the other published docs (`README.md`,
    `docs/architecture.md`, `docs/implementations/dotnet.md`,
    `docs/README.md`) — a readability/tone pass, not a correctness one,
