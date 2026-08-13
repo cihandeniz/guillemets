@@ -29,7 +29,6 @@ public class JTokenIntegrationTests
     }
 
     [Test]
-    [Ignore("depends on a block header naming a truly-missing property resolving to falsy instead of throwing — see PropertyResolver.Project, not yet implemented")]
     public void Render_ProducesAlmostErrorsIntegrationOutput()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");

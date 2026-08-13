@@ -34,9 +34,7 @@ internal class PropertyResolver(VariableStore variables)
         }
 
         var name = properties[0].Dehumanize();
-        var next = current.TryGetProperty(name, out var property)
-            ? property
-            : throw new InvalidOperationException($"Property '{name}' was not found.");
+        current.TryGetProperty(name, out var next);
         if (properties.Count == 1 && properties.LastSegmentNegated) { next = next.Negate(); }
 
         foreach (var result in Project(next, properties.Tail()))
