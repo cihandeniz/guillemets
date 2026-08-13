@@ -33,13 +33,18 @@ and Resolving the Block Name in `docs/specs.md`) before reaching for a
 
 **Cold start?** Read `PLAN.md` first for implementation status and remaining
 milestones, then `docs/architecture.md` for how the engine is actually built.
+`IDEAS.md` holds speculative, non-committed notes — things worth
+remembering, not things anyone's decided to build; unlike `PLAN.md` it
+only grows, and only loses an entry once it's promoted into `PLAN.md`
+as a real milestone or deliberately rejected.
 
-This file, `.claude/generic.md`, and `PLAN.md` are agent/contributor
-working files, not published documentation — neither should be linked
-from `README.md` or anything under `/docs`. The published docs are
-`README.md` (basic) and `/docs` (`specs.md`, `architecture.md`,
-`implementations/dotnet.md` and any future per-runtime sibling —
-lowercase, no reference back to these working files).
+This file, `.claude/generic.md`, `PLAN.md`, and `IDEAS.md` are
+agent/contributor working files, not published documentation — none
+should be linked from `README.md` or anything under `/docs`. The
+published docs are `README.md` (basic) and `/docs` (`specs.md`,
+`architecture.md`, `implementations/dotnet.md` and any future
+per-runtime sibling — lowercase, no reference back to these working
+files).
 
 ## Stack
 
