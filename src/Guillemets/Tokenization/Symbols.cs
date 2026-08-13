@@ -13,6 +13,7 @@ internal static class Symbols
     const char BANG = '!';
     const char EQUALS = '=';
     const char SPACE = ' ';
+    const char DOT = '.';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -28,6 +29,7 @@ internal static class Symbols
             .Add([BACKSLASH, TILDE], Tokens.Escaped)
             .Add([COLON, SPACE], Tokens.Colon)
             .Add([COLON], Tokens.BareColon)
+            .Add([DOT, COLON, SPACE], Tokens.LocalScope)
             .Add([SPACE, DELIMITER, SPACE], Tokens.Pipe)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)

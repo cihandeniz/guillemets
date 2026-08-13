@@ -6,15 +6,7 @@ namespace Guillemets.Tests;
 
 public class SpecTests
 {
-    // Fixtures the engine doesn't implement yet. TDD one-case-at-a-time: a
-    // fixture listed here is Ignored (not Failed), so the suite is always
-    // green at commit time. Remove a fixture's name once its case goes
-    // green; this set is empty once the engine is complete.
-    // Scope navigation (PLAN.md milestone 1, `.: `/`..: `) -- spec/fixtures
-    // written, engine work not started.
     static readonly HashSet<string> IGNORED_FIXTURES = [
-        "14-scope-navigation/001-this-scope-only-reaches-own-property-over-magic-var",
-        "14-scope-navigation/002-this-scope-only-skips-fallback",
         "14-scope-navigation/003-climb-to-parent-scope",
         "14-scope-navigation/004-climb-two-levels",
         "14-scope-navigation/005-combine-climb-and-this-scope-only",
@@ -40,11 +32,6 @@ public class SpecTests
         return IGNORED_FIXTURES.Contains(FixtureName(path)) ? testCase.Ignore("not yet implemented") : testCase;
     }
 
-    // Case files are discovered by extension (".md" for success, ".error"
-    // for parse errors), excluding *.guil.md templates (which also end in
-    // ".md"). A case's *.json data file is optional -- see ReadData.
-    // "09-integration" is excluded here: it's exercised explicitly by each
-    // data source's own *IntegrationTests, not by the generic spec sweep.
     static IEnumerable<string> CaseFiles(string extension) =>
         Directory.EnumerateFiles(SpecsRoot.PATH, $"*{extension}", SearchOption.AllDirectories)
             .Where(path => !path.EndsWith(".guil.md", StringComparison.Ordinal))
@@ -60,10 +47,6 @@ public class SpecTests
     static string FixtureName(string path) =>
         Path.GetRelativePath(SpecsRoot.PATH, BasePath(path)).Replace('\\', '/');
 
-    // A case file (e.g. "005a-both-truthy.md") reuses the .guil.md whose
-    // leading number matches its own, so several cases can share one
-    // template without duplicating it -- see "005-nested-blocks.guil.md"
-    // and its "005a"/"005b"/"005c" cases.
     static string TemplateFor(string casePath)
     {
         var directory = Path.GetDirectoryName(casePath)
@@ -79,9 +62,6 @@ public class SpecTests
     static string LeadingNumber(string fileName) =>
         new([.. fileName.TakeWhile(char.IsDigit)]);
 
-    // A fixture with no *.json file renders against an empty object rather
-    // than requiring one -- most fixtures (parse-error cases, plain literal
-    // text, etc.) never touch data at all.
     static JsonElement ReadData(string dataPath)
     {
         using var document = JsonDocument.Parse(File.Exists(dataPath) ? File.ReadAllText(dataPath) : "{}");

@@ -241,9 +241,10 @@ without the trailing space, neither is recognized as a navigator at all.
 ### This Scope Only
 
 `.: name` resolves `name` against the current scope's own data only — no
-falling back to an enclosing scope, and no magic-var shadowing, so `.: first`
-/`.: last` reach the current scope's own `first`/`last` property even where
-the magic `«first»`/`«last»` would otherwise shadow it:
+falling back to an enclosing scope, no magic-var shadowing, and no shadowing
+by a defined variable (see Variable Definitions, below) of the same name
+either, so `.: first`/`.: last` reach the current scope's own `first`/`last`
+property even where the magic `«first»`/`«last»` would otherwise shadow it:
 
 ```markdown
 ««items

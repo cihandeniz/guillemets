@@ -3,13 +3,18 @@ using System.Collections.ObjectModel;
 namespace Guillemets.Ast;
 
 internal class PropertyChainNode(IList<string> properties,
-    bool lastSegmentNegated = false
+    bool lastSegmentNegated = false,
+    bool thisScopeOnly = false
 ) : ReadOnlyCollection<string>(properties)
 {
     public bool LastSegmentNegated { get; } = lastSegmentNegated;
+    public bool ThisScopeOnly { get; } = thisScopeOnly;
 
     public PropertyChainNode WithoutLast() =>
         new([.. this.Take(Count - 1)]);
+
+    public PropertyChainNode LastSegment() =>
+        new([this[^1]], LastSegmentNegated);
 
     public PropertyChainNode Tail() =>
         new([.. this.Skip(1)], LastSegmentNegated);
@@ -20,12 +25,16 @@ internal class PropertyChainNode(IList<string> properties,
         bool _negateNext;
         bool _lastSegmentNegated;
         Position? _lastNegationPosition;
+        bool _thisScopeOnly;
 
         public void Negate(Position position)
         {
             _negateNext = true;
             _lastNegationPosition = position;
         }
+
+        public void PinToCurrentScope() =>
+            _thisScopeOnly = true;
 
         public void Add(string text)
         {
@@ -46,7 +55,7 @@ internal class PropertyChainNode(IList<string> properties,
         }
 
         public PropertyChainNode Build() =>
-            new(_properties, _lastSegmentNegated);
+            new(_properties, _lastSegmentNegated, _thisScopeOnly);
 
         public string PopVariableName()
         {

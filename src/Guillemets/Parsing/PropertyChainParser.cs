@@ -15,6 +15,14 @@ internal class PropertyChainParser(TokenCursor _tokens)
         buffer.Clear();
     }
 
+    void ParseLeadingNavigator(PropertyChainNode.Builder chain)
+    {
+        if (_tokens.AtEnd || _tokens.Current is not LocalScopeToken) { return; }
+
+        chain.PinToCurrentScope();
+        _tokens.Advance();
+    }
+
     public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe = false) =>
         Parse(openPosition, stopAtNewline, stopAtPipe, allowVariableDefinition: false, out _);
 
@@ -26,6 +34,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
         variableName = null;
         var chain = new PropertyChainNode.Builder();
         var buffer = new StringBuilder();
+        ParseLeadingNavigator(chain);
         while (true)
         {
             if (_tokens.AtEnd) { Flush(buffer, chain); break; }

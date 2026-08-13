@@ -28,6 +28,9 @@ internal static class Tokens
     public static BareColonToken BareColon(TokenContext context) =>
         new(context.Text, context.Position);
 
+    public static LocalScopeToken LocalScope(TokenContext context) =>
+        new(context.Text, context.Position);
+
     public static PipeToken Pipe(TokenContext context) =>
         new(context.Text, context.Position);
 
