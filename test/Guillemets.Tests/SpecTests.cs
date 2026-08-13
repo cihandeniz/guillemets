@@ -9,14 +9,7 @@ public class SpecTests
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
-    static readonly HashSet<string> IGNORED_FIXTURES =
-    [
-        // PLAN.md milestone 1, "filter-syntax-redesign": spec/test/doc work
-        // is done (see PLAN.md for the full grammar), engine still speaks
-        // the old `(name = value)` syntax. Comes out of this set one
-        // fixture at a time as each is implemented.
-        "02-conditional-blocks/009-corrupted-filter-syntax-in-body",
-    ];
+    static readonly HashSet<string> IGNORED_FIXTURES = [];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);

@@ -25,6 +25,9 @@ internal static class Tokens
     public static ColonToken Colon(TokenContext context) =>
         new(context.Text, context.Position);
 
+    public static BareColonToken BareColon(TokenContext context) =>
+        new(context.Text, context.Position);
+
     public static PipeToken Pipe(TokenContext context) =>
         new(context.Text, context.Position);
 

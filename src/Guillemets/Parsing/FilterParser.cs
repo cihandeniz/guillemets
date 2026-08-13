@@ -60,12 +60,17 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     bool TryParseStage([NotNullWhen(true)] out FilterNode? stage, out string name, out Position position)
     {
         position = _tokens.Current.Position;
-        name = ReadName();
+        name = ReadText(unescape: false).Trim();
         if (!_filters.TryGet(name, out var filter))
         {
             stage = null;
 
             return false;
+        }
+
+        if (!_tokens.AtEnd && _tokens.Current is BareColonToken colon)
+        {
+            throw new TemplateParseException("Expected a space after ':'", colon.Position.NextColumn());
         }
 
         if (_tokens.AtEnd || _tokens.Current is not ColonToken)
@@ -80,9 +85,6 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
 
         return true;
     }
-
-    string ReadName() =>
-        ReadText(unescape: false).Trim();
 
     string ReadValue() =>
         ReadText(unescape: true);
