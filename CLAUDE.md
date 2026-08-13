@@ -113,6 +113,12 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
 - `using` directives sorted alphabetically (no special-casing `System.*`);
   `using static` directives form their own group below, separated by a blank
   line.
+- A boolean expression that doesn't fit on one line breaks with `&&`/`||` at
+  the *end* of each line, not the start; a closing `)` that ends up alone gets
+  its own line, the same way a closing `}` would
+  (`if (!FilterParser.TryParse(expectLeadingPipe: false, out var pipeline) ||\n
+  _tokens.AtEnd ||\n    _tokens.Current is not CloseBlockToken\n)` in
+  `BodyParser.TryParseFooter`).
 - Never write `private` explicitly — it's the default.
 - Keep whitespace between statements minimal — no blank-line padding between
   unrelated statements.
@@ -321,11 +327,12 @@ When the user says they're "parking" (wrapping up for the day):
 4. Update `CLAUDE.md` with any durable convention/rule/decision from this
    session — these three files are what survive to a cold start elsewhere;
    nothing load-bearing should live only in chat history.
-5. Remind the user of uncommitted changes — don't run git yourself; just point
-   out what's pending.
-6. Give a short summary: what's done, what's next, anything to double-check.
+5. Give a short summary: what's done, what's next, anything to double-check.
 
 ## Git
 
-Never run `git` commands in this repo — the user handles git themselves. Give
-them the exact command to run and wait.
+Read-only `git` commands (`log`, `diff`, `show`, `status`, `blame`, etc.) are
+fine to run directly. Never run a `git` command that writes (`add`, `commit`,
+`push`, `checkout`, `reset`, etc.) — this process has no write permission on
+`.git` anyway, so it would fail. The user handles all of git themselves; don't
+prepare commands for them or remind them about pending git tasks.

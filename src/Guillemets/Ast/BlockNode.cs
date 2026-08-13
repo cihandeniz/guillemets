@@ -1,5 +1,6 @@
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
+using Guillemets.Filters;
 using Guillemets.Rendering;
 
 using static Guillemets.Position;
@@ -14,7 +15,8 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
 {
     public string Render(RenderContext context, Scope scope)
     {
-        var rendered = ResolveBehavior(context, scope).Render(context, Body, ElseBody);
+        var items = ResolveBehavior(context, scope).Render(context, Body, ElseBody);
+        var rendered = string.Concat(ApplyFooter(items));
         if (VariableName is null) { return rendered; }
 
         context.Variables.Define(VariableName, rendered.TrimEnd(NEWLINE));
@@ -22,18 +24,24 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
         return string.Empty;
     }
 
-    // TODO all behaviors need to have filters, so block behavior better return a
-    // string enumerable instead of just a string, so that block node handles the
-    // rest for all
-    //
-    // for single item behaviors (scope and conditional) join and join last will
-    // have no effect, since result is single or no item, for other filters, it
-    // will apply to all items
+    IEnumerable<string> ApplyFooter(IEnumerable<string> items)
+    {
+        if (Footer is not { Count: > 0 }) { return items; }
+
+        var values = items.Select(item => item.TrimEnd(NEWLINE));
+        foreach (var filter in Footer)
+        {
+            values = filter.Apply(values, FilterContext.Footer);
+        }
+
+        return values.Select(value => value + NEWLINE);
+    }
+
     IBlockBehavior ResolveBehavior(RenderContext context, Scope scope)
     {
         if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items))
         {
-            return new LoopBehavior(scope, items, Footer ?? []);
+            return new LoopBehavior(scope, items);
         }
 
         var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault() ?? UndefinedDataSource.INSTANCE;

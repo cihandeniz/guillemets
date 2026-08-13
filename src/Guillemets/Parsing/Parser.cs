@@ -16,5 +16,5 @@ internal class Parser(TokenCursor _tokens, FilterRegistry _filters)
         .Build();
 
     public List<IRenderable> Parse() =>
-        _registry.Get<BodyParser>().ParseNodes(insideBlock: false, stopAtElse: false);
+        _registry.Get<BodyParser>().Parse(insideBlock: false, stopAtElse: false);
 }

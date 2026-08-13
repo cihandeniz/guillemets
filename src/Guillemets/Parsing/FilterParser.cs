@@ -2,6 +2,7 @@ using Guillemets.Ast;
 using Guillemets.Filters;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using static Guillemets.Position;
@@ -15,44 +16,69 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     static readonly string ESCAPED_NEWLINE = $"{BACKSLASH}n";
     static readonly string ESCAPED_TAB = $"{BACKSLASH}t";
     static readonly string ESCAPED_PIPE = $"{BACKSLASH}{DELIMITER}";
+    static readonly Position NO_ERROR_POSITION = new(0, 0);
 
-    // TODO merge this and ParseFooterPipeline via a flag that states don't expect pipe token
-    // TODO this will use TryParse and if false it will throw
-    public IReadOnlyList<FilterNode> ParsePipeline()
+    public IReadOnlyList<FilterNode> Parse(bool expectLeadingPipe)
     {
-        var stages = new List<FilterNode>();
-        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
-        {
-            _tokens.Advance();
-            if (_tokens.AtEnd) { break; }
-
-            stages.Add(ParseStage());
-        }
-
-        return stages;
-    }
-
-    public IReadOnlyList<FilterNode> ParseFooterPipeline()
-    {
-        var stages = new List<FilterNode> { ParseStage() };
-        stages.AddRange(ParsePipeline());
-
-        return stages;
-    }
-
-    FilterNode ParseStage()
-    {
-        var position = _tokens.Current.Position;
-        var name = ReadName();
-        if (!_filters.TryGet(name, out var filter))
+        if (!TryParse(expectLeadingPipe, out var pipeline, out var name, out var position))
         {
             throw new TemplateParseException($"Unknown filter '{name}'", position);
         }
 
-        if (_tokens.AtEnd || _tokens.Current is not ColonToken) { return new FilterNode(filter, null); }
+        return pipeline;
+    }
+
+    public bool TryParse(bool expectLeadingPipe, out IReadOnlyList<FilterNode> pipeline) =>
+        TryParse(expectLeadingPipe, out pipeline, out _, out _);
+
+    bool TryParse(bool expectLeadingPipe, out IReadOnlyList<FilterNode> pipeline, out string name, out Position position)
+    {
+        var stages = new List<FilterNode>();
+        pipeline = stages;
+        name = string.Empty;
+        position = NO_ERROR_POSITION;
+
+        if (!expectLeadingPipe)
+        {
+            if (!TryParseStage(out var first, out name, out position)) { return false; }
+
+            stages.Add(first);
+        }
+
+        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
+        {
+            _tokens.Advance();
+            if (_tokens.AtEnd) { break; }
+            if (!TryParseStage(out var stage, out name, out position)) { return false; }
+
+            stages.Add(stage);
+        }
+
+        return true;
+    }
+
+    bool TryParseStage([NotNullWhen(true)] out FilterNode? stage, out string name, out Position position)
+    {
+        position = _tokens.Current.Position;
+        name = ReadName();
+        if (!_filters.TryGet(name, out var filter))
+        {
+            stage = null;
+
+            return false;
+        }
+
+        if (_tokens.AtEnd || _tokens.Current is not ColonToken)
+        {
+            stage = new FilterNode(filter, null);
+
+            return true;
+        }
         _tokens.Advance();
 
-        return new FilterNode(filter, ReadValue());
+        stage = new FilterNode(filter, ReadValue());
+
+        return true;
     }
 
     string ReadName() =>

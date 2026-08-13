@@ -17,7 +17,7 @@ internal class VariableParser(TokenCursor _tokens, ParserRegistry _registry)
         var open = (OpenToken)token;
         _tokens.Advance();
         var chain = PropertyChainParser.Parse(open.Position, stopAtNewline: false, stopAtPipe: true);
-        var filters = FilterParser.ParsePipeline();
+        var filters = FilterParser.Parse(expectLeadingPipe: true);
         if (_tokens.AtEnd || _tokens.Current is not CloseToken)
         {
             throw new TemplateParseException("Unclosed variable", open.Position);

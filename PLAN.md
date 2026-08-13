@@ -15,9 +15,12 @@ Milestone 1 (`filter-syntax-redesign`) is behaviorally complete — the
 filter-value escapes, every inline filter (`date`/`join`/`currency`/
 `truncate`/`join last`), and the block-footer pipeline (including
 `join`'s context-dependent bare default, `, ` inline vs. newline in a
-footer) are all live. Two implementation cleanups are flagged as
-`// TODO`s in place (see below) and one narrow fixture case remains.
-Pluggable data sources (JSON, POCO, Newtonsoft `JToken`), `tables`, and
+footer) are all live. The two implementation cleanups formerly flagged
+as `// TODO`s are done — `FilterParser` exposes a non-throwing
+`TryParse`, and `IBlockBehavior.Render` now returns
+`IEnumerable<string>` so `BlockNode` applies the footer pipeline
+uniformly — and one narrow fixture case remains (see below). Pluggable
+data sources (JSON, POCO, Newtonsoft `JToken`), `tables`, and
 `inline-lists` are all done — see `docs/architecture.md`. As a side
 effect, the `integration` milestone's `001-customer-offer` fixture now
 passes across all three data sources too.
@@ -30,33 +33,15 @@ after them) — except milestone 1, promoted to the top: it changes
 already-shipped parsing behavior and every other milestone below depends
 on its grammar.
 
-1. `filter-syntax-redesign` — behaviorally complete; two implementation
-   cleanups left in place as `// TODO` comments (pick up via the
-   "reviewed" grep-for-TODOs workflow in `CLAUDE.md`), plus one narrow
-   fixture case:
-   - `BodyParser.TryParseFooter` rewinds via a `catch
-     (TemplateParseException)` around `FilterParser.ParseFooterPipeline`
-     — control flow via exception. Wants a real `TryParse`-style API
-     instead: `ParsePipeline`/`ParseFooterPipeline` merge into one method
-     behind a flag for "leading pipe token expected or not," and gain a
-     non-throwing `TryParse` so `TryParseFooter` can rewind in a
-     plain `if`/`else` instead of a `catch`. Feasible per the TODO's own
-     note: a filter pipeline always ends at a `CloseBlockToken` or
-     `CloseToken`, so success/failure is decidable without throwing.
-   - `IBlockBehavior.Render` returns one joined `string`, so only
-     `LoopBehavior` (which naturally has multiple items) can sensibly
-     apply the footer pipeline — `ConditionalBehavior`/`ScopeBehavior`
-     never see it, and `LoopBehavior` has to immediately re-join by
-     newline after applying it, "defeating the purpose of join filter in
-     a loop" per the TODO. Wants `IBlockBehavior.Render` to return
-     `IEnumerable<string>` (unjoined) instead, so `BlockNode` can apply
-     the footer pipeline once, uniformly, to whatever any behavior
-     produces — a single item for `Conditional`/`Scope` (where
-     `join`/`join last` are then natural no-ops per spec, other filters
-     still apply), N items for `Loop`. The markdown-table path inside
-     `LoopBehavior` is the one exception: it still needs to return a
-     single already-newline-joined item, since heading/divider/rows/table
-     -footer must stay one merged block.
+1. `filter-syntax-redesign` — behaviorally complete; both implementation
+   cleanups formerly flagged as `// TODO` comments are done (`FilterParser`
+   gained a non-throwing `TryParse` so `BodyParser.TryParseFooter` rewinds
+   via a plain `if`/`else` instead of a `catch`, with `Parse` itself now
+   implemented on top of `TryParse`; `IBlockBehavior.Render` returns
+   `IEnumerable<string>` so `BlockNode` applies the footer pipeline once,
+   uniformly, across `Conditional`/`Scope`/`Loop`, with the markdown-table
+   path inside `LoopBehavior` still merging into one already-newline-joined
+   item first). One narrow fixture case remains:
    `02-conditional-blocks/009-corrupted-filter-syntax-in-body` wants a
    filter name immediately followed by a bare `:` (no space — e.g.
    `join:oops`) to raise `Expected a space after ':'` instead of silently
@@ -65,8 +50,8 @@ on its grammar.
    undifferentiated `LiteralToken` — nothing distinguishes "an attempted,
    malformed filter invocation" from "a colon that happens to appear in
    prose" (e.g. `Time: 10:30am`). The signal to use is narrower than "any
-   bare colon": `FilterParser.ParseStage`, when the name it just read is a
-   *registered* filter name and the next raw character is `:` not
+   bare colon": `FilterParser.TryParseStage`, when the name it just read is
+   a *registered* filter name and the next raw character is `:` not
    followed by a space, is where this should raise — not a general
    tokenizer-level change, which would misfire on ordinary prose.
 2. `integration` — the full worked example, combining everything above.

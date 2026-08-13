@@ -60,7 +60,7 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
 
     List<IRenderable> ParseBody(bool stopAtElse, out IReadOnlyList<FilterNode> footer)
     {
-        var body = BodyParser.ParseNodes(insideBlock: true, stopAtElse: stopAtElse, out footer);
+        var body = BodyParser.Parse(insideBlock: true, stopAtElse: stopAtElse, out footer);
         if (!_tokens.AtEnd && _tokens.Current is CloseBlockToken)
         {
             ValidateNotSharingCloseLine(body, _tokens.Current);
