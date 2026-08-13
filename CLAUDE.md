@@ -253,7 +253,28 @@ against the default language. See "Schema & Localization" in `docs/specs.md`.
   the captured variable name back via `out`, rather than a
   `BlockHeader(string?, PropertyChainNode)` DTO) — matches the pre-existing
   `SymbolTree.TryMatchSymbol`/`Scope.TryGetMagic` idiom already in this
-  codebase.
+  codebase. That changes once there are genuinely three or more values to
+  hand back, not just one secondary alongside the main result: consolidate
+  them into a nested result record instead of piling up more `out`
+  parameters, but keep the method itself in the same `bool TryXxx(...,
+  out result)` shape — return the record via a single `out`, don't switch
+  the method to returning the record directly
+  (`FilterParser.TryParseStage(bool stopAtNewline, out StageResult
+  result)`/`TryParsePipeline(..., out PipelineResult result)`, each
+  bundling the success payload with the diagnostic name/position needed
+  on failure).
+- Use target-typed `new(...)` (dropping the repeated type name) wherever
+  the compiler can actually infer it — an assignment/return/`out` whose
+  declared type exactly matches what's being constructed. Don't use it
+  where the declared type is a base/interface and the constructed type is
+  a concrete implementer (`IDataSource value = new JsonElementDataSource(
+  ...)` keeps its type name, since `new(...)` there would mean "construct
+  an `IDataSource`," which isn't valid), where the target is `var` (no
+  declared type to infer from), or where the `new(...)` is the receiver of
+  a chained call rather than the value actually being assigned (`new
+  SymbolTree(...).Add(...)` keeps its type name even though the whole
+  chain's result matches the assignment's declared type — the `new(...)`
+  itself isn't in a target-typed position).
 - No comments in source. If code needs one to be understood, that's a signal to
   restructure — extract a well-named method, turn an encoded string/boolean
   convention into a properly-named type or property — not to narrate it in

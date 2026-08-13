@@ -36,7 +36,7 @@ internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
 
         if (!_children.TryGetValue(path[0], out var child))
         {
-            _children[path[0]] = child = new SymbolTree();
+            _children[path[0]] = child = new();
         }
 
         if (repeat && path.Length == 1)

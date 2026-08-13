@@ -2,7 +2,6 @@ using Guillemets.Ast;
 using Guillemets.Filters;
 using Guillemets.Tokenization;
 using Guillemets.Tokens;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using static Guillemets.Position;
@@ -13,93 +12,13 @@ namespace Guillemets.Parsing;
 
 internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
 {
+    internal record StageResult(FilterNode? Stage, string Name, Position Position);
+    internal record PipelineResult(IReadOnlyList<FilterNode> Pipeline, string Name, Position Position);
+
     static readonly string ESCAPED_NEWLINE = $"{BACKSLASH}n";
     static readonly string ESCAPED_TAB = $"{BACKSLASH}t";
     static readonly string ESCAPED_PIPE = $"{BACKSLASH}{DELIMITER}";
     static readonly Position NO_ERROR_POSITION = new(0, 0);
-
-    public IReadOnlyList<FilterNode> Parse(bool expectLeadingPipe)
-    {
-        if (!TryParse(expectLeadingPipe, out var pipeline, out var name, out var position))
-        {
-            throw new TemplateParseException($"Unknown filter '{name}'", position);
-        }
-
-        return pipeline;
-    }
-
-    public bool TryParse(bool expectLeadingPipe, out IReadOnlyList<FilterNode> pipeline) =>
-        TryParse(expectLeadingPipe, out pipeline, out _, out _);
-
-    bool TryParse(bool expectLeadingPipe, out IReadOnlyList<FilterNode> pipeline, out string name, out Position position)
-    {
-        var stages = new List<FilterNode>();
-        pipeline = stages;
-        name = string.Empty;
-        position = NO_ERROR_POSITION;
-
-        if (!expectLeadingPipe)
-        {
-            if (!TryParseStage(out var first, out name, out position)) { return false; }
-
-            stages.Add(first);
-        }
-
-        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
-        {
-            _tokens.Advance();
-            if (_tokens.AtEnd) { break; }
-            if (!TryParseStage(out var stage, out name, out position)) { return false; }
-
-            stages.Add(stage);
-        }
-
-        return true;
-    }
-
-    bool TryParseStage([NotNullWhen(true)] out FilterNode? stage, out string name, out Position position)
-    {
-        position = _tokens.Current.Position;
-        name = ReadText(unescape: false).Trim();
-        if (!_filters.TryGet(name, out var filter))
-        {
-            stage = null;
-
-            return false;
-        }
-
-        if (!_tokens.AtEnd && _tokens.Current is BareColonToken colon)
-        {
-            throw new TemplateParseException("Expected a space after ':'", colon.Position.NextColumn());
-        }
-
-        if (_tokens.AtEnd || _tokens.Current is not ColonToken)
-        {
-            stage = new FilterNode(filter, null);
-
-            return true;
-        }
-        _tokens.Advance();
-
-        stage = new FilterNode(filter, ReadValue());
-
-        return true;
-    }
-
-    string ReadValue() =>
-        ReadText(unescape: true);
-
-    string ReadText(bool unescape)
-    {
-        var builder = new StringBuilder();
-        while (!_tokens.AtEnd && _tokens.Current is LiteralToken or NewlineToken)
-        {
-            builder.Append(SegmentText(_tokens.Current, unescape));
-            _tokens.Advance();
-        }
-
-        return builder.ToString();
-    }
 
     static string SegmentText(IToken token, bool unescape) => token switch
     {
@@ -113,4 +32,101 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         text.Replace(ESCAPED_NEWLINE, NEWLINE.ToString())
             .Replace(ESCAPED_TAB, TAB.ToString())
             .Replace(ESCAPED_PIPE, DELIMITER.ToString());
+
+    public IReadOnlyList<FilterNode> Parse(bool expectLeadingPipe)
+    {
+        if (!TryParsePipeline(expectLeadingPipe, stopAtNewline: false, out var result))
+        {
+            throw new TemplateParseException($"Unknown filter '{result.Name}'", result.Position);
+        }
+
+        return result.Pipeline;
+    }
+
+    public bool TryParse(bool expectLeadingPipe, out IReadOnlyList<FilterNode> pipeline)
+    {
+        var success = TryParsePipeline(expectLeadingPipe, stopAtNewline: true, out var result);
+        pipeline = result.Pipeline;
+
+        return success;
+    }
+
+    bool TryParsePipeline(bool expectLeadingPipe, bool stopAtNewline, out PipelineResult result)
+    {
+        var stages = new List<FilterNode>();
+        if (!expectLeadingPipe && !TryParseAndAddStage(stopAtNewline, stages, out result)) { return false; }
+
+        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
+        {
+            _tokens.Advance();
+            if (_tokens.AtEnd) { break; }
+            if (!TryParseAndAddStage(stopAtNewline, stages, out result)) { return false; }
+        }
+
+        result = new(stages, string.Empty, NO_ERROR_POSITION);
+
+        return true;
+    }
+
+    bool TryParseAndAddStage(bool stopAtNewline, List<FilterNode> stages, out PipelineResult result)
+    {
+        if (!TryParseStage(stopAtNewline, out var stage))
+        {
+            result = new(stages, stage.Name, stage.Position);
+
+            return false;
+        }
+
+        stages.Add(stage.Stage ?? throw new InvalidOperationException("A successful stage has a filter node."));
+        result = new(stages, string.Empty, NO_ERROR_POSITION);
+
+        return true;
+    }
+
+    bool TryParseStage(bool stopAtNewline, out StageResult result)
+    {
+        var position = _tokens.Current.Position;
+        var name = ReadText(unescape: false, stopAtNewline).Trim();
+        if (!_filters.TryGet(name, out var filter))
+        {
+            result = new(null, name, position);
+
+            return false;
+        }
+
+        if (!_tokens.AtEnd && _tokens.Current is BareColonToken colon)
+        {
+            throw new TemplateParseException("Expected a space after ':'", colon.Position.NextColumn());
+        }
+
+        if (_tokens.AtEnd || _tokens.Current is not ColonToken)
+        {
+            result = new(new(filter, null), name, position);
+
+            return true;
+        }
+
+        _tokens.Advance();
+        result = new(new(filter, ReadValue(stopAtNewline)), name, position);
+
+        return true;
+    }
+
+    string ReadValue(bool stopAtNewline) =>
+        ReadText(unescape: true, stopAtNewline);
+
+    string ReadText(bool unescape, bool stopAtNewline)
+    {
+        var builder = new StringBuilder();
+        while (!_tokens.AtEnd && ContinuesText(stopAtNewline))
+        {
+            builder.Append(SegmentText(_tokens.Current, unescape));
+            _tokens.Advance();
+        }
+
+        return builder.ToString();
+    }
+
+    bool ContinuesText(bool stopAtNewline) =>
+        _tokens.Current is LiteralToken || (_tokens.Current is NewlineToken && !stopAtNewline);
 }

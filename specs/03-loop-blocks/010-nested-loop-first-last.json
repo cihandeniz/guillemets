@@ -1,0 +1,6 @@
+{
+  "Quotes": [
+    { "Items": [{ "Name": "A" }, { "Name": "B" }] },
+    { "Items": [{ "Name": "C" }] }
+  ]
+}

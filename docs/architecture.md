@@ -65,10 +65,11 @@ flowchart TB
     Root(("(root)"))
     Root --> Open["«"] --> OpenToken["Open"]
     Open --> OpenOpen["« (loops on «)"] --> OpenBlockToken["OpenBlock\n(depth = run length)"]
-    Root --> Close["»"] --> CloseToken["Close"]
+    Root --> Close["»"] --> CloseToken["Close\n(literal text if nothing's open)"]
     Close --> CloseClose["» (loops on »)"] --> CloseBlockToken["CloseBlock\n(depth) + trailing newline"]
-    Root --> Esc["backslash"] --> EscChar["« or » or backslash"] --> EscapedToken["Escaped literal"]
-    Root --> ColonSpace[": "] --> ColonToken["Colon"]
+    Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedToken["Escaped literal"]
+    Root --> Colon[":"] --> BareColonToken["BareColon\n(malformed-filter signal)"]
+    Colon --> ColonSpace[" "] --> ColonToken["Colon"]
     Root --> SpacePipeSpace[" | "] --> PipeToken["Pipe"]
     Root -.no match anywhere.-> LiteralToken["Literal (fallback)"]
 ```
@@ -86,14 +87,28 @@ its cursor past it. Anything the tree doesn't recognize accumulates as
 plain text and becomes a `LiteralToken` once a real match (or the end of
 the template) flushes it.
 
-`\«`, `\»`, and `\\` resolve to an `EscapedToken` instead of a plain
-`LiteralToken` — same `Text`, but a distinct type. `EscapedToken`
+`\«`, `\»`, `\~`, and `\\` resolve to an `EscapedToken` instead of a
+plain `LiteralToken` — same `Text`, but a distinct type. `EscapedToken`
 inherits `LiteralToken`, so every other parser that pattern-matches on
 `LiteralToken` still sees it. Only `FilterParser` cares about the
 difference: inside a filter value, an *unescaped* `\n`/`\t`/`\|` means
 "literal newline/tab/pipe," but a global escape already resolved to one
 of those characters must not be reinterpreted a second time. The
 distinct type is what lets it tell the two apart.
+
+A bare `:` (no trailing space) matches `BareColonToken` instead of
+falling into `LiteralToken`. `FilterParser` uses it to catch a botched
+filter invocation (`join:oops` instead of `join: oops`) right where a
+*registered* filter name is immediately followed by one — not a
+general tokenizer rule, which would misfire on ordinary prose like
+`Time: 10:30am`.
+
+A lone `»` that never closes anything — nothing's open, or it's a run
+whose length doesn't match a real close — still needs to render as
+plain text. `CloseToken` implements `ITextToken` for exactly that: the
+same fallback that already renders `ColonToken`/`NewlineToken`/etc. as
+literal text when nothing more specific claims them handles a stray
+`»` too.
 
 ## Parsing, in more detail
 
@@ -128,24 +143,73 @@ hazard.
 marks a footer line — `join: , »»` looks, up to its last two characters,
 like it could just be body text. So at the start of every line inside a
 block, `BodyParser` speculatively asks `FilterParser` to parse a filter
-pipeline from that position. Two outcomes both mean "not a footer, keep
+pipeline from that position. Three outcomes all mean "not a footer, keep
 going": the pipeline fails to parse (unknown filter name — ordinary body
-text almost never doubles as one), or it parses but isn't immediately
+text almost never doubles as one), it parses but isn't immediately
 followed by the block's closing `»»` (there's more body content on the
-line, or on lines after it). Either way, `TokenCursor.Rewind` puts the
-cursor back and normal body parsing continues untouched. Only when the
-pipeline parses *and* lands exactly on `»»` — matching the spec's "MUST
-be the only thing on that line" rule — does `BodyParser` commit to it as
-the block's footer instead of a body node.
+line), or a newline shows up before `»»` does. `TokenCursor.Rewind` puts
+the cursor back in all three cases and normal body parsing continues
+untouched. That last case is enforced inside `FilterParser` itself, not
+just checked afterward: parsing in footer mode stops dead at a newline
+instead of crossing it, unlike parsing an inline `«…»` token, which may
+legitimately span several lines. Only when the pipeline parses *and*
+lands exactly on `»»`, glued to it with nothing between — matching the
+spec's "MUST be the only thing on that line" rule — does `BodyParser`
+commit to it as the block's footer instead of a body node.
 
 ## Rendering behavior
 
-`BlockNode` looks at what a block's header resolves to and picks a
-behavior — a list becomes a loop, an object a scope, anything else a
-conditional. Same syntax every time; only the resolved type decides. A
-loop body that starts and ends each line with `|` renders as a markdown
-table instead of a plain repeat, with a heading/divider/footer split out
+`BlockNode` resolves its header to one of three behaviors, all
+implementing `IBlockBehavior`:
+
+| Resolved type | Behavior              |
+| ---            | ---                   |
+| list           | `LoopBehavior`        |
+| object         | `ScopeBehavior`       |
+| anything else  | `ConditionalBehavior` |
+
+Same syntax every time; only the resolved type decides. A loop body
+that starts and ends each line with `|` renders as a markdown table
+instead of a plain repeat, with a heading/divider/footer split out
 from the one row that actually repeats.
+
+`IBlockBehavior.Render` returns one string per rendered item —
+`Conditional`/`Scope` return zero or one, `Loop` returns one per item
+(or a single already-merged string for a table, since its
+heading/rows/footer can't be pulled apart again afterward). `BlockNode`
+applies the block's own footer filter pipeline, if any, to whatever
+comes back — uniformly, regardless of which behavior produced it —
+then joins the result into the block's final rendered string. That
+uniform handling is why `join`/`join last` are natural no-ops on a
+`Conditional`/`Scope` block: there's only ever one item for them to
+act on.
+
+### Loop items, filtering, and flattening
+
+`PropertyResolver.Resolve` is where a loop's items actually get found,
+and it applies two rules a plain property chain doesn't need:
+
+- If the chain's last segment is a boolean property projected through
+  a list (`items: active`), the list filters down to the matching
+  item(s) instead of collapsing to a list of booleans — every matched
+  item's value is checked for `DataKind.Boolean` first, so this only
+  kicks in for a genuine boolean field, not e.g. a number that happens
+  to read as falsy/truthy.
+- A chain that flattens through two list levels (`quotes: prices`,
+  each quote holding its own list of prices) merges into one combined
+  list, rather than one list *per* quote.
+
+Both rules apply everywhere a chain resolves, not just in a block
+header — used inline, they still filter/flatten the same way; there's
+just no body to scope into, so each surviving item's own display
+representation is what renders.
+
+`Scope.TryGetMagic` resolves `first`/`last` before anything else is
+even considered, for a single-segment chain — that's what makes them
+shadow an item's own same-named property, and why they're always the
+*innermost* loop's position from inside a nested loop: `IsFirst`/
+`IsLast` are set directly on each loop-item `Scope`, so they never
+fall back to a parent scope the way an ordinary property lookup would.
 
 ## Pluggable data sources & filters
 
@@ -161,23 +225,25 @@ optional callback so callers can register their own alongside the
 built-ins (see `README.md`'s Custom filters section).
 
 A bare filter stage (no `: value` at all) can mean something different
-depending on where it's written — `join`'s default is `, ` inline but a
-newline in a block footer. `IFilter.DefaultArg(FilterContext)` is a
-default interface method for this: most filters don't override it and
-stay context-free, `JoinFilter` does. `FilterNode.ResolveArg(context)`
-is what actually applies it — an explicit `: value` always wins, and
-only a bare stage falls through to `DefaultArg`. Both `VariableNode`
-(inline) and `LoopBehavior` (block footer) call `ResolveArg`, passing
-their own `FilterContext`, so a bare `join` reads correctly in either
-spot.
+depending on where it's written — `join`'s default is `, ` inline but
+a newline in a block footer. `IFilter.GetDefaultArg(FilterContext)` is
+a default interface method for this: most filters don't override it
+and stay context-free, `JoinFilter` does. `FilterNode.Apply(values,
+context)` is what actually applies it — an explicit `: value` always
+wins, and only a bare stage falls through to `GetDefaultArg`.
+`VariableNode` (inline) and `BlockNode.ApplyFooter` (block footer)
+each call it with their own `FilterContext`, so a bare `join` reads
+correctly in either spot.
 
-`LoopBehavior` applies the block's footer pipeline (if any) to the
-per-iteration renders exactly the way `VariableNode` applies an inline
-pipeline to resolved property values — each stage narrows the list, then
-a final `string.Join` collapses whatever's left. The only difference is
-the separator: `, ` for `VariableNode`, a newline for `LoopBehavior`, so
-a loop with no footer at all still reads as one item per line, same as
-before footers existed.
+`BlockNode.ApplyFooter` runs the footer pipeline once, uniformly,
+regardless of which `IBlockBehavior` produced the items — a loop's
+per-iteration renders, or a conditional/scope's single one. Each item
+is trimmed of its own trailing newline first, so `join`'s separator
+doesn't collide with one already baked into the render; pipeline
+stages then run in sequence narrowing the list, and the survivors are
+rejoined with a trailing newline each. A loop with no footer at all
+still reads as one item per line, same as before footers existed —
+that's just what an empty pipeline leaves in place.
 
 ## Tests
 

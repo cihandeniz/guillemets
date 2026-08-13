@@ -23,7 +23,7 @@ public class Template
         var filters = FilterRegistry.CreateDefault(configureFilters);
         var nodes = new Parser(tokens, filters).Parse();
 
-        return new Template(nodes, lineEnding);
+        return new(nodes, lineEnding);
     }
 
     readonly IReadOnlyList<IRenderable> _nodes;

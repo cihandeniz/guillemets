@@ -169,6 +169,13 @@ The following variables are injected automatically inside every loop block:
 name — if a loop item's own data has a `first` or `last` field, that field
 becomes unreachable via `«first»`/`«last»` inside that loop.
 
+Inside a nested loop, `«first»`/`«last»` always refer to the *innermost*
+loop's position — the same shadowing rule as any other name lookup falling
+back to an enclosing scope (see Blocks, above), except `first`/`last` are
+always defined the moment you're inside any loop, so they never fall back
+to an outer loop. There's no way to reach an outer loop's `first`/`last`
+from inside a nested one.
+
 ### Filtering Out Items in Lists
 
 If the chain's last segment is a boolean property projected through a list,
@@ -381,8 +388,11 @@ join: , »»
 ```
 
 renders as a comma-separated list when used via `«tags»`. The pipeline MUST be
-the only thing on that line — nothing else may share it, before or after. When
-the block has an else branch, it goes on the last line of whichever branch
+the only thing on that line — nothing else may share it, before or after —
+and MUST end right where the closing `»»` starts, with no line break between
+them. A pipeline that isn't glued to the close this way isn't recognized as
+a footer at all; it's ordinary literal body content instead. When the block
+has an else branch, the footer goes on the last line of whichever branch
 renders last: the truthy body if there is no `~`, the falsy body if there is
 one. `~` itself always stays on its own line and is never adjacent to it.
 
@@ -391,6 +401,20 @@ filter's value, even mid-value with no space before it — `join: , »»` isn't
 ambiguous, the value is exactly `, `. This is the same closing-token rule
 that ends any other block body (see Blocks, above), not something specific
 to filter values.
+
+A table's own trailing footer rows (see Tables, below) are a different,
+non-conflicting concept from this pipeline, and the "glued to the close"
+rule above keeps them from colliding in practice: a table row written on
+its own line, even one that happens to look like a filter name, is just
+another literal row — the pipeline only ever wins when it's written right
+up against `»»`. In that glued form, a table always collapses to one
+rendered block of text, so the pipeline applies to that whole rendered
+table as a single value, exactly like it would for a conditional or scope
+block's single output. `join`/`join last` are no-ops there (a single value
+has nothing to join), so they're harmless if written out of habit; any
+other filter (`truncate`, `date`, ...) would reformat the entire rendered
+table text, which is never useful — don't attach a filter pipeline to a
+table body.
 
 ## Full Example — Customer Quote
 

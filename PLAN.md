@@ -9,7 +9,7 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 141 passed, 0 skipped, 141 total, 0 failed.
+`dotnet test` is green: 145 passed, 0 skipped, 145 total, 0 failed.
 `filter-syntax-redesign` and `integration` are both fully done — the
 `: `/` | ` grammar, the global `\` escapes, the scoped `\n`/`\t`/`\|`
 filter-value escapes, every inline filter (`date`/`join`/`currency`/
@@ -18,7 +18,14 @@ context-dependent bare default, `, ` inline vs. newline in a footer),
 and the full `001-customer-offer`/`002-almost-errors` worked examples
 (across all three data sources) all pass. Pluggable data sources (JSON,
 POCO, Newtonsoft `JToken`), `tables`, and `inline-lists` are all done —
-see `docs/architecture.md`.
+see `docs/architecture.md`. A spec-hardening pass closed every known
+ambiguity in `docs/specs.md` and fixed four real bugs it surfaced along
+the way (`SymbolTree`/`CloseToken` mishandling a `»»` run not followed
+by another `»` or a newline; inline resolution of a list-projected
+boolean chain leaking raw `True`/`False` instead of filtering; a loop
+header flattening through two list levels crashing instead of merging;
+and a block-footer filter pipeline not requiring the same-line-as-`»»`
+gluing the spec always assumed) — no open ambiguities remain.
 
 ## Remaining milestones
 
@@ -38,23 +45,19 @@ whenever a new failure mode turns up rather than tracking it here).
    on where the mapping table itself is supplied from (a data source
    alongside the render call? a separate file/format?) since nothing in
    the engine's public API accepts one today.
-
-## Spec hardening backlog
-
-From a time-boxed spec/coverage review. Everything found is resolved
-except three ambiguities below, each still needing a decision before a
-wording fix (none are known bugs — just unstated behavior). Along the
-way this surfaced and fixed three real bugs, each now locked in by a
-fixture: `SymbolTree.ExtendMatch`/`CloseToken` mishandling a `»»` run
-not followed by another `»` or a newline; inline resolution of a
-list-projected boolean chain (e.g. `«items: active»`) leaking raw
-`True`/`False` instead of filtering, per `PropertyResolver.Resolve`;
-and `TryResolveArrayItems` crashing on a loop header chain that
-flattens through two list levels (e.g. `quotes: prices`) instead of
-merging them into one loop.
-
-1. Table "footer" (trailing rows) vs. filter "Block Footer" — unclear
-   if/how the two interact within one loop block.
-2. Nested-loop `first`/`last` shadowing is unaddressed.
-3. `first`/`last` availability after "Filtering Out Items in Lists"
-   collapses a loop down to a single scoped item is unaddressed.
+2. Explicit scope-navigation syntax — `.: name` for "this scope only,"
+   bypassing magic-var shadowing (`.: first` reaches the current
+   scope's own `first` property even where the magic `«first»` would
+   otherwise shadow it — see Magic Loop Variables in `docs/specs.md`),
+   and `..: name` for "climb to the parent scope," chainable (`..: ..:
+   name` climbs two levels). The two compose: `..: .: name` climbs one
+   level, then applies `.: ` there, reaching that parent's own property
+   with its magic var skipped too. Needs design work before fixtures:
+   exact grammar for `.: `/`..: ` as property-chain-leading markers
+   distinct from the existing `: ` property accessor, how far a `..: `
+   chain can climb before erroring past the root scope, and how it
+   interacts with `!` negation and filters.
+3. Rehumanize `docs/specs.md` and the other published docs (`README.md`,
+   `docs/architecture.md`, `docs/implementations/dotnet.md`,
+   `docs/README.md`) — a readability/tone pass, not a correctness one,
+   after this session's many incremental edits.
