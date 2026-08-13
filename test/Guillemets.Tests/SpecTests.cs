@@ -9,7 +9,17 @@ public class SpecTests
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
-    static readonly HashSet<string> IGNORED_FIXTURES = [];
+    // glossary-localization: fixtures for the Term = PropertyName glossary
+    // bridging template vocabulary to model naming (see "Glossary &
+    // Localization" in docs/specs.md and docs/implementations/dotnet.md).
+    // Not yet implemented -- Template.Create doesn't accept a glossary yet,
+    // so these render against direct resolution only. See PLAN.md.
+    static readonly HashSet<string> IGNORED_FIXTURES = [
+        "13-glossary-localization/001-basic-mapping",
+        "13-glossary-localization/003-case-insensitive-glossary-match",
+        "13-glossary-localization/004-nested-chain-per-segment",
+        "13-glossary-localization/005-block-header",
+    ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);

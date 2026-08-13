@@ -36,3 +36,33 @@ locale-aware list formatting beyond what the template itself writes. See
 
 Same underlying `string.Join` as `join`, applied to just the last two items.
 See [`specs.md`](../specs.md)'s Filters section for the full behavior contract.
+
+## Glossary & Localization
+
+A glossary is supplied at parse time, alongside `Template.Create`'s existing
+`configureFilters` callback, as an `IStringLocalizer`
+(`Microsoft.Extensions.Localization.Abstractions`) — the same abstraction
+ASP.NET Core apps already use for culture-aware resource lookup, so a
+glossary can plug into whatever localization provider (`.resx`, a database,
+a translation service) the host application already has, rather than the
+engine inventing its own format.
+
+The mapping direction is inverted from `IStringLocalizer`'s usual
+key-to-display-string use: the resource *key* is the property name, and its
+*value* is the localized term a template author types for it. Resolution
+enumerates `IStringLocalizer.GetAllStrings()` and matches a template
+segment against each entry's `Value`, case-insensitively, taking the
+matching entry's `Name` as the property name. See
+[`specs.md`](../specs.md)'s Glossary & Localization section for the full
+matching/fallback behavior contract — a term with no entry falls back to
+direct (PascalCase-of-space-words) resolution, so a glossary that's silent
+on a given term and no glossary at all behave identically for that term.
+
+Because that lookup happens during `Render`, not `Create`, the same parsed
+`Template` re-resolves against whatever culture is ambient
+(`CultureInfo.CurrentUICulture`) on the calling thread at each render
+call — a `null`/absent glossary, or one with no entry for a given culture,
+just falls back to direct resolution for that render. `Render` itself takes
+no separate culture parameter; the ambient culture is the only input,
+consistent with how `IStringLocalizer` already resolves elsewhere in a
+.NET host.

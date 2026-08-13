@@ -9,7 +9,9 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 145 passed, 0 skipped, 145 total, 0 failed.
+`dotnet test` is green: 146 passed, 4 skipped, 150 total, 0 failed. The 4
+skipped are `glossary-localization` fixtures pending implementation (see
+Remaining milestones, below).
 `filter-syntax-redesign` and `integration` are both fully done — the
 `: `/` | ` grammar, the global `\` escapes, the scoped `\n`/`\t`/`\|`
 filter-value escapes, every inline filter (`date`/`join`/`currency`/
@@ -35,16 +37,41 @@ In priority order, matching disk order under `/specs`
 has no further known gaps — add a fixture directly, per `CLAUDE.md`,
 whenever a new failure mode turns up rather than tracking it here).
 
-1. `schema-localization` — true schema/localization remapping (business
-   term ≠ property name), per "Schema & Localization" in `docs/specs.md`:
-   a mapping table (`Localized Term = template token = PropertyName`)
-   resolved case-insensitively against the default language, for cases
-   where direct PascalCase-of-space-words resolution via Humanizer
-   doesn't already match. No `/specs` fixture group exists for this yet —
-   add one, test-first. Needs a design decision, before writing fixtures,
-   on where the mapping table itself is supplied from (a data source
-   alongside the render call? a separate file/format?) since nothing in
-   the engine's public API accepts one today.
+1. `glossary-localization` — true glossary/localization remapping (business
+   term ≠ property name), per "Glossary & Localization" in `docs/specs.md`
+   and `docs/implementations/dotnet.md`. Design is settled: a glossary is
+   `Term = PropertyName` rows, matched case-insensitively per segment,
+   additive over direct resolution (a term with no entry falls back to
+   PascalCase-of-space-words as today). Supplied at parse time —
+   `Template.Create(template, glossary)` alongside the existing
+   `configureFilters` overload — as an `IStringLocalizer`
+   (`Microsoft.Extensions.Localization.Abstractions`): the resource key is
+   the property name, its value (for whichever culture is ambient) is the
+   term. Because the actual lookup happens during `Render`, not `Create`,
+   each render re-resolves against `CultureInfo.CurrentUICulture` on the
+   calling thread at that moment — no separate culture parameter on
+   `Render`. The `/specs/13-glossary-localization` fixture group exists
+   (`001-basic-mapping`, `002-fallback-not-in-glossary`,
+   `003-case-insensitive-glossary-match`, `004-nested-chain-per-segment`,
+   `005-block-header`, each with a `.en.json` sidecar — a JSON object of
+   `"PropertyName": "Term"` entries, the same key/value direction
+   `IStringLocalizer.GetAllStrings()` returns) and is red against the
+   current engine except `002` (whose expected behavior needs no glossary
+   at all) — the other four are listed in `SpecTests.cs`'s
+   `IGNORED_FIXTURES`. Still to do:
+   - Add the `Microsoft.Extensions.Localization.Abstractions` package
+     reference.
+   - Implement glossary resolution in `PropertyResolver`/`Scope`, threaded
+     through a new `Template.Create` overload.
+   - Wire `SpecTests.cs` to load a case's `.<culture>.json` sidecar(s) (if
+     present) into a fake `IStringLocalizer` and pass it to
+     `Template.Create`, then un-ignore the four fixtures one at a time,
+     TDD-style.
+   - A small dedicated test suite (like each data source's own
+     integration tests) exercising actual `CultureInfo.CurrentUICulture`
+     switching between renders of the same parsed `Template` — the flat
+     fixture corpus doesn't model an ambient culture change well, so this
+     stays outside `/specs`.
 2. Explicit scope-navigation syntax — `.: name` for "this scope only,"
    bypassing magic-var shadowing (`.: first` reaches the current
    scope's own `first` property even where the magic `«first»` would

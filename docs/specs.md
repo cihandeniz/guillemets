@@ -496,13 +496,14 @@ value — `\n` there is just the two characters `\` and `n`.
 There's no `\:` — a filter clause only ever looks for the *first* `: `, so
 nothing after it is re-scanned for another one.
 
-## Schema & Localization
+## Glossary & Localization
 
 Template authors write variable names as natural, space-separated words —
 whatever terms make sense to them. Developers name the underlying model in
-English, using standard code naming conventions. A schema bridges the two, since
-the author's business vocabulary won't always match the developer's code
-vocabulary.
+English, using standard code naming conventions. Direct resolution (see Nested
+Property Access, above) already bridges the two whenever the author's wording
+and the developer's naming agree once matched case-insensitively. A glossary
+exists for the terms where they don't.
 
 ### Template
 
@@ -512,23 +513,42 @@ vocabulary.
 «company: name»
 ```
 
-### Model (C#)
+### Model
 
-```csharp
-model.OfferNo
-model.FullName
-model.Company.Name
+```
+OfferNo
+FullName
+Company.Name
 ```
 
-### Schema mapping
+### Glossary
 
 ```markdown
-Quote No  = quote no  = OfferNo
-Full Name = full name = FullName
-Company   = company   = Company
-Name      = name      = Name
+Quote No = OfferNo
 ```
 
-A template's space-separated words are matched, case-insensitively, against the
-default language's localized terms in the schema. Whatever property name a
-matched term maps to is what gets resolved.
+A glossary is a table of rows, each mapping one localized term to the
+property name it resolves to. Only `quote no` needs an entry above — `full
+name` and `company: name` already reach `FullName`/`Company.Name` through
+direct resolution, so listing them would be redundant.
+
+A glossary's terms are scoped to a language. A template authored once may be
+matched against different term tables depending on which language is active
+for a given resolution — a business operating in Turkish and English might
+give the same `OfferNo` property a Turkish term in one glossary and an
+English term in another, and either template author can write in their own
+vocabulary against the same underlying model. What determines the active
+language, and how many languages a glossary can hold at once, is
+host/runtime behavior, documented per implementation rather than by this
+spec.
+
+A template's space-separated words are matched, case-insensitively, against
+the localized terms in the glossary. A glossary is additive, not exhaustive:
+it only needs to list the terms that actually diverge from their model's
+naming. A word with no matching entry falls back to direct resolution
+exactly as if no glossary were supplied at all, so a partial glossary and no
+glossary behave identically for every term it doesn't cover.
+
+Each segment of a property chain (`company: name`) is resolved independently,
+against direct resolution or the glossary in turn, so one glossary entry can
+bridge a single segment of a chain without needing to cover the others.

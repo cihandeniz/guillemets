@@ -63,7 +63,13 @@ C#/.NET, targeting `net10.0`. Layout:
   `.guil.md`/`.error` (expected exception message) for cases that must throw
   `TemplateParseException`, plus an optional `.json` data file — omit it and the
   case renders against `{}`, which is the common case for anything that doesn't
-  touch data (parse-error cases, plain literal text). Several cases can share
+  touch data (parse-error cases, plain literal text). `glossary-localization`
+  cases take a further optional `.<culture>.json` sidecar per language (e.g.
+  `.en.json`, `.tr.json` — a JSON object of `"PropertyName": "Term"` entries,
+  the same key/value direction `IStringLocalizer.GetAllStrings()` returns)
+  alongside the `.json` data file, following the same per-exact-case (not
+  shared-by-leading-digit) convention as `.json` — omit every culture and the
+  case renders with no glossary at all. Several cases can share
   one template by giving the template just the group number and suffixing each
   case's `.md`/`.error` (and `.json`, if present) with a letter
   (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `SpecTests.cs`
@@ -113,10 +119,13 @@ C#/.NET, targeting `net10.0`. Layout:
 
 Templates are authored with natural, space-separated words — the author's
 business vocabulary. Models are defined by developers in PascalCase/camelCase —
-the developer's code vocabulary. Where the two don't match (e.g. "quote no" vs.
-`OfferNo`), a schema mapping bridges them:
-`Localized Term = template token = PropertyName`, resolved case-insensitively
-against the default language. See "Schema & Localization" in `docs/specs.md`.
+the developer's code vocabulary. Direct resolution (PascalCase-of-space-words
+via Humanizer's `.Dehumanize()`) already bridges the two whenever they agree
+case-insensitively. Where they don't (e.g. "quote no" vs. `OfferNo`), a
+glossary bridges the rest: `Term = PropertyName` rows, matched
+case-insensitively, additive over direct resolution rather than replacing it —
+a term with no entry still falls back to direct resolution. See "Glossary &
+Localization" in `docs/specs.md`.
 
 ## C# code style
 
