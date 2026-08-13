@@ -30,6 +30,7 @@ internal static class Symbols
             .Add([COLON, SPACE], Tokens.Colon)
             .Add([COLON], Tokens.BareColon)
             .Add([DOT, COLON, SPACE], Tokens.LocalScope)
+            .Add([DOT, DOT, COLON, SPACE], Tokens.ParentScope)
             .Add([SPACE, DELIMITER, SPACE], Tokens.Pipe)
             .Add([TILDE], Tokens.Else, newline: true)
             .Add([BANG], Tokens.Negation)

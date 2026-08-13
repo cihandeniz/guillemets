@@ -4,11 +4,13 @@ namespace Guillemets.Ast;
 
 internal class PropertyChainNode(IList<string> properties,
     bool lastSegmentNegated = false,
-    bool thisScopeOnly = false
+    bool thisScopeOnly = false,
+    int climbLevels = 0
 ) : ReadOnlyCollection<string>(properties)
 {
     public bool LastSegmentNegated { get; } = lastSegmentNegated;
     public bool ThisScopeOnly { get; } = thisScopeOnly;
+    public int ClimbLevels { get; } = climbLevels;
 
     public PropertyChainNode WithoutLast() =>
         new([.. this.Take(Count - 1)]);
@@ -26,6 +28,7 @@ internal class PropertyChainNode(IList<string> properties,
         bool _lastSegmentNegated;
         Position? _lastNegationPosition;
         bool _thisScopeOnly;
+        int _climbLevels;
 
         public void Negate(Position position)
         {
@@ -35,6 +38,9 @@ internal class PropertyChainNode(IList<string> properties,
 
         public void PinToCurrentScope() =>
             _thisScopeOnly = true;
+
+        public void Climb() =>
+            _climbLevels++;
 
         public void Add(string text)
         {
@@ -55,7 +61,7 @@ internal class PropertyChainNode(IList<string> properties,
         }
 
         public PropertyChainNode Build() =>
-            new(_properties, _lastSegmentNegated, _thisScopeOnly);
+            new(_properties, _lastSegmentNegated, _thisScopeOnly, _climbLevels);
 
         public string PopVariableName()
         {

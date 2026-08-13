@@ -6,18 +6,7 @@ namespace Guillemets.Tests;
 
 public class SpecTests
 {
-    static readonly HashSet<string> IGNORED_FIXTURES = [
-        "14-scope-navigation/003-climb-to-parent-scope",
-        "14-scope-navigation/004-climb-two-levels",
-        "14-scope-navigation/005-combine-climb-and-this-scope-only",
-        "14-scope-navigation/006-negation-with-navigator",
-        "14-scope-navigation/007-filter-with-navigator",
-        "14-scope-navigation/008-navigator-as-block-header",
-        "14-scope-navigation/009-climb-past-root-scope-resolves-to-nothing",
-        "14-scope-navigation/010-climb-past-available-nesting-resolves-to-nothing",
-        "14-scope-navigation/011-this-scope-only-not-last-before-chain",
-        "14-scope-navigation/012-this-scope-only-repeated",
-    ];
+    static readonly HashSet<string> IGNORED_FIXTURES = [];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);

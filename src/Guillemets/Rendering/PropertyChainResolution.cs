@@ -11,7 +11,13 @@ internal class PropertyChainResolution(Scope _scope,
     Glossary _glossary
 )
 {
-    Scope Owner => _properties.ThisScopeOnly ? _scope : _scope.FindOwner(_properties);
+    Scope? ClimbedScope => _scope.Climb(_properties.ClimbLevels);
+    Scope? Owner =>
+        ClimbedScope switch
+        {
+            null => null,
+            { } scope => _properties.ThisScopeOnly ? scope : scope.FindOwner(_properties),
+        };
 
     public IEnumerable<IDataSource> Resolve()
     {
@@ -37,7 +43,9 @@ internal class PropertyChainResolution(Scope _scope,
             yield break;
         }
 
-        foreach (var result in Project(Owner.Data, _properties))
+        if (Owner is not { } owner) { yield break; }
+
+        foreach (var result in Project(owner.Data, _properties))
         {
             yield return result;
         }
@@ -49,7 +57,8 @@ internal class PropertyChainResolution(Scope _scope,
 
         return !_properties.ThisScopeOnly &&
             _properties.Count == 1 &&
-            _scope.TryGetMagic(_properties[0], _properties.LastSegmentNegated, out value);
+            ClimbedScope is { } scope &&
+            scope.TryGetMagic(_properties[0], _properties.LastSegmentNegated, out value);
     }
 
     bool TryDefinedVariable(out IDataSource value)
@@ -58,15 +67,16 @@ internal class PropertyChainResolution(Scope _scope,
 
         return !_properties.ThisScopeOnly &&
             _properties.Count == 1 &&
+            ClimbedScope is not null &&
             _variables.TryResolve(_properties[0], out value);
     }
 
     public bool TryFilteredItemScope([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         items = null;
-        if (_properties.ThisScopeOnly || _properties.Count <= 1) { return false; }
+        if (_properties.ThisScopeOnly || _properties.Count <= 1 || ClimbedScope is not { } scope) { return false; }
 
-        var containers = Project(_scope.FindOwner(_properties).Data, _properties.WithoutLast()).ToList();
+        var containers = Project(scope.FindOwner(_properties).Data, _properties.WithoutLast()).ToList();
         if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return false; }
 
         var lastSegment = _properties.LastSegment();

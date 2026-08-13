@@ -31,6 +31,9 @@ internal static class Tokens
     public static LocalScopeToken LocalScope(TokenContext context) =>
         new(context.Text, context.Position);
 
+    public static ParentScopeToken ParentScope(TokenContext context) =>
+        new(context.Text, context.Position);
+
     public static PipeToken Pipe(TokenContext context) =>
         new(context.Text, context.Position);
 

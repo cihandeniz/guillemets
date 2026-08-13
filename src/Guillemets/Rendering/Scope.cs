@@ -49,6 +49,9 @@ internal record Scope(IDataSource Data,
         return Parent is not null ? Parent.FindOwner(properties) : this;
     }
 
+    public Scope? Climb(int levels) =>
+        levels == 0 ? this : Parent?.Climb(levels - 1);
+
     bool HasProperty(string property) =>
         Data.Kind == DataKind.Object && Data.TryGetProperty(Glossary[property], out _);
 }

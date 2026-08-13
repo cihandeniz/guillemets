@@ -70,6 +70,8 @@ flowchart TB
     Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedToken["Escaped literal"]
     Root --> Colon[":"] --> BareColonToken["BareColon\n(malformed-filter signal)"]
     Colon --> ColonSpace[" "] --> ColonToken["Colon"]
+    Root --> Dot["."] --> DotColon[":"] --> DotColonSpace[" "] --> LocalScopeToken["LocalScope\n(.: )"]
+    Dot --> DotDot["."] --> DotDotColon[":"] --> DotDotColonSpace[" "] --> ParentScopeToken["ParentScope\n(..: )"]
     Root --> SpacePipeSpace[" | "] --> PipeToken["Pipe"]
     Root -.no match anywhere.-> LiteralToken["Literal (fallback)"]
 ```
@@ -102,6 +104,13 @@ filter invocation (`join:oops` instead of `join: oops`) right where a
 *registered* filter name is immediately followed by one — not a
 general tokenizer rule, which would misfire on ordinary prose like
 `Time: 10:30am`.
+
+`LocalScopeToken` (`.: `) and `ParentScopeToken` (`..: `) follow the
+same shape as `ColonToken`: both implement `ITextToken`, so `.: `/`..: `
+appearing in ordinary prose (outside a property chain, or without the
+trailing space) round-trips as plain literal text — nothing about the
+tokenizer itself knows these are scope-navigation markers. That meaning
+is applied entirely in `PropertyChainParser` (below).
 
 A lone `»` that never closes anything — nothing's open, or it's a run
 whose length doesn't match a real close — still needs to render as
@@ -157,6 +166,16 @@ lands exactly on `»»`, glued to it with nothing between — matching the
 spec's "MUST be the only thing on that line" rule — does `BodyParser`
 commit to it as the block's footer instead of a body node.
 
+`PropertyChainParser.ParseLeadingNavigator` runs once, before the main
+segment-parsing loop starts (and would need to run again after an `=`
+in a variable definition, if a future fixture needs `.: `/`..: ` there
+too — nothing currently exercises that). It consumes zero or more
+`ParentScopeToken`s (each one increments `PropertyChainNode.ClimbLevels`)
+followed by at most one `LocalScopeToken` (sets `ThisScopeOnly`); a
+`LocalScopeToken` or `ParentScopeToken` found immediately after that is
+a parse error — `.: ` must be the last navigator before the chain
+itself.
+
 ## Rendering behavior
 
 `BlockNode` resolves its header to one of three behaviors, all
@@ -186,8 +205,12 @@ act on.
 
 ### Loop items, filtering, and flattening
 
-`PropertyResolver.Resolve` is where a loop's items actually get found,
-and it applies two rules a plain property chain doesn't need:
+`PropertyResolver` is a thin per-render façade — it just constructs a
+`PropertyChainResolution` (one `scope`/`properties` pair, plus the
+render's `VariableStore`/`Glossary`) for each chain it's asked to
+resolve, and delegates. `PropertyChainResolution.Resolve` is where a
+loop's items actually get found, and it applies two rules a plain
+property chain doesn't need:
 
 - If the chain's last segment is a boolean property projected through
   a list (`items: active`), the list filters down to the matching
@@ -211,6 +234,38 @@ shadow an item's own same-named property, and why they're always the
 `IsLast` are set directly on each loop-item `Scope`, so they never
 fall back to a parent scope the way an ordinary property lookup would.
 
+### Scope Navigation
+
+`PropertyChainNode` carries two navigation flags a plain chain doesn't
+need: `ThisScopeOnly` (set by a leading `.: `) and `ClimbLevels` (one
+per leading `..: `). `ClimbLevels` is read in exactly one place,
+`ClimbedScope`; `ThisScopeOnly` is deliberately checked independently by
+each of `TryMagic`/`TryDefinedVariable`/`TryFilteredItemScope`/`Owner`
+instead of once by their shared caller, so `Resolve` itself never
+touches either flag directly — each helper stays a self-contained
+answer to "does this particular lookup apply here," rather than
+`Resolve` collecting the flags up front and threading a precomputed
+answer through every branch.
+
+- `ClimbedScope` walks `Scope.Climb(ClimbLevels)` — a small recursive
+  method on `Scope` itself, the same shape as `FindOwner`. Climbing
+  past the outermost scope (`Parent` running out before the walk
+  completes) returns `null`, not an error.
+- `Owner` (used for the final `Project` fallback) and every `TryXxx`
+  guard check `ClimbedScope` first: `null` short-circuits the whole
+  chain to unresolved, the same as a chain through a missing property
+  — climbing too far isn't a special case anywhere downstream, it's
+  just another way to end up with nothing to resolve against.
+  `ThisScopeOnly` then decides, at whichever scope the climb landed on,
+  whether magic-var shadowing, a defined variable, and enclosing-scope
+  fallback are still consulted (`..: name`, climb then normal rules) or
+  skipped entirely in favor of that scope's own data only
+  (`..: .: name`, climb then pin).
+
+`PropertyChainParser.ParseLeadingNavigator` (see Parsing, above) is the
+only place either flag gets set — `Resolve` and its `TryXxx` helpers
+only ever *read* them.
+
 ### Name Resolution
 
 `Rendering.Glossary` turns one property-chain segment (`quote no`) into
@@ -230,7 +285,7 @@ that's the culture `IStringLocalizer`'s own resource resolution actually
 varies by — keying on the wrong one would let a cache hit silently serve
 a `Glossary` built for a stale UI culture.
 
-`PropertyResolver.Project` indexes it directly (`_glossary[segment]`),
+`PropertyChainResolution.Project` indexes it directly (`_glossary[segment]`),
 once per chain segment. `Scope` carries its own `Glossary` too, since
 `Scope.FindOwner` needs to test whether an *ancestor* scope owns a given
 property. Every child `Scope` inherits its parent's `Glossary` unless one

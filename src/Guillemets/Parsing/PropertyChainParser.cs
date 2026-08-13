@@ -17,10 +17,24 @@ internal class PropertyChainParser(TokenCursor _tokens)
 
     void ParseLeadingNavigator(PropertyChainNode.Builder chain)
     {
+        while (!_tokens.AtEnd && _tokens.Current is ParentScopeToken)
+        {
+            chain.Climb();
+            _tokens.Advance();
+        }
+
         if (_tokens.AtEnd || _tokens.Current is not LocalScopeToken) { return; }
 
         chain.PinToCurrentScope();
         _tokens.Advance();
+
+        if (!_tokens.AtEnd && _tokens.Current is ParentScopeToken or LocalScopeToken)
+        {
+            throw new TemplateParseException(
+                "A this-scope-only navigator must be the last one before the property chain",
+                _tokens.Current.Position
+            );
+        }
     }
 
     public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe = false) =>
