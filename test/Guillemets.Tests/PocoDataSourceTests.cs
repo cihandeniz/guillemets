@@ -8,24 +8,24 @@ namespace Guillemets.Tests;
 public class PocoDataSourceTests
 {
     [Test]
-    public void Kind_ReturnsObject_ForPlainObject() =>
+    public void Kind_returns_object_for_plain_object() =>
         new PocoDataSource(new { Name = "Alice" }).Kind.ShouldBe(DataKind.Object);
 
     [Test]
-    public void Kind_ReturnsString_ForStringValue() =>
+    public void Kind_returns_string_for_string_value() =>
         new PocoDataSource("Alice").Kind.ShouldBe(DataKind.String);
 
     [Test]
-    public void Kind_ReturnsNumber_ForNumericValue() =>
+    public void Kind_returns_number_for_numeric_value() =>
         new PocoDataSource(42).Kind.ShouldBe(DataKind.Number);
 
     [TestCase(true)]
     [TestCase(false)]
-    public void Kind_ReturnsBoolean_ForBoolValue(bool value) =>
+    public void Kind_returns_boolean_for_bool_value(bool value) =>
         new PocoDataSource(value).Kind.ShouldBe(DataKind.Boolean);
 
     [Test]
-    public void Kind_ReturnsNull_ForNullValue() =>
+    public void Kind_returns_null_for_null_value() =>
         new PocoDataSource(null).Kind.ShouldBe(DataKind.Null);
 
     static IEnumerable<object> CollectionSamples()
@@ -38,11 +38,11 @@ public class PocoDataSourceTests
     }
 
     [TestCaseSource(nameof(CollectionSamples))]
-    public void Kind_ReturnsArray_ForVariousCollectionTypes(object collection) =>
+    public void Kind_returns_array_for_various_collection_types(object collection) =>
         new PocoDataSource(collection).Kind.ShouldBe(DataKind.Array);
 
     [Test]
-    public void TryGetProperty_ReturnsWrappedValue_WhenPropertyExists()
+    public void Try_get_property_returns_wrapped_value_when_property_exists()
     {
         var source = new PocoDataSource(new { Name = "Alice" });
 
@@ -51,15 +51,15 @@ public class PocoDataSourceTests
     }
 
     [Test]
-    public void TryGetProperty_ReturnsFalse_WhenPropertyMissing() =>
+    public void Try_get_property_returns_false_when_property_missing() =>
         new PocoDataSource(new { Name = "Alice" }).TryGetProperty("Age", out _).ShouldBeFalse();
 
     [Test]
-    public void TryGetProperty_ReturnsFalse_WhenNotAnObject() =>
+    public void Try_get_property_returns_false_when_not_an_object() =>
         new PocoDataSource("Alice").TryGetProperty("Length", out _).ShouldBeFalse();
 
     [Test]
-    public void EnumerateArray_ReturnsWrappedItems_ForList()
+    public void Enumerate_array_returns_wrapped_items_for_list()
     {
         var items = new PocoDataSource(new List<string> { "a", "b" }).EnumerateArray().ToList();
 
@@ -67,7 +67,7 @@ public class PocoDataSourceTests
     }
 
     [Test]
-    public void EnumerateArray_ReturnsWrappedItems_ForArray()
+    public void Enumerate_array_returns_wrapped_items_for_array()
     {
         var items = new PocoDataSource(new[] { "a", "b" }).EnumerateArray().ToList();
 
@@ -76,21 +76,21 @@ public class PocoDataSourceTests
 
     [TestCase(true)]
     [TestCase(false)]
-    public void AsBoolean_ReturnsUnderlyingValue(bool value) =>
+    public void As_boolean_returns_underlying_value(bool value) =>
         new PocoDataSource(value).AsBoolean().ShouldBe(value);
 
     [Test]
-    public void AsBoolean_ReturnsFalse_ForNonBoolean() =>
+    public void As_boolean_returns_false_for_non_boolean() =>
         new PocoDataSource("Alice").AsBoolean().ShouldBeFalse();
 
     [Test]
-    public void AsDisplayString_ReturnsUnderlyingValueText()
+    public void As_display_string_returns_underlying_value_text()
     {
         new PocoDataSource("Alice").AsDisplayString().ShouldBe("Alice");
         new PocoDataSource(42).AsDisplayString().ShouldBe("42");
     }
 
     [Test]
-    public void AsDisplayString_ReturnsNull_ForNullValue() =>
+    public void As_display_string_returns_null_for_null_value() =>
         new PocoDataSource(null).AsDisplayString().ShouldBeNull();
 }

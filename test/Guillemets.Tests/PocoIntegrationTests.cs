@@ -5,7 +5,7 @@ namespace Guillemets.Tests;
 public class PocoIntegrationTests
 {
     [Test]
-    public void RendersSimplePropertyFromPoco()
+    public void Renders_simple_property_from_poco()
     {
         var actual = Template.Create("Hello «name»!").RenderObject(new { Name = "Alice" });
 
@@ -13,7 +13,7 @@ public class PocoIntegrationTests
     }
 
     [Test]
-    public void Render_ProducesCustomerOfferIntegrationOutput()
+    public void Render_produces_customer_offer_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");
         var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.md");
@@ -44,7 +44,7 @@ public class PocoIntegrationTests
     }
 
     [Test]
-    public void Render_ProducesAlmostErrorsIntegrationOutput()
+    public void Render_produces_almost_errors_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");
         var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.md");

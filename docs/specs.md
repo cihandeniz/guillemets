@@ -311,6 +311,7 @@ Filters, below.
 «date | date: dd/MM/yyyy»
 «amount | currency: $»
 «description | truncate: 80»
+«name | upper»
 «list: name | join: , »
 ```
 
@@ -330,9 +331,11 @@ input is still a list; a list-collapsing filter (like `join`) acts on the whole
 list at once and produces a single string. Order matters for a pipeline mixing
 both kinds — they're genuinely sequential stages, not a paired configuration.
 
-Two filters are part of the language itself, not just a common convenience,
-since Inline Lists (above) defines its default comma-join in terms of them —
-every implementation MUST provide both:
+A few filters are part of the language itself, not implementation-defined
+like the formatting filters below — every implementation MUST provide them,
+with a fixed contract that doesn't vary by runtime. Each gets its own
+subsection below explaining why it belongs here rather than in a runtime's
+own filter catalog.
 
 ### Join
 
@@ -341,7 +344,8 @@ value. Zero or one items is a no-op. Its own default value (used when written
 bare, with no `: value`) is `, ` when used inline, and a newline when used as
 a block footer (see Block Footer, below) — a bare `join` in a footer is a
 natural fit for joining loop output that already looks like separate lines,
-e.g. a list of `- «name»` rows.
+e.g. a list of `- «name»` rows. `join` is guaranteed because Inline Lists
+(above) defines its default comma-join in terms of it and `join last`.
 
 ### Join Last
 
@@ -362,7 +366,24 @@ alone is enough for the common "A, B and C" case.
 empty separator — the last two items merge with nothing between them. Unlike
 `join`, there's no natural single default for `join last` across contexts, so
 write an explicit value (e.g. `join last:  and `) rather than relying on the
-bare form.
+bare form. Guaranteed alongside `join`, for the same reason — see Join,
+above.
+
+### Upper
+
+`upper` converts every value to uppercase, following whatever casing rules
+the implementation's language/culture setting applies (see below) — it
+takes no value; write it bare, since anything after `: ` is ignored, the
+same as any filter that has no use for its argument. Guaranteed because —
+unlike a date, currency, or truncate filter — it doesn't parse the value
+through a host-specific primitive, just transforms its characters; exactly
+how casing behaves for a given language is implementation-defined (see
+below), but the filter itself is always available.
+
+### Lower
+
+`lower` converts every value to lowercase, the same shape as `upper` in
+every other respect, guaranteed for the same reason.
 
 Other utility filters — formatting a date, a currency amount, truncating
 text, and so on — are commonly provided but implementation-defined, not part
@@ -373,7 +394,8 @@ formatter, and so on), so the exact catalog and behavior necessarily vary by
 runtime. Every implementation MUST document such filters separately rather
 than folding them in here. This repository's .NET implementation documents
 its `date`, `currency`, and `truncate` (plus any .NET-specific notes on
-`join`/`join last`) in [`implementations/dotnet.md`](implementations/dotnet.md).
+`join`/`join last`/`upper`/`lower`) in
+[`implementations/dotnet.md`](implementations/dotnet.md).
 
 ### Block Footer
 
@@ -459,7 +481,7 @@ satisfaction at every step.
 We look forward to working with you. This quote is valid until «valid until».
 Please don't hesitate to contact us with any questions.
 
-*«Company» — «Date | date: dd/MM/yyyy»*
+*«Company» — «Date»*
 ```
 
 ---

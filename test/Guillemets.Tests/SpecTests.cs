@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Localization;
 using Shouldly;
 using System.Text.Json;
 
@@ -9,17 +10,7 @@ public class SpecTests
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
-    // glossary-localization: fixtures for the Term = PropertyName glossary
-    // bridging template vocabulary to model naming (see "Glossary &
-    // Localization" in docs/specs.md and docs/implementations/dotnet.md).
-    // Not yet implemented -- Template.Create doesn't accept a glossary yet,
-    // so these render against direct resolution only. See PLAN.md.
-    static readonly HashSet<string> IGNORED_FIXTURES = [
-        "13-glossary-localization/001-basic-mapping",
-        "13-glossary-localization/003-case-insensitive-glossary-match",
-        "13-glossary-localization/004-nested-chain-per-segment",
-        "13-glossary-localization/005-block-header",
-    ];
+    static readonly HashSet<string> IGNORED_FIXTURES = [];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);
@@ -29,7 +20,7 @@ public class SpecTests
 
     static TestCaseData TestCaseFor(string path)
     {
-        var testCase = new TestCaseData(TemplateFor(path), DataPathFor(path), path).SetName(FixtureName(path));
+        var testCase = new TestCaseData(TemplateFor(path), DataPathFor(path), GlossaryFor(path), path).SetName(FixtureName(path));
 
         return IGNORED_FIXTURES.Contains(FixtureName(path)) ? testCase.Ignore("not yet implemented") : testCase;
     }
@@ -83,25 +74,40 @@ public class SpecTests
         return document.RootElement.Clone();
     }
 
+    static IStringLocalizer? GlossaryFor(string casePath)
+    {
+        var basePath = BasePath(casePath);
+        var directory = Path.GetDirectoryName(basePath)
+            ?? throw new InvalidOperationException($"Fixture case path '{casePath}' has no directory.");
+        var baseName = Path.GetFileName(basePath);
+
+        var entries = Directory.EnumerateFiles(directory, $"{baseName}.*.json")
+            .SelectMany(path => JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path))
+                ?? throw new InvalidOperationException($"Glossary sidecar '{path}' did not deserialize to a JSON object."))
+            .ToDictionary(entry => entry.Key, entry => entry.Value);
+
+        return entries.Count == 0 ? null : new FakeStringLocalizer(entries);
+    }
+
     [TestCaseSource(nameof(FixtureCases))]
-    public void Fixture_RendersExpectedOutput(string templatePath, string dataPath, string expectedPath)
+    public void Fixture_renders_expected_output(string templatePath, string dataPath, IStringLocalizer? glossary, string expectedPath)
     {
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = Template.Create(template).Render(ReadData(dataPath));
+        var actual = Template.Create(template, options => options.Glossary = glossary).Render(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
 
     [TestCaseSource(nameof(ErrorFixtureCases))]
-    public void Fixture_ThrowsExpectedError(string templatePath, string dataPath, string errorPath)
+    public void Fixture_throws_expected_error(string templatePath, string dataPath, IStringLocalizer? glossary, string errorPath)
     {
         var template = File.ReadAllText(templatePath);
         var expectedError = File.ReadAllText(errorPath).Trim();
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template).Render(ReadData(dataPath))
+            () => Template.Create(template, options => options.Glossary = glossary).Render(ReadData(dataPath))
         );
 
         exception.Message.ShouldBe(expectedError);

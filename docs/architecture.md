@@ -211,6 +211,38 @@ shadow an item's own same-named property, and why they're always the
 `IsLast` are set directly on each loop-item `Scope`, so they never
 fall back to a parent scope the way an ordinary property lookup would.
 
+### Name Resolution
+
+`Rendering.Glossary` turns one property-chain segment (`quote no`) into
+the model's actual property name (`OfferNo`). It wraps whatever
+`IStringLocalizer` the caller set on `ParseOptions.Glossary` — a plain
+`IStringLocalizer?` field on `Template` until `Render` asks
+`Glossary.GetOrCreate(localizer)` for one, then hands that same
+instance to both `PropertyResolver` and the render's root `Scope`.
+
+`Glossary.GetOrCreate` caches by `(localizer,
+CultureInfo.CurrentUICulture.Name)` in a single process-wide
+`ConcurrentDictionary` — global, not per `Template`, so any two
+templates sharing the same `IStringLocalizer` reuse the same built
+`Glossary` for a given culture instead of each rebuilding their own.
+Keyed on `CurrentUICulture` specifically (not `CurrentCulture`) because
+that's the culture `IStringLocalizer`'s own resource resolution actually
+varies by — keying on the wrong one would let a cache hit silently serve
+a `Glossary` built for a stale UI culture.
+
+`PropertyResolver.Project` indexes it directly (`_glossary[segment]`),
+once per chain segment. `Scope` carries its own `Glossary` too, since
+`Scope.FindOwner` needs to test whether an *ancestor* scope owns a given
+property. Every child `Scope` inherits its parent's `Glossary` unless one
+is passed explicitly, so only the root `Scope` built in `Template.Render`
+needs to supply it.
+
+Resolution itself: look the segment up against the underlying
+`IStringLocalizer`'s entries (matching a `LocalizedString.Value`,
+case-insensitively) and use the matching entry's `Name`; fall back to
+Humanizer's `.Dehumanize()` when there's no glossary, or no matching
+entry.
+
 ## Pluggable data sources & filters
 
 `IDataSource` is the one interface the engine talks to for external
@@ -220,9 +252,12 @@ built-in adapters, all shipped in the one package; anyone can add
 another.
 
 `IFilter` is the one interface behind `«expr | filter: arg»` — a
-sequence-in, sequence-out pipeline stage. `Template.Create` takes an
-optional callback so callers can register their own alongside the
-built-ins (see `README.md`'s Custom filters section).
+sequence-in, sequence-out pipeline stage. `Template.Create`'s optional
+`Action<ParseOptions>` callback exposes `ParseOptions.Filters`, so callers
+can register their own alongside the built-ins (see `README.md`'s Custom
+filters section) — the same callback also exposes `ParseOptions.Glossary`,
+so both concerns configure through one place instead of separate
+overloads.
 
 A bare filter stage (no `: value` at all) can mean something different
 depending on where it's written — `join`'s default is `, ` inline but

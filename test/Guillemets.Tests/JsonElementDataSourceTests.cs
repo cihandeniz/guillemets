@@ -8,32 +8,32 @@ namespace Guillemets.Tests;
 public class JsonElementDataSourceTests
 {
     [Test]
-    public void Kind_ReturnsObject_ForJsonObject() =>
+    public void Kind_returns_object_for_json_object() =>
         Parse("{}").Kind.ShouldBe(DataKind.Object);
 
     [Test]
-    public void Kind_ReturnsArray_ForJsonArray() =>
+    public void Kind_returns_array_for_json_array() =>
         Parse("[]").Kind.ShouldBe(DataKind.Array);
 
     [Test]
-    public void Kind_ReturnsString_ForJsonString() =>
+    public void Kind_returns_string_for_json_string() =>
         Parse("\"Alice\"").Kind.ShouldBe(DataKind.String);
 
     [Test]
-    public void Kind_ReturnsNumber_ForJsonNumber() =>
+    public void Kind_returns_number_for_json_number() =>
         Parse("42").Kind.ShouldBe(DataKind.Number);
 
     [TestCase("true")]
     [TestCase("false")]
-    public void Kind_ReturnsBoolean_ForJsonTrueOrFalse(string json) =>
+    public void Kind_returns_boolean_for_json_true_or_false(string json) =>
         Parse(json).Kind.ShouldBe(DataKind.Boolean);
 
     [Test]
-    public void Kind_ReturnsNull_ForJsonNull() =>
+    public void Kind_returns_null_for_json_null() =>
         Parse("null").Kind.ShouldBe(DataKind.Null);
 
     [Test]
-    public void TryGetProperty_ReturnsWrappedValue_WhenPropertyExists()
+    public void Try_get_property_returns_wrapped_value_when_property_exists()
     {
         var source = Parse("""{"Name": "Alice"}""");
 
@@ -42,15 +42,15 @@ public class JsonElementDataSourceTests
     }
 
     [Test]
-    public void TryGetProperty_ReturnsFalse_WhenPropertyMissing() =>
+    public void Try_get_property_returns_false_when_property_missing() =>
         Parse("""{"Name": "Alice"}""").TryGetProperty("Age", out _).ShouldBeFalse();
 
     [Test]
-    public void TryGetProperty_ReturnsFalse_WhenNotAnObject() =>
+    public void Try_get_property_returns_false_when_not_an_object() =>
         Parse("\"Alice\"").TryGetProperty("Length", out _).ShouldBeFalse();
 
     [Test]
-    public void EnumerateArray_ReturnsWrappedItems()
+    public void Enumerate_array_returns_wrapped_items()
     {
         var items = Parse("""["a", "b"]""").EnumerateArray().ToList();
 
@@ -59,15 +59,15 @@ public class JsonElementDataSourceTests
 
     [TestCase("true", true)]
     [TestCase("false", false)]
-    public void AsBoolean_ReturnsUnderlyingValue(string json, bool expected) =>
+    public void As_boolean_returns_underlying_value(string json, bool expected) =>
         Parse(json).AsBoolean().ShouldBe(expected);
 
     [Test]
-    public void AsBoolean_ReturnsFalse_ForNonBoolean() =>
+    public void As_boolean_returns_false_for_non_boolean() =>
         Parse("\"Alice\"").AsBoolean().ShouldBeFalse();
 
     [Test]
-    public void AsDisplayString_ReturnsUnderlyingValueText()
+    public void As_display_string_returns_underlying_value_text()
     {
         Parse("\"Alice\"").AsDisplayString().ShouldBe("Alice");
         Parse("42").AsDisplayString().ShouldBe("42");

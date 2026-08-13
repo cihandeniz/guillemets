@@ -7,18 +7,15 @@ public class FilterRegistry
 {
     const string FILTER_SUFFIX = "Filter";
 
-    public static FilterRegistry CreateDefault(Action<FilterRegistry> configureFilters)
-    {
-        var result = new FilterRegistry()
+    public static FilterRegistry CreateDefault() =>
+        new FilterRegistry()
             .Register<JoinFilter>()
             .Register<DateFilter>()
             .Register<CurrencyFilter>()
             .Register<TruncateFilter>()
-            .Register<JoinLastFilter>();
-        configureFilters(result);
-
-        return result;
-    }
+            .Register<JoinLastFilter>()
+            .Register<UpperFilter>()
+            .Register<LowerFilter>();
 
     readonly Dictionary<string, IFilter> _filters = [];
 

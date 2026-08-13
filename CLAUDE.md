@@ -75,6 +75,13 @@ C#/.NET, targeting `net10.0`. Layout:
   (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `SpecTests.cs`
   matches a case to its template by leading digits. Group folders are numbered
   on disk for sort order only — refer to fixtures by name in prose, not number.
+  `08-filters` only holds cases for the mechanism `docs/specs.md` actually
+  guarantees (`join`/`join last`/`upper`/`lower`); a case whose expected
+  output depends on `date`/`currency`/`truncate`'s exact .NET formatting
+  belongs in a `test/Guillemets.Tests/*.cs` unit test instead (see
+  `FilterFormattingTests.cs`/`FilterCultureTests.cs`), same as any other
+  .NET-implementation-specific behavior — not the runtime-agnostic
+  `/specs` corpus.
 - `Guillemets.slnx` at repo root (.NET 10's default `dotnet new sln` format).
 - Central package management: `Directory.Packages.props` (versions) +
   `Directory.Build.props` (shared `TargetFramework`/`LangVersion`/
@@ -113,7 +120,7 @@ C#/.NET, targeting `net10.0`. Layout:
   another filter, no parens — `«expr | filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
   `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
-  `join`, `join last`.
+  `join`, `join last`, `upper`, `lower`.
 
 ## Localization / naming
 
@@ -126,6 +133,16 @@ glossary bridges the rest: `Term = PropertyName` rows, matched
 case-insensitively, additive over direct resolution rather than replacing it —
 a term with no entry still falls back to direct resolution. See "Glossary &
 Localization" in `docs/specs.md`.
+
+`SpecTests.cs` builds its `IStringLocalizer` from a case's `.<culture>.json`
+sidecar via `FakeStringLocalizer`, a minimal in-memory implementation.
+`GlossaryResourceIntegrationTests.cs` separately exercises a real
+`.restext`-backed `IStringLocalizer` — `Resources/Glossary.restext` plus a
+same-named empty marker type in `Resources/Glossary.cs` (needed so
+`ResourceManagerStringLocalizerFactory.Create(Type)` can locate the
+compiled resource by namespace/name convention) — confirming the feature
+also works against the real ASP.NET Core localization stack, not just the
+fake.
 
 ## C# code style
 
@@ -185,6 +202,18 @@ Localization" in `docs/specs.md`.
   parsing — try an interpretation, rewind and fall back if it doesn't pan
   out — is a legitimate alternative for this general class of problem too;
   don't treat its absence from the current code as a decision against it.)
+- A type that should be built at most once per some key (not per call site)
+  gets a plain (no-modifier, so implicitly private per the rule above)
+  constructor plus a `public static GetOrCreate(...)` factory backed by a
+  `static readonly` cache field (`Glossary.CACHE`, a
+  `ConcurrentDictionary<TKey, Glossary>` keyed by `(IStringLocalizer?,
+  string culture)` — global and thread-safe, not per-instance of whatever
+  owns the call site, so unrelated callers sharing the same key reuse the
+  same built value). C# has no `private` primary-constructor modifier
+  (`class Foo private(...)` doesn't parse) — dropping down to a regular
+  constructor is the only way to get this shape, and it's the right call
+  whenever a primary constructor's brevity would otherwise let external
+  code bypass the cache with `new Foo(...)` directly.
 - A type whose only externally-relevant contract is a single interface (nothing
   about the concrete type should be called directly from outside it) implements
   that interface explicitly rather than with a `public` method of the same name
@@ -237,6 +266,12 @@ Localization" in `docs/specs.md`.
   `static` field, regardless of accessibility, is `SCREAMING_CASE` (a custom
   rule, since standard "static fields start uppercase" conventions would
   otherwise conflict with the private-field rule).
+- `[Test]`-attributed method names are `Snake_case` — a plain sentence
+  describing the case, only its first letter capitalized, with an
+  underscore anywhere the sentence would have a space, comma, or semicolon
+  (`Date_filter_formats_with_given_pattern`, not
+  `DateFilter_FormatsWithGivenPattern` or
+  `date_filter_formats_with_given_pattern`).
 - A character/string literal that carries meaning beyond its own face value —
   a delimiter, a sentinel, a syntax marker — gets a named `SCREAMING_CASE`
   constant instead of being inlined at each use site, e.g. `Position.NEWLINE`
@@ -360,7 +395,12 @@ When the user says they're "parking" (wrapping up for the day):
    red.
 2. Update `PLAN.md`: refresh status/fixture count, remove completed work from
    "Remaining milestones" (don't just annotate it done — delete it, this file
-   shrinks), add new "Known v1 scope decisions."
+   shrinks to empty once nothing's left). `PLAN.md` only ever tracks
+   actionable remaining work — an accepted tradeoff or known limitation with
+   no follow-up action isn't a todo, so it doesn't belong here; fold it into
+   the relevant behavior doc instead (`docs/architecture.md`, `docs/specs.md`,
+   or the runtime implementation doc) as a plain fact about current behavior,
+   the same as anything else there.
 3. Update `docs/architecture.md` with any structural change from this session
    (new types, moved namespaces, a resolved design decision) — keep it
    describing current shape only, not a changelog.

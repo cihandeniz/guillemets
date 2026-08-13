@@ -28,4 +28,4 @@ your satisfaction at every step.
 We look forward to working with you. This quote is valid until
 2026-08-11. Please don't hesitate to contact us with any questions.
 
-*Acme Consulting Inc. — 11/07/2026*
+*Acme Consulting Inc. — 2026-07-11*

@@ -1,13 +1,12 @@
 using Guillemets.Ast;
 using Guillemets.Data;
-using Humanizer;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Guillemets.Rendering;
 
-internal class PropertyResolver(VariableStore variables)
+internal class PropertyResolver(VariableStore variables, Glossary _glossary)
 {
-    static IEnumerable<IDataSource> Project(IDataSource current, PropertyChainNode properties)
+    IEnumerable<IDataSource> Project(IDataSource current, PropertyChainNode properties)
     {
         if (properties.Count == 0)
         {
@@ -33,7 +32,7 @@ internal class PropertyResolver(VariableStore variables)
             yield break;
         }
 
-        var name = properties[0].Dehumanize();
+        var name = _glossary[properties[0]];
         current.TryGetProperty(name, out var next);
         if (properties.Count == 1 && properties.LastSegmentNegated) { next = next.Negate(); }
 
@@ -43,7 +42,7 @@ internal class PropertyResolver(VariableStore variables)
         }
     }
 
-    static bool TryResolveFilteredItemScope(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    bool TryResolveFilteredItemScope(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         items = null;
         if (properties.Count <= 1) { return false; }

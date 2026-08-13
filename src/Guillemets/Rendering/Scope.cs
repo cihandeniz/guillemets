@@ -1,20 +1,24 @@
 using Guillemets.Ast;
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
-using Humanizer;
 
 namespace Guillemets.Rendering;
 
 internal record Scope(IDataSource Data,
     Scope? Parent = null,
     bool? IsFirst = null,
-    bool? IsLast = null
+    bool? IsLast = null,
+    Glossary? Glossary = null
 )
 {
     const string FIRST = "first";
     const string LAST = "last";
 
     static readonly HashSet<string> MAGIC_NAMES = [FIRST, LAST];
+
+    public Glossary Glossary { get; } =
+        Glossary ?? Parent?.Glossary
+            ?? throw new InvalidOperationException("A root Scope (one with no Parent) must be given a Glossary.");
 
     public bool TryGetMagic(string property, bool negated, out IDataSource value)
     {
@@ -46,5 +50,5 @@ internal record Scope(IDataSource Data,
     }
 
     bool HasProperty(string property) =>
-        Data.Kind == DataKind.Object && Data.TryGetProperty(property.Dehumanize(), out _);
+        Data.Kind == DataKind.Object && Data.TryGetProperty(Glossary[property], out _);
 }

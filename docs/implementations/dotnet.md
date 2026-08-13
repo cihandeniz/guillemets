@@ -1,12 +1,13 @@
 # .NET Implementation
 
 [`specs.md`](../specs.md) is the language-level spec — it defines the filter
-*mechanism* (`name: value` syntax, chaining, defaults) and guarantees
-`join`/`join last`, but deliberately says nothing about which other filters
-exist or exactly how each one formats its output, since a filter is a thin
-wrapper around whatever formatting/parsing primitives the host runtime
-provides. This document covers that part for Guillemets' .NET implementation.
-A Guillemets implementation on a different runtime would document its own
+*mechanism* (`name: value` syntax, chaining, defaults) and which filters are
+guaranteed at the language level (see its Filters section for the current
+list), but deliberately says nothing about which other filters exist or
+exactly how each one formats its output, since a filter is a thin wrapper
+around whatever formatting/parsing primitives the host runtime provides.
+This document covers that part for Guillemets' .NET implementation. A
+Guillemets implementation on a different runtime would document its own
 such filters in its own equivalent file, not by editing
 [`specs.md`](../specs.md) or this file.
 
@@ -37,10 +38,31 @@ locale-aware list formatting beyond what the template itself writes. See
 Same underlying `string.Join` as `join`, applied to just the last two items.
 See [`specs.md`](../specs.md)'s Filters section for the full behavior contract.
 
+## Upper
+
+`string.ToUpper(CultureInfo.CurrentCulture)` — casing follows the host's
+ambient culture, e.g. Turkish `tr-TR` maps `i` to `İ` (not `I`) under this
+filter, same as it would for any other culture-aware casing in a .NET host.
+
+## Lower
+
+`string.ToLower(CultureInfo.CurrentCulture)`, the same ambient-culture
+reasoning as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
+
+Because both depend on `CurrentCulture`, their `/specs/08-filters` fixtures
+(and `05-variable-definitions/006`) only pass under whatever ambient
+culture the test process runs with — true today since CI defaults to
+invariant/en-US and the fixture text has no culture-sensitive casing under
+that, but would break under a different default (e.g. `tr-TR`, per the
+Turkish mapping above). `FilterCultureTests.cs`'s
+`Upper_filter_respects_ambient_culture`/`Lower_filter_respects_ambient_culture`
+exercise that divergence directly under `[SetCulture("tr-TR")]`.
+
 ## Glossary & Localization
 
-A glossary is supplied at parse time, alongside `Template.Create`'s existing
-`configureFilters` callback, as an `IStringLocalizer`
+A glossary is supplied at parse time, via `Template.Create`'s `configure`
+callback setting `ParseOptions.Glossary` (see `README.md`'s Custom filters
+section for the same callback's other use), as an `IStringLocalizer`
 (`Microsoft.Extensions.Localization.Abstractions`) — the same abstraction
 ASP.NET Core apps already use for culture-aware resource lookup, so a
 glossary can plug into whatever localization provider (`.resx`, a database,

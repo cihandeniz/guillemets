@@ -1,0 +1,47 @@
+using Shouldly;
+using System.Text.Json;
+
+namespace Guillemets.Tests;
+
+public class FilterFormattingTests
+{
+    [Test]
+    public void Date_filter_formats_with_given_pattern()
+    {
+        var data = JsonDocument.Parse("""{"Date": "2026-07-11"}""").RootElement;
+
+        var actual = Template.Create("Date: «date | date: dd/MM/yyyy»").Render(data);
+
+        actual.ShouldBe("Date: 11/07/2026");
+    }
+
+    [Test]
+    public void Currency_filter_formats_with_prefix_and_two_decimals()
+    {
+        var data = JsonDocument.Parse("""{"Amount": 1500}""").RootElement;
+
+        var actual = Template.Create("Amount: «amount | currency: $»").Render(data);
+
+        actual.ShouldBe("Amount: $1,500.00");
+    }
+
+    [Test]
+    public void Truncate_filter_appends_ellipsis_past_length()
+    {
+        var data = JsonDocument.Parse("""{"Description": "This is a very long description text."}""").RootElement;
+
+        var actual = Template.Create("Description: «description | truncate: 10»").Render(data);
+
+        actual.ShouldBe("Description: This is a …");
+    }
+
+    [Test]
+    public void Truncate_filter_chained_after_join_truncates_joined_result()
+    {
+        var data = JsonDocument.Parse("""{"Tags": ["philosophy", "wisdom", "ancient-greek"]}""").RootElement;
+
+        var actual = Template.Create("Tags: «tags | join: , | truncate: 10»").Render(data);
+
+        actual.ShouldBe("Tags: philosophy…");
+    }
+}

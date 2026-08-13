@@ -6,7 +6,7 @@ namespace Guillemets.Tests;
 public class JsonIntegrationTests
 {
     [Test]
-    public void RendersSimplePropertyFromJson()
+    public void Renders_simple_property_from_json()
     {
         var data = JsonDocument.Parse("""{"Name": "Alice"}""").RootElement;
 
@@ -16,7 +16,7 @@ public class JsonIntegrationTests
     }
 
     [Test]
-    public void Render_ProducesCustomerOfferIntegrationOutput()
+    public void Render_produces_customer_offer_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");
         var jsonPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.json");
@@ -29,7 +29,7 @@ public class JsonIntegrationTests
     }
 
     [Test]
-    public void Render_ProducesAlmostErrorsIntegrationOutput()
+    public void Render_produces_almost_errors_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");
         var jsonPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.json");

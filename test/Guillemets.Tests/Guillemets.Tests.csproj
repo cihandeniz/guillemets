@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="NUnit" />
@@ -20,6 +21,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Guillemets\Guillemets.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Glossary.restext" />
   </ItemGroup>
 
 </Project>

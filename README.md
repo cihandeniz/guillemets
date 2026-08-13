@@ -47,12 +47,13 @@ var output = template.Render(data);
 
 ### Custom filters
 
-`Template.Create` takes an optional callback to register your own filters
-alongside the built-ins (`join`, `date`):
+`Template.Create` takes an optional `configure` callback exposing
+`ParseOptions`, whose `Filters` registry lets you add your own filters
+alongside the built-ins (`join`, `date`, `upper`, ...):
 
 ```csharp
 var template = Template.Create(text,
-    filters => filters.Register<UpperFilter>()
+    options => options.Filters.Register<ReverseFilter>()
 );
 ```
 
@@ -62,8 +63,13 @@ one. Every filter maps over the current sequence of values and hands back a
 sequence in turn — a single-value filter like `date` returns one string per
 input, while a collapsing filter like `join` returns a shorter sequence. The
 name a template uses to invoke a filter is derived from its class name — drop
-the `Filter` suffix and lowercase it, so `UpperFilter` is invoked as
-`«text | upper»`.
+the `Filter` suffix and lowercase it, so `ReverseFilter` is invoked as
+`«text | reverse»`.
+
+The same `configure` callback also sets `options.Glossary`, an
+`IStringLocalizer` bridging a template's business vocabulary to model
+property names that don't already match — see
+[`docs/specs.md`](docs/specs.md)'s Glossary & Localization section.
 
 ## Development
 
