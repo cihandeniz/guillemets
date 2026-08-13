@@ -12,8 +12,9 @@ enforce.
 
 ## Delimiters
 
-`«»` (guillemets) are the only delimiter characters. They never appear in
-standard markdown, so they are unambiguous in any template context.
+`«»` — guillemets, pronounced *ghee-uh-MAY* — are angle quotation marks
+used for punctuation in French and several other languages. They're the
+only delimiter characters this engine recognizes.
 
 Multi-guillemet depth (`««`, `«««`, ...) exists for readability at nesting
 levels. The engine accepts any consistent depth — the author chooses based on

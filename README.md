@@ -1,7 +1,33 @@
 # Guillemets
 
-A markdown-aware template engine for non-technical authors. `«»` (guillemets)
-are the sole delimiter characters — they never collide with standard markdown.
+A markdown-aware template engine for non-technical authors. `«»` —
+guillemets, pronounced *ghee-uh-MAY* — were chosen for readability.
+
+<details>
+<summary>How to type «»</summary>
+
+| Platform                          | «                         | »                         |
+| --------------------------------- | ------------------------- | ------------------------- |
+| Windows (any keyboard)            | `Alt+0171` (numpad)       | `Alt+0187` (numpad)       |
+| Windows, French AZERTY            | `AltGr+Z`                 | `AltGr+X`                 |
+| macOS, US/English keyboard        | `Option+\`                | `Option+Shift+\`          |
+| macOS, French AZERTY              | `Option+7`                | `Option+Shift+7`          |
+| Linux (any keyboard, GNOME/GTK)   | `Ctrl+Shift+U 00ab Enter` | `Ctrl+Shift+U 00bb Enter` |
+| Linux, French AZERTY or Turkish Q | `AltGr+Z`                 | `AltGr+X`                 |
+
+On Windows/macOS, Turkish (Q) keyboards have no dedicated key for either
+character — use the row above for your OS instead. If `Alt+0171`/ `Alt+0187`
+doesn't work in a given Windows app, try `Alt+174`/`Alt+175` (same numpad
+requirement, no leading zero) — a different Alt-code table that some apps read
+instead.
+
+On macOS, you can also set up **Text Replacement** once so `<<`/`>>` expand to
+`«`/`»` automatically in any app: System Settings → Keyboard → Text Input → Text
+Replacements… → `+` → add `<<` → `«`, then `>>` → `»`.
+
+</details>
+
+---
 
 ```markdown
 Hi «first name»,
@@ -69,6 +95,8 @@ Shipping to Austin, TX.
 
 Thanks for shopping with us!
 
+---
+
 <details>
 <summary>Raw output</summary>
 
@@ -97,12 +125,11 @@ Thanks for shopping with us!
 
 ---
 
-One template covers both the member and first-time-buyer greeting (an
-`if`/`else` block, inferred from `IsMember` being a boolean — no keyword
-needed), repeats the order table's one row per item straight from a plain
-markdown table, and turns the item list into a natural "A, B and C" sentence
-with the `join`/`join last` filters. See [`docs/specs.md`](docs/specs.md) for
-the full language.
+One template covers both the member and first-time-buyer greeting (an `if` /
+`else` block, inferred from `IsMember` being a boolean — no keyword needed),
+repeats the order table's one row per item straight from a plain markdown table,
+and turns the item list into a natural "A, B and C" sentence with the `join` /
+`join last` filters. See [`docs/specs.md`](docs/specs.md) for the full language.
 
 ## Usage
 
@@ -122,28 +149,33 @@ var output = template.Render(data);
 
 ### Custom filters
 
-`Template.Create` takes an optional `configure` callback exposing
-`ParseOptions`, whose `Filters` registry lets you add your own filters
-alongside the built-ins (`join`, `date`, `upper`, ...):
+`Template.Create`'s optional `configure` callback exposes
+`ParseOptions.Filters`, the registry `Register<T>()` adds a filter to alongside
+the built-ins (`join`, `date`, `upper`, ...). A filter's template name drops the
+`Filter` suffix and lowercases the rest — `ReverseFilter` becomes `reverse`.
+`Apply` maps over the current sequence: a single-value filter like `date`
+returns one string per input; a collapsing filter like `join` returns fewer
+strings than it received.
 
 ```csharp
+using Guillemets.Filters;
+
+public class ReverseFilter : IFilter
+{
+    public IEnumerable<string> Apply(IEnumerable<string> values, string? arg) =>
+        values.Select(value => new string(value.Reverse().ToArray()));
+}
+
 var template = Template.Create(text,
     options => options.Filters.Register<ReverseFilter>()
 );
+// «text | reverse» reverses each value
 ```
 
-`IFilter` is one method — implement `IEnumerable<string>
-Apply(IEnumerable<string> values, string? arg)` to add one. Every filter maps
-over the current sequence of values and hands back a sequence in turn — a
-single-value filter like `date` returns one string per input, while a collapsing
-filter like `join` returns a shorter sequence. The name a template uses to
-invoke a filter is derived from its class name — drop the `Filter` suffix and
-lowercase it, so `ReverseFilter` is invoked as `«text | reverse»`.
-
 The same `configure` callback also sets `options.Glossary`, an
-`IStringLocalizer` bridging a template's business vocabulary to model property
-names that don't already match — see [`docs/specs.md`](docs/specs.md)'s Glossary
-& Localization section.
+`IStringLocalizer` that bridges a template's business vocabulary to model
+property names when they don't already match — see
+[`docs/specs.md`](docs/specs.md)'s Glossary & Localization section.
 
 ## Documentation
 
