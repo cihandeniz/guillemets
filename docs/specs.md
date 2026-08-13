@@ -533,6 +533,24 @@ other respect, guaranteed for the same reason:
 → ada lovelace
 ```
 
+### Default
+
+`default` substitutes its value for any value that would otherwise
+render as empty — an unresolved chain (see Resolving the Block Name,
+above) or a property whose own value is empty (an explicit null, or an
+empty string). Applied per item when the input is still a list, the
+same as `upper`/`lower`; a resolved, non-empty value passes through
+unchanged.
+
+```markdown
+«nickname | default: N/A»
+```
+
+Given `nickname` is missing entirely, this renders `N/A`; given
+`nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
+reason as `upper`/`lower` — it's a direct string substitution, not a
+wrapper around a host-specific parsing/formatting primitive.
+
 Other utility filters — formatting a date, a currency amount, truncating text,
 and so on — are commonly provided but implementation-defined, not part of this
 language-level spec. Each is a thin wrapper around whatever formatting/parsing

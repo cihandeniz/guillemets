@@ -10,12 +10,14 @@ public class FilterRegistry
     public static FilterRegistry CreateDefault() =>
         new FilterRegistry()
             .Register<JoinFilter>()
+            .Register<JoinLastFilter>()
+            .Register<DefaultFilter>()
+            .Register<UpperFilter>()
+            .Register<LowerFilter>()
             .Register<DateFilter>()
             .Register<CurrencyFilter>()
             .Register<TruncateFilter>()
-            .Register<JoinLastFilter>()
-            .Register<UpperFilter>()
-            .Register<LowerFilter>();
+        ;
 
     readonly Dictionary<string, IFilter> _filters = [];
 

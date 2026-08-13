@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 173 passed, 0 skipped, 0 failed. Every milestone is
+`dotnet test` is green: 175 passed, 0 skipped, 0 failed. Every milestone is
 done. See `docs/architecture.md` for how the engine is built and
 `docs/specs.md`/`docs/implementations/dotnet.md` for current behavior — no open
 ambiguities remain.

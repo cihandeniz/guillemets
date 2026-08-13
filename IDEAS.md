@@ -5,6 +5,17 @@ anyone's decided to build. Unlike `PLAN.md` (actionable, shrinks to
 empty), this file only grows and only loses an entry once it's either
 promoted into `PLAN.md` as a real milestone or deliberately rejected.
 
+## Comments
+
+No way to leave a non-rendering note inside a template today — every
+Mustache-family engine has one (`{{! }}` in Mustache, `{% comment %}`
+in Liquid). Whatever the syntax, it needs to fit inside guillemets'
+existing `«»`-only-delimiter rule rather than introducing a second
+special character, and MUST NOT collide with any existing marker (`!`
+negation, `~` else, `.: `/`..: ` navigation, `=` variable definition).
+A leading marker inside a bare `«...»` (e.g. `«# a note»`) is one
+plausible direction, not a decision.
+
 ## Compile-time source generation instead of runtime optimization
 
 A Roslyn *incremental source generator* that reads a `.guil.md` template

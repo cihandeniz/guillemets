@@ -22,6 +22,20 @@ implementation's own behavior on top of that (its own filters, such as
 another runtime gets its own file under `docs/implementations/`, not edits
 to `specs.md` or this one.
 
+**`docs/specs.md`/`docs/implementations/dotnet.md` prose style**: every
+paragraph that introduces a new concept gets a worked `markdown` example
+(template → output) right there, not just a description — added
+throughout during this project's readability pass, so keep doing it for
+new sections. A MUST-rule or a gotcha that's easy to get wrong (a fixed
+token needing exact spacing, a navigator ordering constraint, a filter's
+value not being trimmed) gets a GFM alert blockquote (`> [!NOTE]`/
+`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`) instead of being buried inline in
+a paragraph. In `README.md` specifically, an *actual rendered output*
+example is shown as live markdown (bold text, a real table) rather than
+inside a fenced snippet, with the exact raw text preserved separately in
+a `<details><summary>Raw output</summary>` block for anyone who wants
+the literal characters.
+
 When a new template-language feature raises a "what if X doesn't exist /
 goes too far" question (see the general rule in `.claude/generic.md`),
 check first whether resolving to nothing at render time (falsy, like
@@ -75,11 +89,11 @@ C#/.NET, targeting `net10.0`. Layout:
   matches a case to its template by leading digits. Group folders are numbered
   on disk for sort order only — refer to fixtures by name in prose, not number.
   `08-filters` only holds cases for the mechanism `docs/specs.md` actually
-  guarantees (`join`/`join last`/`upper`/`lower`); a case whose expected
-  output depends on `date`/`currency`/`truncate`'s exact .NET formatting
-  belongs in a `test/Guillemets.Tests/*.cs` unit test instead (see
-  `FilterFormattingTests.cs`/`FilterCultureTests.cs`), same as any other
-  .NET-implementation-specific behavior — not the runtime-agnostic
+  guarantees (`join`/`join last`/`upper`/`lower`/`default`); a case whose
+  expected output depends on `date`/`currency`/`truncate`'s exact .NET
+  formatting belongs in a `test/Guillemets.Tests/*.cs` unit test instead
+  (see `FilterFormattingTests.cs`/`FilterCultureTests.cs`), same as any
+  other .NET-implementation-specific behavior — not the runtime-agnostic
   `/specs` corpus. `09-integration` is excluded from `SpecTests.cs`'s own
   discovery sweep entirely — it's exercised directly by each data source's
   own `*IntegrationTests.cs` instead.
@@ -146,8 +160,8 @@ handful of adapters, and `Newtonsoft.Json` isn't a heavy dependency to carry).
   another filter, no parens — `«expr | filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
   `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
-  `join`, `join last`, `upper`, `lower`. New built-in filter names should
-  read as verbs (an action performed on a value) rather than nouns —
+  `join`, `join last`, `upper`, `lower`, `default`. New built-in filter names
+  should read as verbs (an action performed on a value) rather than nouns —
   `truncate`, not `length` — but this is a default, not absolute: a short,
   conventional name matching what other templating engines call the same
   operation can win, as `upper`/`lower` did over `uppercase`/`lowercase`.
