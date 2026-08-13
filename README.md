@@ -1,33 +1,108 @@
 # Guillemets
 
-A logicless, markdown-aware template engine for non-technical authors.
+A markdown-aware template engine for non-technical authors. `«»` (guillemets)
+are the sole delimiter characters — they never collide with standard markdown.
 
 ```markdown
-Dear «full name»,
+Hi «first name»,
 
-Your order **«order id»** is on its way to «company: name».
+««is member
+Welcome back — thanks for being a member!
+~
+Thanks for placing your first order with us!
+»»
+
+**Order #«order id»** — placed «order date | date: MMMM d, yyyy»
+
+««items
+| Item   | Qty        | Price                 | Total                       |
+| ------ | ---------- | --------------------- | --------------------------- |
+| «name» | «quantity» | «price | currency: $» | «total | currency: $»       |
+|        |            | **Order total**       | «order total | currency: $» |
+»»
+
+You ordered «items: name | join last:  and  | join: , ».
+
+Shipping to «shipping address: city», «shipping address: state».
+
+Thanks for shopping with us!
 ```
 
 rendered against
 
 ```json
 {
-  "FullName": "Alice Smith",
-  "OrderId": "A-1024",
-  "Company": { "Name": "Acme Logistics" }
+  "FirstName": "Priya",
+  "IsMember": true,
+  "OrderId": "A-1042",
+  "OrderDate": "2026-03-04",
+  "OrderTotal": 87.50,
+  "Items": [
+    { "Name": "Wireless Mouse", "Quantity": 1, "Price": 24.99, "Total": 24.99 },
+    { "Name": "USB-C Hub", "Quantity": 1, "Price": 39.99, "Total": 39.99 },
+    { "Name": "Mousepad", "Quantity": 2, "Price": 11.26, "Total": 22.52 }
+  ],
+  "ShippingAddress": { "City": "Austin", "State": "TX" }
 }
 ```
 
 produces
 
-```markdown
-Dear Alice Smith,
+---
 
-Your order **A-1024** is on its way to Acme Logistics.
+Hi Priya,
+
+Welcome back — thanks for being a member!
+
+**Order #A-1042** — placed March 4, 2026
+
+| Item   | Qty        | Price                 | Total                       |
+| ------ | ---------- | --------------------- | --------------------------- |
+| Wireless Mouse | 1 | $24.99 | $24.99       |
+| USB-C Hub | 1 | $39.99 | $39.99       |
+| Mousepad | 2 | $11.26 | $22.52       |
+|        |            | **Order total**       | $87.50 |
+
+You ordered Wireless Mouse, USB-C Hub and Mousepad.
+
+Shipping to Austin, TX.
+
+Thanks for shopping with us!
+
+<details>
+<summary>Raw output</summary>
+
+```markdown
+Hi Priya,
+
+Welcome back — thanks for being a member!
+
+**Order #A-1042** — placed March 4, 2026
+
+| Item   | Qty        | Price                 | Total                       |
+| ------ | ---------- | --------------------- | --------------------------- |
+| Wireless Mouse | 1 | $24.99 | $24.99       |
+| USB-C Hub | 1 | $39.99 | $39.99       |
+| Mousepad | 2 | $11.26 | $22.52       |
+|        |            | **Order total**       | $87.50 |
+
+You ordered Wireless Mouse, USB-C Hub and Mousepad.
+
+Shipping to Austin, TX.
+
+Thanks for shopping with us!
 ```
 
-`«»` (guillemets) are the sole delimiter characters — they never collide with
-standard markdown.
+</details>
+
+---
+
+One template covers both the member and first-time-buyer greeting (an
+`if`/`else` block, inferred from `IsMember` being a boolean — no keyword
+needed), repeats the order table's one row per item straight from a plain
+markdown table, and turns the item list into a natural "A, B and C" sentence
+with the `join`/`join last` filters. See [`docs/specs.md`](docs/specs.md) for
+the full language.
 
 ## Usage
 
@@ -57,25 +132,18 @@ var template = Template.Create(text,
 );
 ```
 
-`IFilter` is one method — implement
-`IEnumerable<string> Apply(IEnumerable<string> values, string? arg)` to add
-one. Every filter maps over the current sequence of values and hands back a
-sequence in turn — a single-value filter like `date` returns one string per
-input, while a collapsing filter like `join` returns a shorter sequence. The
-name a template uses to invoke a filter is derived from its class name — drop
-the `Filter` suffix and lowercase it, so `ReverseFilter` is invoked as
-`«text | reverse»`.
+`IFilter` is one method — implement `IEnumerable<string>
+Apply(IEnumerable<string> values, string? arg)` to add one. Every filter maps
+over the current sequence of values and hands back a sequence in turn — a
+single-value filter like `date` returns one string per input, while a collapsing
+filter like `join` returns a shorter sequence. The name a template uses to
+invoke a filter is derived from its class name — drop the `Filter` suffix and
+lowercase it, so `ReverseFilter` is invoked as `«text | reverse»`.
 
 The same `configure` callback also sets `options.Glossary`, an
-`IStringLocalizer` bridging a template's business vocabulary to model
-property names that don't already match — see
-[`docs/specs.md`](docs/specs.md)'s Glossary & Localization section.
-
-## Development
-
-```
-dotnet test
-```
+`IStringLocalizer` bridging a template's business vocabulary to model property
+names that don't already match — see [`docs/specs.md`](docs/specs.md)'s Glossary
+& Localization section.
 
 ## Documentation
 

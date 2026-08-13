@@ -5,9 +5,9 @@ are in `.claude/generic.md` — read both.
 
 ## Project
 
-Guillemets — a logicless, markdown-aware template engine for non-technical
-authors. `«»` (U+00AB/U+00BB) are the sole delimiters, chosen because they never
-collide with markdown and are easy to type via AltGr (e.g. Turkish keyboards).
+Guillemets — a markdown-aware template engine for non-technical authors. `«»`
+(U+00AB/U+00BB) are the sole delimiters, chosen because they never collide with
+markdown and are easy to type via AltGr (e.g. Turkish keyboards).
 
 **`docs/specs.md` is the source of truth for behavior**, authoritative over this
 file — resolve spec ambiguities there alongside the code change, don't just
