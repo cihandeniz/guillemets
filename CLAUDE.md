@@ -343,6 +343,12 @@ fake.
 
 ## Working on this repo
 
+- `make init` (alias `make fix-owners` — same recipe, reach for whichever
+  name fits: initial sandbox setup or a later ownership fix) downloads
+  `setup-claudedev-sandbox.sh` from `cihandeniz/config-files` into the
+  gitignored `.tmp/scripts/` on first use (cached after that — delete
+  `.tmp/` to force a re-download) and runs it with `sudo`. The script
+  itself lives outside this repo now; don't recreate `scripts/` here.
 - Run `dotnet test` from the repo root for the full fixture suite — each fixture
   becomes one NUnit test case, named by its relative path under `/specs`.
 - Engine work proceeds fixture-group by fixture-group, simplest → most complex —
