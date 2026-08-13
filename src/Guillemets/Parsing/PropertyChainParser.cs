@@ -32,7 +32,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
 
             if (_tokens.Current is NegationToken)
             {
-                chain.Negate();
+                chain.Negate(_tokens.Current.Position);
                 _tokens.Advance();
 
                 continue;

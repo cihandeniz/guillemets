@@ -19,14 +19,26 @@ internal class PropertyChainNode(IList<string> properties,
         readonly List<string> _properties = [];
         bool _negateNext;
         bool _lastSegmentNegated;
+        Position? _lastNegationPosition;
 
-        public void Negate() =>
+        public void Negate(Position position)
+        {
             _negateNext = true;
+            _lastNegationPosition = position;
+        }
 
         public void Add(string text)
         {
             var name = NormalizeWhitespace(text);
             if (name.Length == 0) { return; }
+
+            if (_lastSegmentNegated)
+            {
+                var position = _lastNegationPosition
+                    ?? throw new InvalidOperationException("A negated segment must have a recorded position.");
+
+                throw new TemplateParseException("A negated property must be the last in its chain", position);
+            }
 
             _properties.Add(name);
             _lastSegmentNegated = _negateNext;

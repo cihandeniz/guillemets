@@ -112,8 +112,9 @@ Tax No: «tax no»
 
 Above example passes `company` value of `quote` property to the block body.
 
-If the chain doesn't resolve to anything at all (for example, it projects
-through an empty list), the block is treated as falsy, the same as an explicit
+If the chain doesn't resolve to anything at all — whether because it projects
+through an empty list, or because the named property doesn't exist anywhere
+in the data at all — the block is treated as falsy, the same as an explicit
 `false`. This is not an error.
 
 ### Else
@@ -176,14 +177,14 @@ name` resolves against that matched item, not the outer scope.
 
 > [!WARNING]
 >
-> In a longer property chain, only the final segment can be negated:
+> A negated segment MUST be the last one in its property chain:
 >
 > ```markdown
 > «company: !active»
 > ```
 >
 > Negating an earlier segment (for example, `company: !active: something`) is
-> not supported.
+> invalid.
 
 ## Variable Definitions
 
@@ -280,30 +281,33 @@ written — nothing is trimmed automatically. See Escaping, below, for how to fi
 a literal `|` or `»`, or an actual newline/tab, inside a value.
 
 A filter's value is optional — write the bare name, with no `: value` at all, to
-use its default. `join`'s default is `, ` when used inline, and a newline when
-used as a block footer (see Block Footer, below) — a bare `join` in a footer is
-a natural fit for joining loop output that already looks like separate lines,
+use its default; what that default resolves to, and whether a bare name is even
+meaningful, is up to the filter itself.
+
+Filters chain into a pipeline, applied left to right — each stage receives the
+previous stage's output. A single-value filter maps over every item when its
+input is still a list; a list-collapsing filter (like `join`) acts on the whole
+list at once and produces a single string. Order matters for a pipeline mixing
+both kinds — they're genuinely sequential stages, not a paired configuration.
+
+Two filters are part of the language itself, not just a common convenience,
+since Inline Lists (above) defines its default comma-join in terms of them —
+every implementation MUST provide both:
+
+### Join
+
+`join` collapses the entire current list into a single string, joined by its
+value. Zero or one items is a no-op. Its own default value (used when written
+bare, with no `: value`) is `, ` when used inline, and a newline when used as
+a block footer (see Block Footer, below) — a bare `join` in a footer is a
+natural fit for joining loop output that already looks like separate lines,
 e.g. a list of `- «name»` rows.
 
-A fixed set of built-in filters is supported:
-
-| Filter      | Value                                             |
-| ---         | ---                                                |
-| `date`      | a date/time format string, e.g. `dd/MM/yyyy`       |
-| `currency`  | a currency symbol prefix, e.g. `$`                 |
-| `truncate`  | a maximum character length to truncate to          |
-| `join`      | the string used to join the whole list into one    |
-| `join last` | the string used to join just the list's last pair  |
-
-Filters chain into a pipeline, applied left to right. A filter that acts on a
-single value (`date`, `currency`, `truncate`) maps over every item when its
-input is still a list; `join`/`join last` act on the whole list at once and
-produce a single string.
+### Join Last
 
 `join last` merges the last two items of the current list into one, joined by
-its value; fewer than two items is a no-op. `join` collapses the entire current
-list into a single string, joined by its value; zero or one items is a no-op.
-Order matters — they're genuinely sequential stages, not a paired configuration:
+its value; fewer than two items is a no-op. Order matters when combined with
+`join` — they're genuinely sequential stages, not a paired configuration:
 
 ```markdown
 «quote: tags | join last:  and  | join: , »
@@ -313,6 +317,17 @@ Order matters — they're genuinely sequential stages, not a paired configuratio
 The default auto-join (`, `, see Inline Lists, above) still applies if the
 pipeline ends without fully collapsing the list to a string, so `join last`
 alone is enough for the common "A, B and C" case.
+
+Other utility filters — formatting a date, a currency amount, truncating
+text, and so on — are commonly provided but implementation-defined, not part
+of this language-level spec: each is a thin wrapper around whatever
+formatting/parsing primitives the host runtime provides (a date filter
+around the runtime's own date formatter, a currency filter around its number
+formatter, and so on), so the exact catalog and behavior necessarily vary by
+runtime. Every implementation MUST document such filters separately rather
+than folding them in here. This repository's .NET implementation documents
+its `date`, `currency`, and `truncate` (plus any .NET-specific notes on
+`join`/`join last`) in [`implementations/dotnet.md`](implementations/dotnet.md).
 
 ### Block Footer
 

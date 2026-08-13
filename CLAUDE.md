@@ -8,7 +8,16 @@ collide with markdown and are easy to type via AltGr (e.g. Turkish keyboards).
 
 **`docs/specs.md` is the source of truth for behavior**, authoritative over this
 file — resolve spec ambiguities there alongside the code change, don't just
-patch around them.
+patch around them. It's runtime-agnostic: it defines the template language
+itself, including the filter *mechanism* and the `join`/`join last` filters
+it guarantees, but deliberately not other filters (what exists, how each
+formats output), since those wrap whatever the host runtime provides.
+`docs/implementations/dotnet.md` is the source of truth for this .NET
+implementation's own behavior on top of that (currently its `date`/
+`currency`/`truncate` filters, plus any .NET-specific notes on `join`/
+`join last`) — same rule applies, resolve ambiguities there. A port to
+another runtime gets its own file under `docs/implementations/`, not edits
+to `specs.md` or this one.
 
 **Cold start?** Read `PLAN.md` first for implementation status and remaining
 milestones, then `docs/architecture.md` for how the engine is actually built.
@@ -19,7 +28,8 @@ left* (it shrinks as milestones complete); `docs/architecture.md` is the durable
 This file and `PLAN.md` are agent/contributor working files, not published
 documentation — neither should be linked from `README.md` or anything under
 `/docs`. The published docs are `README.md` (basic) and `/docs` (`specs.md`,
-`architecture.md` — lowercase, no reference back to this file or `PLAN.md`).
+`architecture.md`, `implementations/dotnet.md` and any future per-runtime
+sibling — lowercase, no reference back to this file or `PLAN.md`).
 
 **`docs/architecture.md` is written for humans, not as a terse internal note.**
 Short sentences. A mermaid diagram for any structure that's easier to see than

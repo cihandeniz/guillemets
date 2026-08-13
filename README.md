@@ -74,6 +74,8 @@ dotnet test
 ## Documentation
 
 - [`docs/specs.md`](docs/specs.md) — full syntax reference and behavior spec.
+- [`docs/implementations/dotnet.md`](docs/implementations/dotnet.md) — this
+  .NET implementation's own behavior, including its runtime-specific filters.
 - [`docs/architecture.md`](docs/architecture.md) — how the engine is built.
 
 ## License
