@@ -1,0 +1,9 @@
+{
+  "Company": {
+    "Active": false,
+    "Quotes": [
+      { "Number": 1 },
+      { "Number": 2 }
+    ]
+  }
+}

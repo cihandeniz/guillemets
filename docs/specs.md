@@ -278,10 +278,16 @@ Given each item has its own `name` as well as the enclosing quote, `«name»`
 inside the items loop resolves to the item's own name (it shadows the
 quote's), while `«..: name»` climbs past that shadow to reach the quote's.
 
-Climbing past the outermost scope is a parse error: how many `..: ` markers
-a chain can carry is capped by how many scopes actually enclose it in the
-template, which is fixed by the template's own block nesting and so is
-already known at parse time, not left to fail at render time.
+Climbing past the outermost scope isn't a parse error — there's simply
+nothing there, so the chain resolves to nothing, the same as any other
+chain that can't find its property (see Resolving the Block Name, above).
+This is the same short-circuiting a null-conditional operator (`?.` in C#)
+gives a chain of member accesses once one link is null: drilling into a
+`null` object already resolves to nothing today (see Nested Property
+Access, above), and climbing past the outermost scope is just that same
+rule applied to scopes instead of properties. A chain can carry as many
+`..: ` markers as the author writes, regardless of how many scopes actually
+enclose it in the template — there's no engine-enforced cap.
 
 ### Combining Both
 

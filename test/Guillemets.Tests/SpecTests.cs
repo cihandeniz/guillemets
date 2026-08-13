@@ -10,7 +10,22 @@ public class SpecTests
     // fixture listed here is Ignored (not Failed), so the suite is always
     // green at commit time. Remove a fixture's name once its case goes
     // green; this set is empty once the engine is complete.
-    static readonly HashSet<string> IGNORED_FIXTURES = [];
+    // Scope navigation (PLAN.md milestone 1, `.: `/`..: `) -- spec/fixtures
+    // written, engine work not started.
+    static readonly HashSet<string> IGNORED_FIXTURES = [
+        "14-scope-navigation/001-this-scope-only-reaches-own-property-over-magic-var",
+        "14-scope-navigation/002-this-scope-only-skips-fallback",
+        "14-scope-navigation/003-climb-to-parent-scope",
+        "14-scope-navigation/004-climb-two-levels",
+        "14-scope-navigation/005-combine-climb-and-this-scope-only",
+        "14-scope-navigation/006-negation-with-navigator",
+        "14-scope-navigation/007-filter-with-navigator",
+        "14-scope-navigation/008-navigator-as-block-header",
+        "14-scope-navigation/009-climb-past-root-scope-resolves-to-nothing",
+        "14-scope-navigation/010-climb-past-available-nesting-resolves-to-nothing",
+        "14-scope-navigation/011-this-scope-only-not-last-before-chain",
+        "14-scope-navigation/012-this-scope-only-repeated",
+    ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);

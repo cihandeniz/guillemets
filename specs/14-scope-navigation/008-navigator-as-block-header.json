@@ -1,0 +1,13 @@
+{
+  "Region": {
+    "Items": [
+      { "Name": "region-widget" }
+    ],
+    "Company": {
+      "Items": [
+        { "Name": "company-widget-1" },
+        { "Name": "company-widget-2" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,2 @@
+true / uno
+false / dos
