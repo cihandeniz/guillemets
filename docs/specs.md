@@ -111,6 +111,10 @@ Tax No: «tax no»
 ```
 
 Above example passes `company` value of `quote` property to the block body.
+When the chain projects through two list levels (e.g. `quotes: prices`,
+where each quote has its own list of prices), a loop block flattens them
+into one combined loop over every price, the same way chaining across lists
+already flattens for an inline variable.
 
 If the chain doesn't resolve to anything at all — whether because it projects
 through an empty list, or because the named property doesn't exist anywhere
@@ -140,6 +144,18 @@ No company information available
 »»
 ```
 
+Else works the same way for a loop block whose list is empty — whether
+that's because the list itself has zero items, or because "Filtering Out
+Items in Lists" (below) filtered every item out:
+
+```markdown
+««items
+- «description»
+~
+No items.
+»»
+```
+
 ### Magic Loop Variables
 
 The following variables are injected automatically inside every loop block:
@@ -149,12 +165,17 @@ The following variables are injected automatically inside every loop block:
 | `«first»`| true on first item   |
 | `«last»` | true on last item    |
 
+`first`/`last` always take precedence over an item property of the same
+name — if a loop item's own data has a `first` or `last` field, that field
+becomes unreachable via `«first»`/`«last»` inside that loop.
+
 ### Filtering Out Items in Lists
 
-If the chain's last segment is a boolean property projected through a list, the
-block filters the list down to the item(s) where that property is true and
-scopes into the match, instead of collapsing the projected booleans into a
-single truthy/falsy check:
+If the chain's last segment is a boolean property projected through a list,
+resolving the chain filters the list down to the item(s) where that property
+is true, instead of collapsing the projected booleans into a single
+truthy/falsy check. This holds everywhere a property chain resolves, not just
+in a block header:
 
 ```markdown
 ««items: active
@@ -162,9 +183,16 @@ Dear «full name»,
 »»
 ```
 
-Given `items` is a list of objects each with `active` and `full name`, this
-finds the item where `active` is true and renders the body scoped to it — `full
-name` resolves against that matched item, not the outer scope.
+Given `items` is a list of objects each with `active` and `full name`, the
+block filters the list down to the item(s) where `active` is true and scopes
+into the match — `full name` resolves against that matched item, not the
+outer scope.
+
+Used inline (`«items: active»`), the same filtering happens, but there's no
+body to scope into — each matched item's own display representation is used
+directly, auto-joined like any other list (see Inline Lists, above). This is
+rarely useful on its own, since a plain boolean field carries no display
+text of its own.
 
 ### Negation
 
@@ -237,6 +265,11 @@ render once as a footer.
 
 A body with fewer than three rows isn't treated as a table — it renders as a
 normal repeating block instead.
+
+Column alignment across rows (matching `|` counts) is the author's
+responsibility — the engine doesn't parse or validate table structure at
+all, only which row repeats. A row with a different cell count than its
+header still renders exactly as written, substituted and unmodified.
 
 ## Inline Lists
 
@@ -318,6 +351,12 @@ The default auto-join (`, `, see Inline Lists, above) still applies if the
 pipeline ends without fully collapsing the list to a string, so `join last`
 alone is enough for the common "A, B and C" case.
 
+`join last`'s own bare-name default (used with no `: value` at all) is an
+empty separator — the last two items merge with nothing between them. Unlike
+`join`, there's no natural single default for `join last` across contexts, so
+write an explicit value (e.g. `join last:  and `) rather than relying on the
+bare form.
+
 Other utility filters — formatting a date, a currency amount, truncating
 text, and so on — are commonly provided but implementation-defined, not part
 of this language-level spec: each is a thin wrapper around whatever
@@ -346,6 +385,12 @@ the only thing on that line — nothing else may share it, before or after. When
 the block has an else branch, it goes on the last line of whichever branch
 renders last: the truthy body if there is no `~`, the falsy body if there is
 one. `~` itself always stays on its own line and is never adjacent to it.
+
+An unescaped `»»` at the block's own depth always terminates the last
+filter's value, even mid-value with no space before it — `join: , »»` isn't
+ambiguous, the value is exactly `, `. This is the same closing-token rule
+that ends any other block body (see Blocks, above), not something specific
+to filter values.
 
 ## Full Example — Customer Quote
 
@@ -403,11 +448,14 @@ immediately followed by one of a small, fixed set of symbols; everywhere else,
 `\` is just a literal backslash and whatever follows it is read completely
 normally.
 
-`\«`, `\»`, and `\\` are recognized in ordinary template text. Every `«`
+`\«`, `\»`, `\~`, and `\\` are recognized in ordinary template text. Every `«`
 unconditionally tries to open a token or block, so a literal one always needs
 escaping; a literal `»` only ever needs it inside a block's body, where an
 unescaped `»»` would close the block early — outside any open block, `»` was
-already just text. `\\` is a literal backslash.
+already just text. A literal `~` only ever needs it on its own line inside a
+block's body, where it would otherwise split the block into truthy/falsy
+branches (see Else, above) — anywhere else, `~` was already just text. `\\`
+is a literal backslash.
 
 ```markdown
 Use \« and \» to show guillemets literally, like this: \«full name\».

@@ -17,7 +17,7 @@ internal static class Tokens
         new(context.Text, context.Position);
 
     public static CloseToken Close(TokenContext context) =>
-        new(context.Position);
+        new(context.Text, context.Position);
 
     public static CloseBlockToken CloseBlock(TokenContext context) =>
         new(context.Text, context.Position);

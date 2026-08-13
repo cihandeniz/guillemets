@@ -1,0 +1,15 @@
+{
+  "Quotes": [
+    {
+      "Prices": [
+        { "Amount": 100 },
+        { "Amount": 200 }
+      ]
+    },
+    {
+      "Prices": [
+        { "Amount": 300 }
+      ]
+    }
+  ]
+}

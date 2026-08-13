@@ -25,6 +25,7 @@ internal static class Symbols
             .Add([BACKSLASH, OPEN], Tokens.Escaped)
             .Add([BACKSLASH, CLOSE], Tokens.Escaped)
             .Add([BACKSLASH, BACKSLASH], Tokens.Escaped)
+            .Add([BACKSLASH, TILDE], Tokens.Escaped)
             .Add([COLON, SPACE], Tokens.Colon)
             .Add([COLON], Tokens.BareColon)
             .Add([SPACE, DELIMITER, SPACE], Tokens.Pipe)

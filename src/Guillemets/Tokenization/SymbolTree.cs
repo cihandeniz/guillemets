@@ -73,8 +73,10 @@ internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
         if (nextChild is null) { return _createToken; }
 
         var extended = nextChild.ExtendMatch(text, index + 1, out var extendedLength);
+        if (extended is null) { return _createToken; }
+
         length = extendedLength;
 
-        return extended ?? _createToken;
+        return extended;
     }
 }

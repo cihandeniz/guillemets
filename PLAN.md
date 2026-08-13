@@ -9,7 +9,7 @@ discipline, code style), see `CLAUDE.md`.
 
 ## Status
 
-`dotnet test` is green: 129 passed, 0 skipped, 129 total, 0 failed.
+`dotnet test` is green: 141 passed, 0 skipped, 141 total, 0 failed.
 `filter-syntax-redesign` and `integration` are both fully done — the
 `: `/` | ` grammar, the global `\` escapes, the scoped `\n`/`\t`/`\|`
 filter-value escapes, every inline filter (`date`/`join`/`currency`/
@@ -24,15 +24,11 @@ see `docs/architecture.md`.
 
 In priority order, matching disk order under `/specs`
 (`variable-definitions`, `tables`, `filter-syntax-redesign`, and
-`integration` are fully done, so the list picks up after them).
+`integration` are fully done, so the list picks up after them; `errors`
+has no further known gaps — add a fixture directly, per `CLAUDE.md`,
+whenever a new failure mode turns up rather than tracking it here).
 
-1. `errors` — currently 7 fixtures (`unclosed-guillemet`,
-   `unclosed-block`, `mismatched-block-depth`, `literal-shares-close-line`,
-   `unclosed-block-dangling-filter-pipe`, `negated-non-last-segment`, plus
-   one retired alongside the old filter grammar). Add more error cases as
-   new failure modes appear — extend `TemplateParseException` usage rather
-   than introducing ad hoc exceptions.
-2. `schema-localization` — true schema/localization remapping (business
+1. `schema-localization` — true schema/localization remapping (business
    term ≠ property name), per "Schema & Localization" in `docs/specs.md`:
    a mapping table (`Localized Term = template token = PropertyName`)
    resolved case-insensitively against the default language, for cases
@@ -42,3 +38,23 @@ In priority order, matching disk order under `/specs`
    on where the mapping table itself is supplied from (a data source
    alongside the render call? a separate file/format?) since nothing in
    the engine's public API accepts one today.
+
+## Spec hardening backlog
+
+From a time-boxed spec/coverage review. Everything found is resolved
+except three ambiguities below, each still needing a decision before a
+wording fix (none are known bugs — just unstated behavior). Along the
+way this surfaced and fixed three real bugs, each now locked in by a
+fixture: `SymbolTree.ExtendMatch`/`CloseToken` mishandling a `»»` run
+not followed by another `»` or a newline; inline resolution of a
+list-projected boolean chain (e.g. `«items: active»`) leaking raw
+`True`/`False` instead of filtering, per `PropertyResolver.Resolve`;
+and `TryResolveArrayItems` crashing on a loop header chain that
+flattens through two list levels (e.g. `quotes: prices`) instead of
+merging them into one loop.
+
+1. Table "footer" (trailing rows) vs. filter "Block Footer" — unclear
+   if/how the two interact within one loop block.
+2. Nested-loop `first`/`last` shadowing is unaddressed.
+3. `first`/`last` availability after "Filtering Out Items in Lists"
+   collapses a loop down to a single scoped item is unaddressed.

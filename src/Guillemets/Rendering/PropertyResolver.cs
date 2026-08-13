@@ -52,9 +52,16 @@ internal class PropertyResolver(VariableStore variables)
         if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return false; }
 
         var lastSegment = new PropertyChainNode([properties[^1]], properties.LastSegmentNegated);
+        var matches = new List<IDataSource>();
+        foreach (var item in containers[0].EnumerateArray())
+        {
+            var flag = Project(item, lastSegment).SingleOrDefault();
+            if (flag is not { Kind: DataKind.Boolean }) { return false; }
 
-        items = [.. containers[0].EnumerateArray()
-            .Where(item => Project(item, lastSegment).SingleOrDefault()?.AsBoolean() == true)];
+            if (flag.AsBoolean()) { matches.Add(item); }
+        }
+
+        items = matches;
 
         return true;
     }
@@ -75,6 +82,16 @@ internal class PropertyResolver(VariableStore variables)
             yield break;
         }
 
+        if (TryResolveFilteredItemScope(scope, properties, out var filtered))
+        {
+            foreach (var item in filtered)
+            {
+                yield return item;
+            }
+
+            yield break;
+        }
+
         foreach (var result in Project(scope.FindOwner(properties).Data, properties))
         {
             yield return result;
@@ -88,14 +105,14 @@ internal class PropertyResolver(VariableStore variables)
     bool TryResolveArrayItems(Scope scope, PropertyChainNode properties, [NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         var resolved = Resolve(scope, properties).ToList();
-        if (resolved.Count != 1 || resolved[0].Kind != DataKind.Array)
+        if (resolved.Count == 0 || resolved.Any(result => result.Kind != DataKind.Array))
         {
             items = null;
 
             return false;
         }
 
-        items = [.. resolved[0].EnumerateArray()];
+        items = [.. resolved.SelectMany(result => result.EnumerateArray())];
 
         return true;
     }
