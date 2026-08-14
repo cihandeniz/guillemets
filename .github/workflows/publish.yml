@@ -1,0 +1,108 @@
+name: Publish
+
+on:
+  pull_request:
+    types:
+      - labeled
+    branches:
+      - main
+      - 'v*.*'
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write
+
+jobs:
+  remove-label:
+    # Remove when not in release branch
+    name: Remove Label
+    if: github.event.label.name == 'Publish' && github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/') == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions-ecosystem/action-remove-labels@v1
+        name: Remove Publish Label
+        with:
+          labels: 'Publish'
+
+  check-version:
+    # Start publish when in release branch
+    # This job fetches current version from Directory.Build.props and checks if this version already pushed to nuget
+    name: Check Version
+    if: github.event.label.name == 'Publish' && github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/') == true
+    runs-on: ubuntu-latest
+    outputs:
+      # Version number that is parsed from Directory.Build.props
+      version: ${{ steps.parse.outputs.version }}
+      # Flag to indicate a new version should be built or not;
+      # - true means it was already published
+      # - false means pack & push is required
+      action: ${{ steps.check.outputs.action }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse Version
+        id: parse
+        run: |
+          # 1. cat outputs content of Directory.Build.props file to stream editor (sed)
+          # 2. first sed removes all lines except with Version info
+          # 3. second sed removes <Version> and </Version> and spaces
+          # 4. result is only version which is set to the $version variable
+          version=$(cat Directory.Build.props | sed -n '/<Version>/p' | sed '/[ <>a-zA-Z\/]/ s///g')
+          # value of $version is set as a step output
+          echo "version="$version >> $GITHUB_OUTPUT
+      - name: Check Version in NuGet
+        id: check
+        run: |
+          if wget -q --method=HEAD https://api.nuget.org/v3-flatcontainer/Guillemets/${{ steps.parse.outputs.version }}/Guillemets.nuspec;
+           then
+            echo "action=nothing" >> $GITHUB_OUTPUT
+           else
+            echo "action=pack" >> $GITHUB_OUTPUT
+          fi
+
+  pack-project:
+    name: Pack Project
+    needs: check-version
+    # should only run when this version does not exist in nuget
+    # use contains to check for action value, == operator does not work probably because some space chars in the value
+    if: contains(needs.check-version.outputs.action, 'pack')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10
+      - name: Pack NuGet
+        run: dotnet pack src/Guillemets -o nuget-packages -c Release
+      - name: Upload NuGet Packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: nuget-packages/
+
+  push-nuget-packages:
+    name: Push NuGet Packages
+    needs: pack-project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10
+      - name: Download NuGet Packages
+        uses: actions/download-artifact@v8
+        with:
+          name: nuget-packages
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push NuGet
+        run: |
+          dotnet nuget push "*.nupkg" \
+            -s https://api.nuget.org/v3/index.json \
+            -k ${{ steps.login.outputs.NUGET_API_KEY }} \
+            --skip-duplicate \
+            -t 3600

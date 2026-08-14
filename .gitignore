@@ -3,3 +3,5 @@
 bin/
 obj/
 .tmp/
+.coverage/
+code-coverage-results.md

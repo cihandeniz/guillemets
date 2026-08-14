@@ -1,4 +1,4 @@
-.PHONY: format build test init fix-owners
+.PHONY: format build test coverage init fix-owners
 FILE ?= file_name
 OWNER ?= $(shell whoami)
 CLAUDE_USER ?= claudeuser
@@ -11,6 +11,13 @@ build:
 	@(dotnet build)
 test:
 	@(dotnet test)
+coverage:
+	@( \
+		rm -rf .coverage && \
+		dotnet test -c Release --collect:"XPlat Code Coverage" --settings ./test/runsettings.xml --results-directory .coverage && \
+		dotnet reportgenerator -reports:.coverage/*/coverage.cobertura.xml -targetdir:.coverage/html && \
+		open .coverage/html/index.html \
+	)
 
 $(SETUP_SCRIPT):
 	@mkdir -p $(dir $(SETUP_SCRIPT))

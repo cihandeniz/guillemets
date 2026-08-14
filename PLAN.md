@@ -13,18 +13,17 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 12 issues remain before release — see P3
+locked in by 2 new spec fixtures). 11 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P3 — release readiness (packaging/process)
 
-- No CI at all — no `.github/` directory. "175 tests green" is currently
-  unverified by anything but the author's machine. Add a GitHub Actions
-  workflow (build + test on push/PR) first — it de-risks every fix above.
 - No package metadata in `Guillemets.csproj` (`PackageId`, `Description`,
-  `Authors`, `PackageLicenseExpression`, `RepositoryUrl`, version).
+  `Authors`, `PackageLicenseExpression`, `RepositoryUrl`). `Version` is
+  now set (`Directory.Build.props`, needed by `publish.yml`'s
+  version-check step) but the rest is still missing.
 - `make init` sudo-runs an unpinned script off `main` with no checksum. Pin
   to a tag/commit + checksum.
 
