@@ -34,9 +34,8 @@ public class Template
     public string Render(IDataSource data)
     {
         var glossary = Glossary.GetOrCreate(_localizer);
-        var variables = new VariableStore();
-        var propertyResolver = new PropertyResolver(variables, glossary);
-        var renderer = new Renderer(propertyResolver, variables);
+        var propertyResolver = new PropertyResolver(glossary);
+        var renderer = new Renderer(propertyResolver);
 
         var rendered = renderer.Render(_nodes, new(data, Glossary: glossary));
 

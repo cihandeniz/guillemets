@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 182 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 183 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -17,37 +17,10 @@ before being added here. Priorities adjusted per author call: POCO reflection
 caching deprioritized (production runs on JSON, not POCO), net8
 multi-targeting and the Newtonsoft package split are both skipped for now.
 
-Fixed: currency/date culture round-trip corruption
-(`PocoDataSource.AsDisplayString()` now formats `IFormattable` values
-invariantly, matching `JTokenDataSource`) — see `PocoFilterCultureTests.cs`.
-Surfaced a follow-up gap during that fix (no plain-number-formatting filter),
-tracked below under P3 release readiness.
-
-Fixed: scalar truthiness. `AsBoolean()` was hardcoded `false` for every
-non-boolean kind across all three adapters and `StringDataSource`, which made
-`Negate()` always return `true` for strings/numbers *and* made
-`««company name»»` always take the else branch regardless of content — same
-root cause, one fix. Now presence-based: a resolved, non-null string or
-number is truthy (including `""` and `0`); `null`/undefined stay falsy. See
-`specs/02-conditional-blocks/010-negation-of-non-boolean.*`.
-
-Fixed: empty property chain (`«»`, and a bare `.: `/`..: ` navigator with no
-following property) is now a parse error ("Property chain must not be empty")
-instead of silently resolving to the current scope and dumping the whole data
-model. See `specs/10-errors/008-empty-property-chain.*`.
-
-Work TDD-style per `CLAUDE.md`: for each item, write/extend a failing test
-(prefer a `/specs` fixture when the bug is spec-observable behavior, otherwise
-a targeted unit test) before touching implementation code.
-
 ## Remaining milestones
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- `VariableStore` is one flat, unscoped dictionary per render. A `Define`
-  inside a loop or a falsy branch leaks out and persists — last iteration
-  wins, data-dependent, contradicts "available anywhere below its
-  definition."
 - Property lookup is case-sensitive in all three data adapters
   (`JsonElementDataSource`, `PocoDataSource`, `JTokenDataSource`), but
   `docs/specs.md` claims case-insensitive resolution — that's only true via
@@ -58,6 +31,13 @@ a targeted unit test) before touching implementation code.
   (used by `Glossary`, `VariableStore`, `FilterRegistry.NameFor`); folds in
   the per-lookup Humanizer allocation win from the P2 `Dehumanize()` caching
   item below.
+- Merge the ~16 token record types under `src/Guillemets/Tokens/` (`OpenToken`,
+  `CloseToken`, `CloseBlockToken`, `PipeToken`, ...) into one `Token`
+  struct/class with a `TokenKind` enum and offsets into the source string.
+  Removes the unconditional per-token substring allocation in `Tokenizer.cs`
+  (kept even for token kinds like `OpenToken` that discard the text) and
+  replaces scattered `is OpenToken`/`is CloseToken` type-pattern dispatch with
+  an exhaustive switch over `TokenKind`.
 
 ### P1 — correctness bugs (parser/render)
 

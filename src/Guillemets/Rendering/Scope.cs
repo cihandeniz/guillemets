@@ -16,6 +16,8 @@ internal record Scope(IDataSource Data,
 
     static readonly HashSet<string> MAGIC_NAMES = [FIRST, LAST];
 
+    readonly VariableStore _variables = new();
+
     public Glossary Glossary { get; } =
         Glossary ?? Parent?.Glossary
             ?? throw new InvalidOperationException("A root Scope (one with no Parent) must be given a Glossary.");
@@ -51,6 +53,16 @@ internal record Scope(IDataSource Data,
 
     public Scope? Climb(int levels) =>
         levels == 0 ? this : Parent?.Climb(levels - 1);
+
+    public void DefineVariable(string name, string value) =>
+        _variables.Define(name, value);
+
+    public bool TryResolveVariable(string name, out IDataSource value)
+    {
+        if (_variables.TryResolve(name, out value)) { return true; }
+
+        return Parent is not null && Parent.TryResolveVariable(name, out value);
+    }
 
     bool HasProperty(string property) =>
         Data.Kind == DataKind.Object && Data.TryGetProperty(Glossary[property], out _);

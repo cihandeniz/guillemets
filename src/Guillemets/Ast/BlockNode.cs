@@ -19,7 +19,7 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
         var rendered = string.Concat(ApplyFooter(items));
         if (VariableName is null) { return rendered; }
 
-        context.Variables.Define(VariableName, rendered.TrimEnd(NEWLINE));
+        scope.DefineVariable(VariableName, rendered.TrimEnd(NEWLINE));
 
         return string.Empty;
     }

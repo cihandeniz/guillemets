@@ -1,0 +1,9 @@
+{
+  "Items": [
+    { "Name": "A", "Active": true },
+    { "Name": "B", "Active": false },
+    { "Name": "C", "Active": true }
+  ],
+  "Company": { "HasSlogan": true },
+  "Enabled": true
+}

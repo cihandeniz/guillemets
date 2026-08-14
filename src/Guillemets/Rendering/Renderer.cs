@@ -7,8 +7,8 @@ internal class Renderer
 {
     readonly RenderContext _context;
 
-    public Renderer(PropertyResolver propertyResolver, VariableStore variables) =>
-        _context = new(propertyResolver, this, variables);
+    public Renderer(PropertyResolver propertyResolver) =>
+        _context = new(propertyResolver, this);
 
     public string Render(IReadOnlyList<IRenderable> nodes, Scope scope)
     {

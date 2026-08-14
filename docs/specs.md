@@ -395,6 +395,50 @@ the scope property it shadows.
 >
 > Inline ifs are not supported, use variable definitions instead.
 
+### Definition Scope
+
+"Anywhere below its definition" is bounded by the nearest enclosing loop
+iteration or object scope — the same boundary that governs regular property
+fallback (see Blocks, above). A definition made inside a loop or object block
+is visible for the rest of that same iteration/object's body, but doesn't
+survive past the loop or object block closing:
+
+```markdown
+««items
+««current = active
+Yes
+~
+No
+»»
+«name»: «current»
+»»
+After loop: «current»
+```
+
+`current` is redefined fresh every iteration and is gone once the loop ends —
+`After loop: «current»` resolves to nothing, regardless of what the last item's
+value was.
+
+A conditional (boolean) block is different: it doesn't open a new scope, so a
+definition made inside one behaves exactly like a top-level definition — it
+keeps leaking forward past the conditional's own closing `»»`, into whatever
+scope was already active:
+
+```markdown
+««enabled
+««greeting = enabled
+Hi
+~
+Bye
+»»
+Message: «greeting»
+»»
+After flag: «greeting»
+```
+
+`After flag: «greeting»` still resolves to `Hi` — the conditional never
+introduced a boundary for `greeting` to fall out of.
+
 ## Tables
 
 When a loop block's body is a markdown table, only the third row repeats — the

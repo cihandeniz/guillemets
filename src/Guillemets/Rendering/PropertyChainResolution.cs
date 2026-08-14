@@ -7,7 +7,6 @@ namespace Guillemets.Rendering;
 
 internal class PropertyChainResolution(Scope _scope,
     PropertyChainNode _properties,
-    VariableStore _variables,
     Glossary _glossary
 )
 {
@@ -67,8 +66,8 @@ internal class PropertyChainResolution(Scope _scope,
 
         return !_properties.ThisScopeOnly &&
             _properties.Count == 1 &&
-            ClimbedScope is not null &&
-            _variables.TryResolve(_properties[0], out value);
+            ClimbedScope is { } scope &&
+            scope.TryResolveVariable(_properties[0], out value);
     }
 
     public bool TryFilteredItemScope([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
