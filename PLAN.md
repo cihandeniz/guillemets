@@ -9,9 +9,9 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 217 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 220 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
-surfaced 30 confirmed issues (23 remaining) that need fixing before release; every item was
+surfaced 30 confirmed issues (22 remaining) that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
 before being added here. Priorities adjusted per author call: POCO reflection
 caching deprioritized (production runs on JSON, not POCO), net8
@@ -21,10 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P1 — correctness bugs (parser/render)
 
-- `truncate` splits UTF-16 surrogate pairs (`value[..maxLength]`), and a
-  bare/non-numeric `truncate` throws an unwrapped exception at render with
-  no position — same unwrapped-exception asymmetry the currency/date filters
-  had before their culture-round-trip fix.
 - Registering a custom filter can silently change existing template output —
   a final body line glued to `»»` matching a filter name is consumed as a
   footer pipeline instead of body text. Built-in filter names are

@@ -103,13 +103,13 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
 
         if (_tokens.AtEnd || _tokens.Current.Kind is not Colon)
         {
-            result = new(new(filter, null), name, position);
+            result = new(new(filter, null, position), name, position);
 
             return true;
         }
 
         _tokens.Advance();
-        result = new(new(filter, ReadValue(stopAtNewline)), name, position);
+        result = new(new(filter, ReadValue(stopAtNewline), position), name, position);
 
         return true;
     }

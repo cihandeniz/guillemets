@@ -149,6 +149,20 @@ appends `…` once the value exceeds the length given as its argument.
 → A wireless…
 ```
 
+> [!NOTE]
+>
+> Counting UTF-16 characters, not grapheme clusters, can still land the cut
+> point in the middle of a multi-char emoji or other symbol outside the Basic
+> Multilingual Plane. `truncate` backs the cut point off by one in that
+> specific case so it never splits a surrogate pair in half — it does not
+> attempt full grapheme-cluster awareness (combining marks, ZWJ sequences,
+> and the like) beyond that.
+
+A missing or non-numeric argument (`truncate` with no value, or `truncate:
+abc`) is a render-time `TemplateParseException` pointing at the filter's own
+position, not an unwrapped `.NET` exception — every filter gets this for
+free from the same choke point (`FilterNode.Apply`), not just `truncate`.
+
 ## Join
 
 Collapses a list via plain string concatenation (`string.Join`) — no

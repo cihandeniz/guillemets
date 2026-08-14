@@ -33,15 +33,6 @@ Quote: «number»
 at depth 3 purely so the two are easier to tell apart on the page — depth 2 all
 the way down would behave identically.
 
-## Line Endings
-
-A template's own line-ending style (LF or CRLF, detected once from the template
-source) is authoritative for the entire rendered output. Any line breaks
-embedded in resolved data — a multi-line string value, say — are normalized to
-match, regardless of which style they originally used. The output always uses
-one consistent line ending throughout; data never forces a mix of styles into
-it.
-
 ## Variables
 
 A single-line or multi-line token that resolves to a scalar value.
@@ -764,6 +755,15 @@ Please don't hesitate to contact us with any questions.
 ```
 
 ---
+
+## Line Endings
+
+A template's own line-ending style (LF or CRLF, detected once from the template
+source) is authoritative for the entire rendered output. Any line breaks
+embedded in resolved data — a multi-line string value, say — are normalized to
+match, regardless of which style they originally used. The output always uses
+one consistent line ending throughout; data never forces a mix of styles into
+it.
 
 ## Escaping
 

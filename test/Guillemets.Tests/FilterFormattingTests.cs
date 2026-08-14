@@ -75,4 +75,14 @@ public class FilterFormattingTests
 
         actual.ShouldBe("Tags: philosophy…");
     }
+
+    [Test]
+    public void Truncate_filter_does_not_split_a_surrogate_pair()
+    {
+        var data = JsonDocument.Parse("""{"Description": "AB😀CD"}""").RootElement;
+
+        var actual = Template.Create("«description / truncate: 3»").Render(data);
+
+        actual.ShouldBe("AB…");
+    }
 }
