@@ -47,6 +47,15 @@ public class JTokenDataSourceTests
         Wrap(new JObject { ["Name"] = "Alice" }).TryGetProperty("Age", out _).ShouldBeFalse();
 
     [Test]
+    public void Try_get_property_is_case_insensitive()
+    {
+        var source = Wrap(new JObject { ["fullName"] = "Alice" });
+
+        source.TryGetProperty("FullName", out var value).ShouldBeTrue();
+        value.AsDisplayString().ShouldBe("Alice");
+    }
+
+    [Test]
     public void Try_get_property_returns_false_when_not_an_object() =>
         Wrap(new JValue("Alice")).TryGetProperty("Length", out _).ShouldBeFalse();
 

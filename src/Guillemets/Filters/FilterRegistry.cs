@@ -1,4 +1,3 @@
-using Humanizer;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Guillemets.Filters;
@@ -30,7 +29,7 @@ public class FilterRegistry
     }
 
     static string NameFor<TFilter>() =>
-        typeof(TFilter).Name[..^FILTER_SUFFIX.Length].Humanize(LetterCasing.LowerCase);
+        typeof(TFilter).Name[..^FILTER_SUFFIX.Length].ToLowerWords();
 
     internal bool TryGet(string name, [NotNullWhen(true)] out IFilter? filter) =>
         _filters.TryGetValue(name, out filter);

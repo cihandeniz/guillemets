@@ -1,6 +1,7 @@
 using Guillemets.Data.Primitives;
 using System.Collections;
 using System.Globalization;
+using System.Reflection;
 
 namespace Guillemets.Data.Poco;
 
@@ -29,7 +30,9 @@ public record PocoDataSource(object? Value)
 
     public bool TryGetProperty(string name, out IDataSource value)
     {
-        var property = Kind == DataKind.Object ? Value?.GetType().GetProperty(name) : null;
+        var property = Kind == DataKind.Object
+            ? Value?.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+            : null;
         if (property is null)
         {
             value = UndefinedDataSource.INSTANCE;

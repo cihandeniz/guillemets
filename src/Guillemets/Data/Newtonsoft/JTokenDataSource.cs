@@ -31,7 +31,7 @@ public record JTokenDataSource(JToken Element)
 
     public bool TryGetProperty(string name, out IDataSource value)
     {
-        if (Kind == DataKind.Object && Element is JObject obj && obj.TryGetValue(name, out var property))
+        if (Kind == DataKind.Object && Element is JObject obj && obj.TryGetValue(name, StringComparison.OrdinalIgnoreCase, out var property))
         {
             value = new JTokenDataSource(property);
 

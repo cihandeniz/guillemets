@@ -46,6 +46,15 @@ public class JsonElementDataSourceTests
         Parse("""{"Name": "Alice"}""").TryGetProperty("Age", out _).ShouldBeFalse();
 
     [Test]
+    public void Try_get_property_is_case_insensitive()
+    {
+        var source = Parse("""{"fullName": "Alice"}""");
+
+        source.TryGetProperty("FullName", out var value).ShouldBeTrue();
+        value.AsDisplayString().ShouldBe("Alice");
+    }
+
+    [Test]
     public void Try_get_property_returns_false_when_not_an_object() =>
         Parse("\"Alice\"").TryGetProperty("Length", out _).ShouldBeFalse();
 

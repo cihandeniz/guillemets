@@ -121,9 +121,9 @@ enumerates `IStringLocalizer.GetAllStrings()` and matches a template segment
 against each entry's `Value`, case-insensitively, taking the matching entry's
 `Name` as the property name. See [`specs.md`](../specs.md)'s Glossary &
 Localization section for the full matching/fallback behavior contract — a term
-with no entry falls back to direct (PascalCase-of-space-words) resolution, so a
-glossary that's silent on a given term and no glossary at all behave identically
-for that term.
+with no entry falls back to direct (PascalCase-of-space-words, matched
+case-insensitively against the model) resolution, so a glossary that's silent
+on a given term and no glossary at all behave identically for that term.
 
 Because that lookup happens during `Render`, not `Create`, the same parsed
 `Template` re-resolves against whatever culture is ambient

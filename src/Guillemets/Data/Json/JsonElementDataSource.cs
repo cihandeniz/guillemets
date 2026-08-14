@@ -20,11 +20,16 @@ public record JsonElementDataSource(JsonElement Element)
 
     public bool TryGetProperty(string name, out IDataSource value)
     {
-        if (Kind == DataKind.Object && Element.TryGetProperty(name, out var property))
+        if (Kind == DataKind.Object)
         {
-            value = new JsonElementDataSource(property);
+            foreach (var property in Element.EnumerateObject())
+            {
+                if (!string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) { continue; }
 
-            return true;
+                value = new JsonElementDataSource(property.Value);
+
+                return true;
+            }
         }
 
         value = UndefinedDataSource.INSTANCE;

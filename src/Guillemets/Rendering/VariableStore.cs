@@ -1,6 +1,5 @@
 using Guillemets.Data;
 using Guillemets.Data.Primitives;
-using Humanizer;
 
 namespace Guillemets.Rendering;
 

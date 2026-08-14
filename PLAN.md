@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 183 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 187 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -21,16 +21,19 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- Property lookup is case-sensitive in all three data adapters
-  (`JsonElementDataSource`, `PocoDataSource`, `JTokenDataSource`), but
-  `docs/specs.md` claims case-insensitive resolution — that's only true via
-  `Glossary`'s `Dehumanize()` fallback (PascalCase), so camelCase JSON (the
-  ASP.NET Core default) silently resolves to nothing. Fix once in a shared
-  helper used by all three adapters. While in there: drop the `Humanizer.Core`
-  dependency — hand-roll `Dehumanize`/`Humanize(LowerCase)` in a small utility
-  (used by `Glossary`, `VariableStore`, `FilterRegistry.NameFor`); folds in
-  the per-lookup Humanizer allocation win from the P2 `Dehumanize()` caching
-  item below.
+- `Glossary` uses a localizer resource entry's key (`entry.Name`) verbatim as
+  the model property name (`Glossary.cs:20`: `.ToDictionary(entry =>
+  entry.Value, entry => entry.Name, ...)`). The resource key's naming
+  convention is under the *localization resource author's* control, not the
+  model's — a resource key written as `Full Name` (matching how translators
+  naturally write it) won't match a model property named `FullName`, even
+  after the case-insensitivity fix above (that fixes casing, not spacing).
+  Add a key-conversion function to `ParseOptions` (default: identity, i.e.
+  today's behavior) that `Glossary` applies to `entry.Name` while building its
+  map, so the resource key can be normalized to the model's actual property
+  name independently of how the translator wrote it. Expected usage: the
+  template's words live in the glossary's *values* (unchanged), the
+  underlying object's property lives in the glossary's *keys* (this item).
 - Merge the ~16 token record types under `src/Guillemets/Tokens/` (`OpenToken`,
   `CloseToken`, `CloseBlockToken`, `PipeToken`, ...) into one `Token`
   struct/class with a `TokenKind` enum and offsets into the source string.
@@ -38,6 +41,21 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
   (kept even for token kinds like `OpenToken` that discard the text) and
   replaces scattered `is OpenToken`/`is CloseToken` type-pattern dispatch with
   an exhaustive switch over `TokenKind`.
+- No plain-number-formatting filter. Surfaced while fixing the culture
+  round-trip bug: making `PocoDataSource.AsDisplayString()` invariant means
+  plain `«amount»` (no filter) now renders flat invariant text (`1234.5`)
+  instead of locale-formatted text, and the only filter that adds
+  grouping/decimals is `currency`, which also forces a currency symbol
+  prefix — there's no way to get `1,234.50` without also getting
+  `$1,234.50`. Add a `number` filter (e.g. `| number: N2`) to close the gap.
+- `IDataSource`/`IFilter` contract inconsistencies across adapters (e.g.
+  `EnumerateArray()` throwing vs. returning empty) — worth a pass once the
+  case-sensitivity fix touches all three adapters anyway. Pairs naturally
+  with a shared abstract `DataSourceSpec`-style test base (parameterized over
+  a factory the concrete `*DataSourceTests` classes supply) that all three
+  adapters — and any future one — inherit, so a contract requirement like
+  case-insensitive `TryGetProperty` or presence-based `AsBoolean()` is
+  enforced automatically instead of copy-pasted per adapter test file.
 
 ### P1 — correctness bugs (parser/render)
 
@@ -119,13 +137,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
   call) — real, good property, currently undocumented. Pure doc addition.
 - `make init` sudo-runs an unpinned script off `main` with no checksum. Pin
   to a tag/commit + checksum.
-- No plain-number-formatting filter. Surfaced while fixing the culture
-  round-trip bug: making `PocoDataSource.AsDisplayString()` invariant means
-  plain `«amount»` (no filter) now renders flat invariant text (`1234.5`)
-  instead of locale-formatted text, and the only filter that adds
-  grouping/decimals is `currency`, which also forces a currency symbol
-  prefix — there's no way to get `1,234.50` without also getting
-  `$1,234.50`. Add a `number` filter (e.g. `| number: N2`) to close the gap.
 
 ### Explicitly deferred (not this pass)
 
@@ -145,6 +156,3 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
   feature, not a bug fix.
 - Benchmark project / fuzz target — recommended before making performance
   claims, not a blocker for fixing the perf issues already identified.
-- `IDataSource`/`IFilter` contract inconsistencies across adapters (e.g.
-  `EnumerateArray()` throwing vs. returning empty) — worth a pass once the
-  case-sensitivity fix touches all three adapters anyway.

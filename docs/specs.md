@@ -74,6 +74,13 @@ uses `.SelectMany()` internally, so the result stays flat.
 > space isn't recognized as the property accessor at all; it renders as literal
 > text instead of drilling into `company`.
 
+Each segment matches the underlying property case-insensitively, regardless of
+the model's own naming convention — `«full name»` resolves `FullName`,
+`fullName`, and `full_name` identically. This holds for every built-in data
+source (POCOs, `System.Text.Json`, Newtonsoft `JToken`); a third-party
+`IDataSource` SHOULD do the same for `TryGetProperty` to behave consistently
+with the rest of the engine.
+
 ## Blocks
 
 A block opens with `««name` on its own line and closes with `»»` on its own
