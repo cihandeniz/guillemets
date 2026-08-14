@@ -1,7 +1,8 @@
 # Templating
 
-A markdown-aware template engine for non-technical authors. Syntax is minimal,
-language-neutral, and keyboard-friendly.
+A markdown-aware template engine for non-technical authors. Syntax is
+minimal and language-neutral, favoring readability over ease of typing —
+see [`README.md`](../README.md) for why.
 
 This document uses MUST and SHOULD in the RFC 2119 sense. MUST marks a rule the
 engine enforces — the parser throws `TemplateParseException` if it's broken.

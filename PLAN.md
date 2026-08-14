@@ -13,20 +13,13 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 13 issues remain before release — see P3
+locked in by 2 new spec fixtures). 11 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P3 — release readiness (packaging/process)
 
-- README doesn't document that `Template` is safe to reuse across threads
-  (immutable AST, stateless filter singletons, fresh state per `Render`
-  call) — real, good property, currently undocumented. Pure doc addition.
-- Remove any statement that claims «» is easy to type in docs. Docs should
-  rather admit that it's a sacrifice for readability over writability.
-  - This can be defended that no body writes by hand any more, AI writes docs
-    any way, but reading is more crucial at the age of GENAI
 - No CI at all — no `.github/` directory. "175 tests green" is currently
   unverified by anything but the author's machine. Add a GitHub Actions
   workflow (build + test on push/PR) first — it de-risks every fix above.

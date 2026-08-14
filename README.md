@@ -1,7 +1,13 @@
 # Guillemets
 
-A markdown-aware template engine for non-technical authors. `«»` —
-guillemets, pronounced *ghee-uh-MAY* — were chosen for readability.
+A markdown-aware template engine for non-technical authors.
+
+`«»` — guillemets, pronounced *ghee-uh-MAY* — were chosen for readability:
+they never collide with markdown syntax and stand out visually in prose.
+That's a deliberate trade against writability — neither delimiter sits on
+a standard keyboard, so typing either takes a shortcut (see below), not a
+keystroke. Templates get read far more often than typed by hand, so that
+trade favors the reader.
 
 <details>
 <summary>How to type «»</summary>
@@ -146,6 +152,10 @@ var output = template.Render(data);
 `Render`/`RenderObject` also accept plain C# objects
 (`template.RenderObject(new { FullName = "Alice Smith" })`) and
 `Newtonsoft.Json.Linq.JToken`.
+
+A `Template` is immutable and stateless once created — parse it once and
+reuse the same instance for every `Render` call, including concurrently
+across threads, rather than re-parsing per request.
 
 ### Custom filters
 
