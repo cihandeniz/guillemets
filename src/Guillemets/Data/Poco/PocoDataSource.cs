@@ -1,5 +1,6 @@
 using Guillemets.Data.Primitives;
 using System.Collections;
+using System.Globalization;
 
 namespace Guillemets.Data.Poco;
 
@@ -11,8 +12,17 @@ public record PocoDataSource(object? Value)
         null => DataKind.Null,
         bool => DataKind.Boolean,
         string => DataKind.String,
-        sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal
-            => DataKind.Number,
+        sbyte or
+        byte or
+        short or
+        ushort or
+        int or
+        uint or
+        long or
+        ulong or
+        float or
+        double or
+        decimal => DataKind.Number,
         IEnumerable => DataKind.Array,
         _ => DataKind.Object,
     };
@@ -42,5 +52,7 @@ public record PocoDataSource(object? Value)
         Kind == DataKind.Boolean && (bool)(Value ?? throw new InvalidOperationException("Boolean value was unexpectedly null."));
 
     public string? AsDisplayString() =>
-        Value?.ToString();
+        Value is IFormattable formattable
+            ? formattable.ToString(null, CultureInfo.InvariantCulture)
+            : Value?.ToString();
 }
