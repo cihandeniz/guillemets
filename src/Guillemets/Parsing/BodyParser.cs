@@ -53,7 +53,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     {
         footer = [];
         var checkpoint = _tokens.Position;
-        if (!FilterParser.TryParse(expectLeadingPipe: false, out var pipeline) ||
+        if (!FilterParser.TryParse(expectLeadingDelimiter: false, out var pipeline) ||
             _tokens.AtEnd ||
             _tokens.Current.Kind is not CloseBlock
         )

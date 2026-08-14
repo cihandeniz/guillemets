@@ -367,7 +367,7 @@ has resolved it, exactly as they do without any navigator:
 
 ```markdown
 «..: !active»
-«..: name | upper»
+«..: name / upper»
 ```
 
 ## Variable Definitions
@@ -502,14 +502,14 @@ Filters, below.
 
 ## Filters
 
-`name: value` attaches a filter to a property chain, chained with ` | `:
+`name: value` attaches a filter to a property chain, chained with ` / `:
 
 ```markdown
-«date | date: dd/MM/yyyy»
-«amount | currency: $»
-«description | truncate: 80»
-«name | upper»
-«list: name | join: , »
+«date / date: dd/MM/yyyy»
+«amount / currency»
+«description / truncate: 80»
+«name / upper»
+«list: name / join: , »
 ```
 
 `: ` (colon immediately followed by exactly one space) MUST be written together,
@@ -517,10 +517,10 @@ same as property access above — it marks where a filter's value starts.
 
 > [!NOTE]
 >
-> Whatever follows `: `, up to the next ` | ` or the end of the token, is the
+> Whatever follows `: `, up to the next ` / ` or the end of the token, is the
 > value exactly as written — nothing is trimmed automatically. `truncate: 80 `
 > keeps its trailing space as part of the value. See Escaping, below, for how to
-> fit a literal `|` or `»`, or an actual newline/tab, inside a value.
+> fit a literal `/` or `»`, or an actual newline/tab, inside a value.
 
 A filter's value is optional — write the bare name, with no `: value` at all, to
 use its default; what that default resolves to, and whether a bare name is even
@@ -543,7 +543,7 @@ explaining why it belongs here rather than in a runtime's own filter catalog.
 value. Zero or one items is a no-op.
 
 ```markdown
-«tags | join:  / »
+«tags / join:  \/ »
 → philosophy / wisdom / ancient-greek
 ```
 
@@ -561,7 +561,7 @@ its value; fewer than two items is a no-op. Order matters when combined with
 `join` — they're genuinely sequential stages, not a paired configuration:
 
 ```markdown
-«quote: tags | join last:  and  | join: , »
+«quote: tags / join last:  and  / join: , »
 → philosophy, wisdom and ancient-greek
 ```
 
@@ -583,7 +583,7 @@ implementation's language/culture setting applies (see below). It takes no value
 that has no use for its argument.
 
 ```markdown
-«name | upper»
+«name / upper»
 → ADA LOVELACE
 ```
 
@@ -598,7 +598,7 @@ implementation-defined (see below), but the filter itself is always available.
 other respect, guaranteed for the same reason:
 
 ```markdown
-«name | lower»
+«name / lower»
 → ada lovelace
 ```
 
@@ -612,7 +612,7 @@ same as `upper`/`lower`; a resolved, non-empty value passes through
 unchanged.
 
 ```markdown
-«nickname | default: N/A»
+«nickname / default: N/A»
 ```
 
 Given `nickname` is missing entirely, this renders `N/A`; given
@@ -627,9 +627,9 @@ primitives the host runtime provides: a date filter around the runtime's own
 date formatter, a currency filter around its number formatter, and so on. The
 exact catalog and behavior necessarily vary by runtime, so every implementation
 MUST document such filters separately rather than folding them in here. This
-repository's .NET implementation documents its `date`, `currency`, and
-`truncate` (plus any .NET-specific notes on `join`/`join last`/`upper`/`lower`)
-in [`implementations/dotnet.md`](implementations/dotnet.md).
+repository's .NET implementation documents its `date`, `currency`, `number`,
+and `truncate` (plus any .NET-specific notes on `join`/`join last`/`upper`/
+`lower`) in [`implementations/dotnet.md`](implementations/dotnet.md).
 
 ### Block Footer
 
@@ -744,15 +744,15 @@ Use \« and \» to show guillemets literally, like this: \«full name\».
 ```
 
 Inside a filter's value specifically (see Filters, above), three more sequences
-are recognized: `\|` for a literal `|` (a bare ` | ` would otherwise end the
+are recognized: `\/` for a literal `/` (a bare ` / ` would otherwise end the
 value and start the next pipeline stage), and `\n`/`\t` for an actual
 newline/tab character — the only way to put one in a value, since it's otherwise
 confined to a single line. None of the three mean anything outside a filter's
 value — `\n` there is just the two characters `\` and `n`.
 
 ```markdown
-«names | join: \|»
-→ Ada|Grace|Katherine
+«names / join: \/»
+→ Ada/Grace/Katherine
 ```
 
 > [!NOTE]

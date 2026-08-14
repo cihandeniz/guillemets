@@ -16,8 +16,8 @@ internal class VariableParser(TokenCursor _tokens, ParserRegistry _registry)
     public IRenderable Parse(Token open)
     {
         _tokens.Advance();
-        var chain = PropertyChainParser.Parse(open.Position, stopAtNewline: false, stopAtPipe: true);
-        var filters = FilterParser.Parse(expectLeadingPipe: true);
+        var chain = PropertyChainParser.Parse(open.Position, stopAtNewline: false, stopAtDelimiter: true);
+        var filters = FilterParser.Parse(expectLeadingDelimiter: true);
         if (_tokens.AtEnd || _tokens.Current.Kind is not Close)
         {
             throw new TemplateParseException("Unclosed variable", open.Position);

@@ -1,1 +1,1 @@
-Tags: «tags | join last»
+Tags: «tags / join last»

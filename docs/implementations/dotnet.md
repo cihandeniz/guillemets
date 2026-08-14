@@ -13,30 +13,121 @@ own equivalent file, not by editing [`specs.md`](../specs.md) or this file.
 
 ## Date
 
-`date` parses the value with `DateTime.Parse` (invariant culture) and formats it
-back out using .NET custom date-and-time format strings, e.g. `dd/MM/yyyy`.
+`date` parses the value with `DateTime.Parse` (invariant culture — that's how
+every built-in data source represents a stored value, see `PocoDataSource`/
+`JsonElementDataSource`/`JTokenDataSource`) and formats it back out using .NET
+custom date-and-time format strings, e.g. `dd/MM/yyyy`, against the ambient
+culture (`CultureInfo.CurrentCulture`) at render time. A rendered document
+reflects whoever's generating it, not a hardcoded locale.
 
 ```markdown
-«date | date: dd/MM/yyyy»
+«date / date: dd/MM/yyyy»
 → 04/03/2026
-```
-
-## Currency
-
-`currency` parses the value with `decimal.Parse` (invariant culture) and formats
-it with `"N2"` (two decimal places, invariant culture separators), prefixing the
-filter's argument directly — no locale-aware symbol placement.
-
-```markdown
-«amount | currency: $»
-→ $1,234.50
 ```
 
 > [!NOTE]
 >
-> `"N2"` includes a thousands separator by default (`1,234.50`, not `1234.50`) —
-> that's .NET's own `"N2"` behavior, not something this filter adds or can turn
-> off.
+> A custom format string's literal-looking separators aren't literal — `/`
+> means "the culture's date separator," not a slash. Under `tr-TR`, whose date
+> separator is `.`, `dd/MM/yyyy` renders `11.07.2026`, not `11/07/2026`. This
+> is .NET's own custom-format-string behavior, not something this filter adds
+> — escape a separator (`\/`) if a literal slash is genuinely intended
+> regardless of culture.
+>
+> That `\/` is a .NET format-string escape, evaluated by `DateTime.ToString()`
+> itself, and it collides with Guillemets' own `\/` (see Escaping in
+> [`specs.md`](../specs.md)): Guillemets unescapes every `\/` in a filter's
+> value before the value ever reaches the filter, so `dd\/MM\/yyyy` arrives at
+> `DateTime.ToString()` as `dd/MM/yyyy` — .NET never sees the backslashes, and
+> the date separator substitutes as normal. There's currently no way to ask
+> for a literal `/` inside a `date` format string specifically; only Guillemets'
+> own delimiter-escaping meaning of `\/` is honored.
+
+## Currency
+
+`currency` parses the value with `decimal.Parse` (invariant culture, same
+reasoning as `date` above) and formats it against the ambient culture's own
+currency convention — symbol, symbol placement, and default decimal count all
+come from the culture, not a hardcoded prefix. With no argument, it uses
+.NET's standard `"C"` format:
+
+```markdown
+«amount / currency»
+→ $1,234.50         (en-US)
+→ 1.234,50 €         (de-DE)
+→ ₺1.234,50          (tr-TR)
+```
+
+An argument overrides the decimal count while keeping the culture's own
+symbol and placement — `C0`/`C3` for zero/three decimal places, say:
+
+```markdown
+«amount / currency: C0»
+→ $1,235             (en-US)
+→ 1.235 €             (de-DE)
+```
+
+> [!IMPORTANT]
+>
+> The argument is a .NET format string, the same as `date`/`number` — it is
+> **not** a currency symbol prefix. `currency: $` is invalid; `$` isn't a
+> recognized custom numeric format specifier, so .NET treats it as a literal,
+> dropping the number entirely (`ToString("$", ...)` → `"$"`). Let the
+> culture supply the symbol; use the argument only to override decimal count
+> (`C0`, `C3`, ...).
+
+> [!NOTE]
+>
+> Standard `"C"` also picks the culture's own symbol *placement*, not just
+> its symbol — trailing (`1.234,50 €`) for `de-DE`, leading (`$1,234.50`) for
+> `en-US`. That's .NET's own `"C"` behavior, not something this filter adds
+> or can turn off.
+
+A host that always bills in one currency regardless of who's reading the
+document — everything is Turkish Lira, say, even when rendered for an
+English-speaking reader — can fix the *symbol* while still letting the
+ambient culture drive digit grouping and decimal separators, by registering
+its own `CurrencyFilter` instance:
+
+```csharp
+options => options.Filters.Register(new CurrencyFilter("TL"))
+```
+
+```markdown
+«amount / currency»
+→ TL1,234.50         (en-US ambient — grouping/decimals still en-US)
+→ 1.234,50 TL         (de-DE ambient — grouping/decimals still de-DE)
+```
+
+`FilterRegistry.Register` re-registering an existing name replaces it
+(there's no separate "edit" — the default `currency` above is what's being
+replaced); `FilterRegistry.Remove<TFilter>()` drops a filter entirely,
+built-in or custom, making it unavailable (`«x / truncate»` then fails to
+parse with "Unknown filter 'truncate'"). Both built-in filters a host might
+want to override or remove — `CurrencyFilter`, `TruncateFilter` — are public
+for exactly this reason.
+
+## Number
+
+`number` parses the value with `decimal.Parse` (invariant culture, same
+reasoning as `date` above) and formats it back out against the ambient
+culture using a .NET standard or custom numeric format string given as its
+argument, e.g. `N2` — the same primitive `currency` wraps, minus the fixed
+`"N2"` and the prefix.
+
+```markdown
+«amount / number: N2»
+→ 1,234.50
+```
+
+With no argument, it uses .NET's default general format — under `en-US`, no
+thousands separator and no fixed decimal places; under a culture with a
+different decimal separator (`tr-TR`'s `,`, say), that separator instead.
+
+```markdown
+«amount / number»
+→ 1234.5
+```
 
 ## Truncate
 
@@ -44,7 +135,7 @@ filter's argument directly — no locale-aware symbol placement.
 appends `…` once the value exceeds the length given as its argument.
 
 ```markdown
-«description | truncate: 10»
+«description / truncate: 10»
 → A wireless…
 ```
 
@@ -54,7 +145,7 @@ Collapses a list via plain string concatenation (`string.Join`) — no
 locale-aware list formatting beyond what the template itself writes.
 
 ```markdown
-«tags | join: , »
+«tags / join: , »
 → red, green, blue
 ```
 
@@ -65,7 +156,7 @@ See [`specs.md`](../specs.md)'s Filters section for the full behavior contract.
 Same underlying `string.Join` as `join`, applied to just the last two items.
 
 ```markdown
-«tags | join last:  and  | join: , »
+«tags / join last:  and  / join: , »
 → red, green and blue
 ```
 
@@ -78,7 +169,7 @@ culture, e.g. Turkish `tr-TR` maps `i` to `İ` (not `I`) under this filter, same
 as it would for any other culture-aware casing in a .NET host.
 
 ```markdown
-«name | upper»
+«name / upper»
 → ADA LOVELACE
 ```
 
@@ -88,7 +179,7 @@ as it would for any other culture-aware casing in a .NET host.
 as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
 
 ```markdown
-«name | lower»
+«name / lower»
 → ada lovelace
 ```
 

@@ -12,7 +12,7 @@ internal enum TokenKind
     BareColon,
     LocalScope,
     ParentScope,
-    Pipe,
+    FilterDelimiter,
     Newline,
     Else,
     Negation,

@@ -14,16 +14,28 @@ public class FilterRegistry
             .Register<UpperFilter>()
             .Register<LowerFilter>()
             .Register<DateFilter>()
-            .Register<CurrencyFilter>()
+            .Register(new CurrencyFilter())
+            .Register<NumberFilter>()
             .Register<TruncateFilter>()
         ;
 
     readonly Dictionary<string, IFilter> _filters = [];
 
     public FilterRegistry Register<TFilter>()
-        where TFilter : IFilter, new()
+        where TFilter : IFilter, new() =>
+        Register(new TFilter());
+
+    public FilterRegistry Register<TFilter>(TFilter filter)
+        where TFilter : IFilter
     {
-        _filters[NameFor<TFilter>()] = new TFilter();
+        _filters[NameFor<TFilter>()] = filter;
+
+        return this;
+    }
+
+    public FilterRegistry Remove<T>() where T : IFilter
+    {
+        _filters.Remove(NameFor<T>());
 
         return this;
     }

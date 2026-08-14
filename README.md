@@ -38,16 +38,16 @@ Welcome back — thanks for being a member!
 Thanks for placing your first order with us!
 »»
 
-**Order #«order id»** — placed «order date | date: MMMM d, yyyy»
+**Order #«order id»** — placed «order date / date: MMMM d, yyyy»
 
 ««items
-| Item   | Qty        | Price                 | Total                       |
-| ------ | ---------- | --------------------- | --------------------------- |
-| «name» | «quantity» | «price | currency: $» | «total | currency: $»       |
-|        |            | **Order total**       | «order total | currency: $» |
+| Item   | Qty        | Price              | Total                    |
+| ------ | ---------- | ------------------ | ------------------------ |
+| «name» | «quantity» | «price / currency» | «total / currency»       |
+|        |            | **Order total**    | «order total / currency» |
 »»
 
-You ordered «items: name | join last:  and  | join: , ».
+You ordered «items: name / join last:  and  / join: , ».
 
 Shipping to «shipping address: city», «shipping address: state».
 
@@ -82,12 +82,12 @@ Welcome back — thanks for being a member!
 
 **Order #A-1042** — placed March 4, 2026
 
-| Item   | Qty        | Price                 | Total                       |
-| ------ | ---------- | --------------------- | --------------------------- |
+| Item   | Qty        | Price              | Total                    |
+| ------ | ---------- | ------------------ | ------------------------ |
 | Wireless Mouse | 1 | $24.99 | $24.99       |
 | USB-C Hub | 1 | $39.99 | $39.99       |
 | Mousepad | 2 | $11.26 | $22.52       |
-|        |            | **Order total**       | $87.50 |
+|        |            | **Order total**    | $87.50 |
 
 You ordered Wireless Mouse, USB-C Hub and Mousepad.
 
@@ -107,12 +107,12 @@ Welcome back — thanks for being a member!
 
 **Order #A-1042** — placed March 4, 2026
 
-| Item   | Qty        | Price                 | Total                       |
-| ------ | ---------- | --------------------- | --------------------------- |
+| Item   | Qty        | Price              | Total                    |
+| ------ | ---------- | ------------------ | ------------------------ |
 | Wireless Mouse | 1 | $24.99 | $24.99       |
 | USB-C Hub | 1 | $39.99 | $39.99       |
 | Mousepad | 2 | $11.26 | $22.52       |
-|        |            | **Order total**       | $87.50 |
+|        |            | **Order total**    | $87.50 |
 
 You ordered Wireless Mouse, USB-C Hub and Mousepad.
 
@@ -169,7 +169,7 @@ public class ReverseFilter : IFilter
 var template = Template.Create(text,
     options => options.Filters.Register<ReverseFilter>()
 );
-// «text | reverse» reverses each value
+// «text / reverse» reverses each value
 ```
 
 The same `configure` callback also sets `options.Localizer`, an

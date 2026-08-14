@@ -1,1 +1,1 @@
-Tags: «tags | join»
+Tags: «tags / join»

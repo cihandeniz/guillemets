@@ -2,7 +2,7 @@ using static Guillemets.Position;
 
 namespace Guillemets.Filters;
 
-internal class JoinFilter : IFilter
+public class JoinFilter : IFilter
 {
     const string INLINE_DEFAULT = ", ";
 

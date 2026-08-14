@@ -1,1 +1,1 @@
-Nickname: «nickname | default: N/A»
+Nickname: «nickname / default: N/A»

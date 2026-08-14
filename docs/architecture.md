@@ -57,7 +57,7 @@ flowchart TB
     Colon --> ColonSpace[" "] --> ColonKind["Colon"]
     Root --> Dot["."] --> DotColon[":"] --> DotColonSpace[" "] --> LocalScopeKind["LocalScope\n(.: )"]
     Dot --> DotDot["."] --> DotDotColon[":"] --> DotDotColonSpace[" "] --> ParentScopeKind["ParentScope\n(..: )"]
-    Root --> SpacePipeSpace[" | "] --> PipeKind["Pipe"]
+    Root --> SpaceSlashSpace[" / "] --> FilterDelimiterKind["FilterDelimiter"]
     Root -.no match anywhere.-> LiteralKind["Literal (fallback)"]
 ```
 
@@ -222,7 +222,7 @@ add another by implementing the same interface.
 
 ## Filters
 
-The pluggable value-transform pipeline stages behind `«expr | filter: arg»` and
+The pluggable value-transform pipeline stages behind `«expr / filter: arg»` and
 the block-footer join.
 
 `IFilter` is the one interface behind a pipeline stage — a sequence-in,

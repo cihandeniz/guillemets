@@ -14,7 +14,7 @@ internal static class Symbols
     const char SPACE = ' ';
     const char DOT = '.';
     internal const char BACKSLASH = '\\';
-    internal const char PIPE = '|';
+    internal const char SLASH = '/';
 
     public static readonly SymbolTree TREE = BuildTree();
 
@@ -32,7 +32,7 @@ internal static class Symbols
             .Add([COLON], BareColon)
             .Add([DOT, COLON, SPACE], LocalScope)
             .Add([DOT, DOT, COLON, SPACE], ParentScope)
-            .Add([SPACE, PIPE, SPACE], Pipe)
+            .Add([SPACE, SLASH, SPACE], FilterDelimiter)
             .Add([TILDE], Else, newline: true)
             .Add([BANG], Negation)
             .Add([EQUALS], Assign)

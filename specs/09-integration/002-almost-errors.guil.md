@@ -36,6 +36,6 @@ Approvers on file:
 This should not appear.
 »»
 
-Single tag: «single tag | join last: and »
-No tags: «no tags | join: , »
-Tags: «tags | join last:  and  | join: , »
+Single tag: «single tag / join last: and »
+No tags: «no tags / join: , »
+Tags: «tags / join last:  and  / join: , »

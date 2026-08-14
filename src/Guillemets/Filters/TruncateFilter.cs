@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Guillemets.Filters;
 
-internal class TruncateFilter : IFilter
+public class TruncateFilter : IFilter
 {
     const char ELLIPSIS = '…';
 

@@ -1,1 +1,1 @@
-Tags: «quote: tags | join last:  and  | join: , »
+Tags: «quote: tags / join last:  and  / join: , »

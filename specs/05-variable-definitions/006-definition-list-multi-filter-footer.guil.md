@@ -1,4 +1,4 @@
 ««tags = quote: tags
 «name»
-upper | join: , »»
+upper / join: , »»
 Tags: «tags»

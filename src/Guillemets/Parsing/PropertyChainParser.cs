@@ -38,13 +38,13 @@ internal class PropertyChainParser(TokenCursor _tokens)
         }
     }
 
-    public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe = false) =>
-        Parse(openPosition, stopAtNewline, stopAtPipe, allowVariableDefinition: false, out _);
+    public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtDelimiter = false) =>
+        Parse(openPosition, stopAtNewline, stopAtDelimiter, allowVariableDefinition: false, out _);
 
     public PropertyChainNode Parse(Position openPosition, bool stopAtNewline, out string? variableName) =>
-        Parse(openPosition, stopAtNewline, stopAtPipe: false, allowVariableDefinition: true, out variableName);
+        Parse(openPosition, stopAtNewline, stopAtDelimiter: false, allowVariableDefinition: true, out variableName);
 
-    PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtPipe, bool allowVariableDefinition, out string? variableName)
+    PropertyChainNode Parse(Position openPosition, bool stopAtNewline, bool stopAtDelimiter, bool allowVariableDefinition, out string? variableName)
     {
         variableName = null;
         var chain = new PropertyChainNode.Builder();
@@ -69,7 +69,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 break;
             }
 
-            if (stopAtPipe && _tokens.Current.Kind is Pipe)
+            if (stopAtDelimiter && _tokens.Current.Kind is FilterDelimiter)
             {
                 Flush(buffer, chain); break;
             }
@@ -111,12 +111,12 @@ internal class PropertyChainParser(TokenCursor _tokens)
             _tokens.Advance();
         }
 
-        if (_tokens.AtEnd || (stopAtPipe && _tokens.Current.Kind is not (Close or Pipe)))
+        if (_tokens.AtEnd || (stopAtDelimiter && _tokens.Current.Kind is not (Close or FilterDelimiter)))
         {
             throw new TemplateParseException("Unclosed variable", openPosition);
         }
 
-        if (stopAtPipe)
+        if (stopAtDelimiter)
         {
             return chain.Build(openPosition);
         }

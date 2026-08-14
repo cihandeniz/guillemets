@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 191 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 193 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -21,13 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- No plain-number-formatting filter. Surfaced while fixing the culture
-  round-trip bug: making `PocoDataSource.AsDisplayString()` invariant means
-  plain `«amount»` (no filter) now renders flat invariant text (`1234.5`)
-  instead of locale-formatted text, and the only filter that adds
-  grouping/decimals is `currency`, which also forces a currency symbol
-  prefix — there's no way to get `1,234.50` without also getting
-  `$1,234.50`. Add a `number` filter (e.g. `| number: N2`) to close the gap.
 - `IDataSource`/`IFilter` contract inconsistencies across adapters (e.g.
   `EnumerateArray()` throwing vs. returning empty) — worth a pass once the
   case-sensitivity fix touches all three adapters anyway. Pairs naturally

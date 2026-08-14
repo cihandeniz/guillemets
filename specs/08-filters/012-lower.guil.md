@@ -1,1 +1,1 @@
-Name: «name | lower»
+Name: «name / lower»

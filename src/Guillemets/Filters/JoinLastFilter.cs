@@ -1,6 +1,6 @@
 namespace Guillemets.Filters;
 
-internal class JoinLastFilter : IFilter
+public class JoinLastFilter : IFilter
 {
     public IEnumerable<string> Apply(IEnumerable<string> values, string? arg)
     {

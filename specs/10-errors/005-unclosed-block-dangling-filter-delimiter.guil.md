@@ -1,2 +1,2 @@
 Hello, ««items
-join: , | 
+join: , / 

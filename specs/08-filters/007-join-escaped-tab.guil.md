@@ -1,1 +1,1 @@
-Tags: «tags | join: \t»
+Tags: «tags / join: \t»

@@ -1,6 +1,6 @@
 namespace Guillemets.Filters;
 
-internal class DefaultFilter : IFilter
+public class DefaultFilter : IFilter
 {
     public IEnumerable<string> Apply(IEnumerable<string> values, string? arg)
     {

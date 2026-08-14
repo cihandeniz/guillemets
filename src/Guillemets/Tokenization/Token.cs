@@ -15,7 +15,7 @@ internal readonly record struct Token(TokenKind Kind, string Source, int Start, 
         OpenBlock => Length,
         CloseBlock => CountNonNewline(),
         Literal or Escaped or Open or Close or Colon
-            or BareColon or LocalScope or ParentScope or Pipe
+            or BareColon or LocalScope or ParentScope or FilterDelimiter
             or Newline or Else or Negation or Assign =>
             throw new InvalidOperationException($"{Kind} tokens have no depth."),
         _ => throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unrecognized token kind."),
