@@ -1,4 +1,3 @@
-Before.
 ««outer
 before-inner
 «««inner
@@ -10,4 +9,3 @@ after-inner
 ~
 outer falsy
 »»
-After.

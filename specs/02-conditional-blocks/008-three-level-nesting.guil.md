@@ -1,4 +1,3 @@
-Before.
 ««outer
 outer-before
 «««middle
@@ -10,4 +9,3 @@ middle-after
 »»»
 outer-after
 »»
-After.

@@ -1,4 +1,3 @@
-Before.
 ««company name
 Company: «company name»
 ~
@@ -29,4 +28,3 @@ Has missing.
 ~
 No missing.
 »»
-After.

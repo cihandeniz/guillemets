@@ -6,6 +6,7 @@ internal class SymbolTree(TokenKind? kind = null)
 {
     readonly Dictionary<char, SymbolTree> _children = [];
     TokenKind? _kind = kind;
+    TokenKind? _kindAtEnd;
 
     public TokenKind Kind =>
         _kind ?? throw new InvalidOperationException("Symbol tree node has no token kind.");
@@ -18,6 +19,7 @@ internal class SymbolTree(TokenKind? kind = null)
         var node = AddPath(path, newline ? null : kind, repeat);
         if (newline)
         {
+            node._kindAtEnd = kind;
             node.AddPath([Position.NEWLINE], kind, false);
         }
 
@@ -66,7 +68,7 @@ internal class SymbolTree(TokenKind? kind = null)
     TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, out int length)
     {
         length = index;
-        if (index >= text.Length) { return _kind; }
+        if (index >= text.Length) { return _kindAtEnd ?? _kind; }
 
         var nextChild = _children.GetValueOrDefault(text[index]);
         if (nextChild is null) { return _kind; }

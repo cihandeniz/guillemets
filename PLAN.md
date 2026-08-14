@@ -9,9 +9,9 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 199 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 200 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
-surfaced 30 confirmed issues that need fixing before release; every item was
+surfaced 30 confirmed issues (29 remaining) that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
 before being added here. Priorities adjusted per author call: POCO reflection
 caching deprioritized (production runs on JSON, not POCO), net8
@@ -21,9 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P1 — correctness bugs (parser/render)
 
-- A block whose final `»»` has no trailing newline never closes (`Symbols`
-  only registers `CloseBlock` as `»»` + `\n`) — wrong error, wrong location.
-  - IN PROGRESS: see `PARKED-DECISIONS.md`
 - `~` (else) isn't required to be at line start (`BodyParser.ReachedElse` has
   no `AtLineStart` guard, unlike `ValidateNotSharingCloseLine`) — a stray
   trailing `~` anywhere silently truncates the truthy body.

@@ -90,10 +90,12 @@ Variables, above).
 
 > [!IMPORTANT]
 >
-> "On its own line" is enforced on both sides of the closing `»»` — nothing
-> else may share that line, before or after it. Only a newline or the end of
-> the template may follow; a template that ends right after `»»`, with no
-> trailing newline at all, closes normally.
+> A literal may not share a line with the closing `»»` before it — that's a
+> hard parse error. After it, only a newline or the end of the template may
+> follow for it to count as a close at all; a template that ends right after
+> `»»`, with no trailing newline, closes normally. A `»»` followed by
+> anything else on the same line isn't recognized as a close — it's treated
+> as literal text and the search for the real closing `»»` continues.
 
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
