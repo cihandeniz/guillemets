@@ -102,11 +102,10 @@ blocks easier to read.
 
 > [!TIP]
 >
-> A run of the same guillemet may not exceed 7 deep. Depth is only ever compared
-> to that same block's own open/close pair — never to a sibling's or an
-> ancestor's — so once you're past a readable depth you don't need to keep
-> growing it for each additional nesting level; reuse any depth up to 7 for
-> however much further you nest.
+> A run of the same guillemet may not exceed 7 deep. Depth is only ever
+> compared within a single block's own open/close pair, never to a sibling's
+> or an ancestor's — so past a readable depth, just reuse any depth up to 7
+> instead of growing it further.
 
 Behavior is inferred from the resolved type of `name`:
 
@@ -685,6 +684,22 @@ MUST end right where the closing `»»` starts, with no line break between them.
 pipeline that isn't glued to the close this way isn't recognized as a footer at
 all; it's ordinary literal body content instead.
 
+> [!NOTE]
+>
+> This means a new custom filter can retroactively change how an
+> already-written template parses, if its name matches a glued last line:
+>
+> ```markdown
+> ««notes
+> Summary text.
+> highlight»»
+> ```
+>
+> A hard parse error with no `highlight` filter registered, silently
+> different output the moment a host app registers one — even for an
+> unrelated feature. Expected, not a bug; keep custom filter names
+> distinctive.
+
 When the block has an else branch, the footer goes on the last line of whichever
 branch renders last: the truthy body if there is no `~`, the falsy body if there
 is one. `~` itself always stays on its own line and is never adjacent to it.
@@ -758,12 +773,11 @@ Please don't hesitate to contact us with any questions.
 
 ## Line Endings
 
-A template's own line-ending style (LF or CRLF, detected once from the template
-source) is authoritative for the entire rendered output. Any line breaks
-embedded in resolved data — a multi-line string value, say — are normalized to
-match, regardless of which style they originally used. The output always uses
-one consistent line ending throughout; data never forces a mix of styles into
-it.
+A template's own line-ending style (LF or CRLF, detected once from the source)
+is authoritative for the whole rendered output — any line breaks embedded in
+resolved data, a multi-line string value say, are normalized to match
+regardless of which style they originally used. Data never forces a mix of
+styles into the output.
 
 ## Escaping
 
