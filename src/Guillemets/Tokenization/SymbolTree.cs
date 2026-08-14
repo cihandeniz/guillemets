@@ -4,6 +4,8 @@ namespace Guillemets.Tokenization;
 
 internal class SymbolTree(TokenKind? kind = null)
 {
+    internal const int MAX_REPEAT = 7;
+
     readonly Dictionary<char, SymbolTree> _children = [];
     TokenKind? _kind = kind;
     TokenKind? _kindAtEnd;
@@ -51,7 +53,7 @@ internal class SymbolTree(TokenKind? kind = null)
     void Repeat(char symbol) =>
         _children[symbol] = this;
 
-    public bool TryMatchSymbol(ReadOnlySpan<char> text, [NotNullWhen(true)] out TokenKind? kind, out int length)
+    public bool TryMatchSymbol(ReadOnlySpan<char> text, Position position, [NotNullWhen(true)] out TokenKind? kind, out int length)
     {
         length = 0;
         kind = null;
@@ -60,12 +62,12 @@ internal class SymbolTree(TokenKind? kind = null)
         var child = _children.GetValueOrDefault(text[0]);
         if (child is null) { return false; }
 
-        kind = child.ExtendMatch(text, 1, out length);
+        kind = child.ExtendMatch(text, 1, position, out length);
 
         return kind is not null;
     }
 
-    TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, out int length)
+    TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, Position startPosition, out int length)
     {
         length = index;
         if (index >= text.Length) { return _kindAtEnd ?? _kind; }
@@ -73,7 +75,15 @@ internal class SymbolTree(TokenKind? kind = null)
         var nextChild = _children.GetValueOrDefault(text[index]);
         if (nextChild is null) { return _kind; }
 
-        var extended = nextChild.ExtendMatch(text, index + 1, out var extendedLength);
+        if (ReferenceEquals(nextChild, this) && index + 1 > MAX_REPEAT)
+        {
+            throw new TemplateParseException(
+                $"A run of the same guillemet may not exceed {MAX_REPEAT} deep - reuse a depth instead of nesting further",
+                startPosition
+            );
+        }
+
+        var extended = nextChild.ExtendMatch(text, index + 1, startPosition, out var extendedLength);
         if (extended is null) { return _kind; }
 
         length = extendedLength;

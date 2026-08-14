@@ -101,6 +101,14 @@ The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
 blocks easier to read.
 
+> [!TIP]
+>
+> A run of the same guillemet may not exceed 7 deep. Depth is only ever
+> compared to that same block's own open/close pair — never to a sibling's
+> or an ancestor's — so once you're past a readable depth you don't need to
+> keep growing it for each additional nesting level; reuse any depth up to
+> 7 for however much further you nest.
+
 Behavior is inferred from the resolved type of `name`:
 
 | Resolved type    | Behavior                                                |

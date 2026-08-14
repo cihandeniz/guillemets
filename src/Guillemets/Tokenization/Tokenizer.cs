@@ -12,7 +12,7 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         var pendingPosition = position;
         while (index < _template.Length)
         {
-            if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), out var kind, out var length))
+            if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), position, out var kind, out var length))
             {
                 var unmatchedLength = Math.Max(length, 1);
                 position = position.Next(_template.AsSpan(index, unmatchedLength));
