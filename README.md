@@ -150,8 +150,10 @@ var output = template.Render(data);
 ### Custom filters
 
 `Template.Create`'s optional `configure` callback exposes
-`ParseOptions.Filters`, the registry `Register<T>()` adds a filter to alongside
-the built-ins (`join`, `date`, `upper`, ...). A filter's template name drops the
+`ParseOptions.Filters`, the registry `Register(instance)` adds a filter to
+alongside the built-ins (`join`, `date`, `upper`, ...) — re-registering an
+existing name (e.g. `Register(new CurrencyFilter("TL"))`) replaces it, and
+`Remove<TFilter>()` drops one entirely. A filter's template name drops the
 `Filter` suffix and lowercases the rest — `ReverseFilter` becomes `reverse`.
 `Apply` maps over the current sequence: a single-value filter like `date`
 returns one string per input; a collapsing filter like `join` returns fewer
@@ -167,7 +169,7 @@ public class ReverseFilter : IFilter
 }
 
 var template = Template.Create(text,
-    options => options.Filters.Register<ReverseFilter>()
+    options => options.Filters.Register(new ReverseFilter())
 );
 // «text / reverse» reverses each value
 ```

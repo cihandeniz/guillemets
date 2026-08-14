@@ -8,22 +8,18 @@ public class FilterRegistry
 
     public static FilterRegistry CreateDefault() =>
         new FilterRegistry()
-            .Register<JoinFilter>()
-            .Register<JoinLastFilter>()
-            .Register<DefaultFilter>()
-            .Register<UpperFilter>()
-            .Register<LowerFilter>()
-            .Register<DateFilter>()
+            .Register(new JoinFilter())
+            .Register(new JoinLastFilter())
+            .Register(new DefaultFilter())
+            .Register(new UpperFilter())
+            .Register(new LowerFilter())
+            .Register(new DateFilter())
             .Register(new CurrencyFilter())
-            .Register<NumberFilter>()
-            .Register<TruncateFilter>()
+            .Register(new NumberFilter())
+            .Register(new TruncateFilter())
         ;
 
     readonly Dictionary<string, IFilter> _filters = [];
-
-    public FilterRegistry Register<TFilter>()
-        where TFilter : IFilter, new() =>
-        Register(new TFilter());
 
     public FilterRegistry Register<TFilter>(TFilter filter)
         where TFilter : IFilter

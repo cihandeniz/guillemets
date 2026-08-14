@@ -99,13 +99,14 @@ options => options.Filters.Register(new CurrencyFilter("TL"))
 → 1.234,50 TL         (de-DE ambient — grouping/decimals still de-DE)
 ```
 
-`FilterRegistry.Register` re-registering an existing name replaces it
-(there's no separate "edit" — the default `currency` above is what's being
-replaced); `FilterRegistry.Remove<TFilter>()` drops a filter entirely,
-built-in or custom, making it unavailable (`«x / truncate»` then fails to
-parse with "Unknown filter 'truncate'"). Both built-in filters a host might
-want to override or remove — `CurrencyFilter`, `TruncateFilter` — are public
-for exactly this reason.
+`FilterRegistry.Register` takes an instance; re-registering an existing name
+replaces it (there's no separate "edit" — the default `currency` above is
+what's being replaced).
+`FilterRegistry.Remove<TFilter>()` drops a filter entirely, built-in or
+custom, making it unavailable (`«x / truncate»` then fails to parse with
+"Unknown filter 'truncate'"). Every built-in filter class is public for
+exactly this reason — any of them can be targeted by `Register`/`Remove`,
+not just `CurrencyFilter`/`TruncateFilter`.
 
 ## Number
 
