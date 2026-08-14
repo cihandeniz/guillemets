@@ -9,21 +9,17 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 227 passed, 0 skipped, 0 failed. Language/implementation,
+`dotnet test` is green: 228 passed, 0 skipped, 0 failed. Language/implementation,
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 15 issues remain before release — see P3
+locked in by 2 new spec fixtures). 14 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P3 — release readiness (packaging/process)
 
-- `Glossary.CACHE` is a static, unbounded `ConcurrentDictionary` keyed on
-  `(IStringLocalizer?, culture)`. Since `IStringLocalizer<T>` is typically
-  scoped/transient in ASP.NET Core, this leaks in the intended host. Key on
-  something stable or use `ConditionalWeakTable`.
 - `GenerateDocumentationFile`/`TreatWarningsAsErrors` are on but zero public
   APIs have XML docs (`Template`, `IFilter`, `IDataSource`, `FilterRegistry`,
   `ParseOptions`). Add docs to the public surface or turn the flag off until

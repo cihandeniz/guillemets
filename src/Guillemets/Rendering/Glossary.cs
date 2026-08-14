@@ -1,27 +1,35 @@
 using Microsoft.Extensions.Localization;
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Guillemets.Rendering;
 
 internal class Glossary
 {
-    static readonly ConcurrentDictionary<(
-        IStringLocalizer? Localizer,
+    static readonly ConditionalWeakTable<IStringLocalizer, ConcurrentDictionary<(
         string Culture,
         Func<string, string> PropertyNameConversion,
         Func<IEnumerable<string>, string>? CollisionResolver
-    ), Glossary> CACHE = new();
+    ), Glossary>> CACHE = new();
 
     public static Glossary GetOrCreate(
         IStringLocalizer? localizer,
         Func<string, string> propertyNameConversion,
         Func<IEnumerable<string>, string>? collisionResolver
-    ) =>
-        CACHE.GetOrAdd(
-            (localizer, CultureInfo.CurrentUICulture.Name, propertyNameConversion, collisionResolver),
-            static key => new(key.Localizer, key.PropertyNameConversion, key.CollisionResolver)
+    )
+    {
+        if (localizer is null) { return new(null, propertyNameConversion, collisionResolver); }
+
+        var perLocalizer = CACHE.GetValue(localizer, static _ => new());
+        var key = (CultureInfo.CurrentUICulture.Name, propertyNameConversion, collisionResolver);
+
+        return perLocalizer.GetOrAdd(
+            key,
+            static (key, localizer) => new(localizer, key.PropertyNameConversion, key.CollisionResolver),
+            localizer
         );
+    }
 
     static Dictionary<string, string> BuildEntries(
         IStringLocalizer localizer,

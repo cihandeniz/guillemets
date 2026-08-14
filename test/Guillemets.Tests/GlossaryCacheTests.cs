@@ -1,12 +1,36 @@
 using Microsoft.Extensions.Localization;
 using Shouldly;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Guillemets.Tests;
 
 public class GlossaryCacheTests
 {
+    [Test]
+    public void Glossary_cache_does_not_keep_a_collected_localizer_alive()
+    {
+        var weakLocalizer = RenderOnceAndDiscardLocalizer();
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        weakLocalizer.IsAlive.ShouldBeFalse();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static WeakReference RenderOnceAndDiscardLocalizer()
+    {
+        var localizer = new FakeStringLocalizer(new Dictionary<string, string> { ["OfferNo"] = "Quote No" });
+        var data = JsonDocument.Parse("{}").RootElement;
+
+        Template.Create("«quote no»", options => options.Localizer = localizer).Render(data);
+
+        return new WeakReference(localizer);
+    }
+
     [Test]
     public void Glossary_cache_is_keyed_by_culture_not_shared_across_cultures()
     {
