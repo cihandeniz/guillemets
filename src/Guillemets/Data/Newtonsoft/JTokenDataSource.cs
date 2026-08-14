@@ -3,9 +3,16 @@ using Newtonsoft.Json.Linq;
 
 namespace Guillemets.Data.Newtonsoft;
 
+/// <summary>
+/// Adapts Newtonsoft's <see cref="JToken"/> — case-insensitive property
+/// lookup. Every member is <see langword="virtual"/> — subclass to
+/// override just one piece of behavior instead of reimplementing
+/// <see cref="IDataSource"/> from scratch.
+/// </summary>
 public class JTokenDataSource(JToken _element)
     : IDataSource
 {
+    /// <inheritdoc/>
     public virtual DataKind Kind => _element.Type switch
     {
         JTokenType.Object => DataKind.Object,
@@ -29,6 +36,7 @@ public class JTokenDataSource(JToken _element)
         _ => throw new ArgumentOutOfRangeException(nameof(_element), _element.Type, "Unrecognized JToken type."),
     };
 
+    /// <inheritdoc/>
     public virtual bool TryGetProperty(string name, out IDataSource value)
     {
         if (Kind == DataKind.Object && _element is JObject obj && obj.TryGetValue(name, StringComparison.OrdinalIgnoreCase, out var property))
@@ -43,11 +51,13 @@ public class JTokenDataSource(JToken _element)
         return false;
     }
 
+    /// <inheritdoc/>
     public virtual IEnumerable<IDataSource> EnumerateArray() =>
         Kind == DataKind.Array
             ? _element.Children().Select(item => (IDataSource)new JTokenDataSource(item))
             : [];
 
+    /// <inheritdoc/>
     public virtual bool AsBoolean() => Kind switch
     {
         DataKind.Boolean => _element.Value<bool>(),
@@ -56,6 +66,7 @@ public class JTokenDataSource(JToken _element)
         _ => throw new ArgumentOutOfRangeException(nameof(_element), Kind, "Unrecognized data kind."),
     };
 
+    /// <inheritdoc/>
     public virtual string? AsDisplayString() =>
         _element.ToString();
 }

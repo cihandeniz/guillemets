@@ -2,10 +2,18 @@ using System.Globalization;
 
 namespace Guillemets.Filters;
 
+/// <summary>
+/// Counts UTF-16 characters (not words, not grapheme clusters) and
+/// appends <c>…</c> once the value exceeds the length given as its
+/// argument. Backs the cut point off by one character rather than
+/// splitting a surrogate pair, but doesn't attempt full
+/// grapheme-cluster awareness beyond that.
+/// </summary>
 public class TruncateFilter : IFilter
 {
     const char ELLIPSIS = '…';
 
+    /// <inheritdoc/>
     public IEnumerable<string> Apply(IEnumerable<string> values, string? arg) =>
         [.. values.Select(value => Truncate(value, arg))];
 

@@ -5,6 +5,15 @@ using System.Reflection;
 
 namespace Guillemets.Data.Poco;
 
+/// <summary>
+/// Adapts a plain C# object via reflection — case-insensitive property
+/// lookup, <c>IDictionary</c> keys treated as properties, any
+/// <c>IEnumerable</c> as an array, any <c>IParsable&lt;T&gt;</c> (string,
+/// numbers, <c>DateTime</c>, <c>DateOnly</c>, ...) plus <c>Enum</c> as a
+/// scalar. Every member is <see langword="virtual"/> — subclass to
+/// override just one piece of behavior instead of reimplementing
+/// <see cref="IDataSource"/> from scratch.
+/// </summary>
 public class PocoDataSource(object? _value)
     : IDataSource
 {
@@ -27,6 +36,7 @@ public class PocoDataSource(object? _value)
         return false;
     }
 
+    /// <inheritdoc/>
     public virtual DataKind Kind => _value switch
     {
         null => DataKind.Null,
@@ -49,6 +59,7 @@ public class PocoDataSource(object? _value)
         _ => DataKind.Object,
     };
 
+    /// <inheritdoc/>
     public virtual bool TryGetProperty(string name, out IDataSource value)
     {
         if (_value is IDictionary dictionary)
@@ -71,12 +82,14 @@ public class PocoDataSource(object? _value)
         return true;
     }
 
+    /// <inheritdoc/>
     public virtual IEnumerable<IDataSource> EnumerateArray() =>
         Kind == DataKind.Array
             ? ((IEnumerable)(_value ?? throw new InvalidOperationException("Array value was unexpectedly null.")))
                 .Cast<object?>().Select(item => (IDataSource)new PocoDataSource(item))
             : [];
 
+    /// <inheritdoc/>
     public virtual bool AsBoolean() => Kind switch
     {
         DataKind.Boolean => (bool)(_value ?? throw new InvalidOperationException("Boolean value was unexpectedly null.")),
@@ -85,6 +98,7 @@ public class PocoDataSource(object? _value)
         _ => throw new ArgumentOutOfRangeException(nameof(_value), Kind, "Unrecognized data kind."),
     };
 
+    /// <inheritdoc/>
     public virtual string? AsDisplayString() =>
         _value is IFormattable formattable
             ? formattable.ToString(null, CultureInfo.InvariantCulture)

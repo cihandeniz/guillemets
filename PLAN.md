@@ -13,17 +13,13 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 14 issues remain before release — see P3
+locked in by 2 new spec fixtures). 13 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P3 — release readiness (packaging/process)
 
-- `GenerateDocumentationFile`/`TreatWarningsAsErrors` are on but zero public
-  APIs have XML docs (`Template`, `IFilter`, `IDataSource`, `FilterRegistry`,
-  `ParseOptions`). Add docs to the public surface or turn the flag off until
-  they exist.
 - README doesn't document that `Template` is safe to reuse across threads
   (immutable AST, stateless filter singletons, fresh state per `Render`
   call) — real, good property, currently undocumented. Pure doc addition.

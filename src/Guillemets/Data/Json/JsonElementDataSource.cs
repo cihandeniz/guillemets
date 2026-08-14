@@ -3,9 +3,16 @@ using System.Text.Json;
 
 namespace Guillemets.Data.Json;
 
+/// <summary>
+/// Adapts <see cref="JsonElement"/> — case-insensitive
+/// property lookup. Every member is <see langword="virtual"/> — subclass
+/// to override just one piece of behavior instead of reimplementing
+/// <see cref="IDataSource"/> from scratch.
+/// </summary>
 public class JsonElementDataSource(JsonElement _element)
     : IDataSource
 {
+    /// <inheritdoc/>
     public virtual DataKind Kind => _element.ValueKind switch
     {
         JsonValueKind.Object => DataKind.Object,
@@ -18,6 +25,7 @@ public class JsonElementDataSource(JsonElement _element)
         _ => throw new ArgumentOutOfRangeException(nameof(_element), _element.ValueKind, "Unrecognized JSON value kind."),
     };
 
+    /// <inheritdoc/>
     public virtual bool TryGetProperty(string name, out IDataSource value)
     {
         if (Kind == DataKind.Object)
@@ -37,11 +45,13 @@ public class JsonElementDataSource(JsonElement _element)
         return false;
     }
 
+    /// <inheritdoc/>
     public virtual IEnumerable<IDataSource> EnumerateArray() =>
         Kind == DataKind.Array
             ? _element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item))
             : [];
 
+    /// <inheritdoc/>
     public virtual bool AsBoolean() => Kind switch
     {
         DataKind.Boolean => _element.GetBoolean(),
@@ -50,6 +60,7 @@ public class JsonElementDataSource(JsonElement _element)
         _ => throw new ArgumentOutOfRangeException(nameof(_element), Kind, "Unrecognized data kind."),
     };
 
+    /// <inheritdoc/>
     public virtual string? AsDisplayString() =>
         _element.ToString();
 }
