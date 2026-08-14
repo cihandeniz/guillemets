@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 181 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 182 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -31,6 +31,11 @@ root cause, one fix. Now presence-based: a resolved, non-null string or
 number is truthy (including `""` and `0`); `null`/undefined stay falsy. See
 `specs/02-conditional-blocks/010-negation-of-non-boolean.*`.
 
+Fixed: empty property chain (`«»`, and a bare `.: `/`..: ` navigator with no
+following property) is now a parse error ("Property chain must not be empty")
+instead of silently resolving to the current scope and dumping the whole data
+model. See `specs/10-errors/008-empty-property-chain.*`.
+
 Work TDD-style per `CLAUDE.md`: for each item, write/extend a failing test
 (prefer a `/specs` fixture when the bug is spec-observable behavior, otherwise
 a targeted unit test) before touching implementation code.
@@ -39,9 +44,6 @@ a targeted unit test) before touching implementation code.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- `«»` (empty property chain) parses without error and dumps the entire data
-  model (`Project` with `Count == 0` returns the scope unchanged). Should be
-  a parse error.
 - `VariableStore` is one flat, unscoped dictionary per render. A `Define`
   inside a loop or a falsy branch leaks out and persists — last iteration
   wins, data-dependent, contradicts "available anywhere below its

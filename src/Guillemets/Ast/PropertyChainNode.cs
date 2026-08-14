@@ -60,8 +60,16 @@ internal class PropertyChainNode(IList<string> properties,
             _negateNext = false;
         }
 
-        public PropertyChainNode Build() =>
-            new(_properties, _lastSegmentNegated, _thisScopeOnly, _climbLevels);
+        public PropertyChainNode Build(Position openPosition)
+        {
+            var result = new PropertyChainNode(_properties, _lastSegmentNegated, _thisScopeOnly, _climbLevels);
+            if (result.Count == 0)
+            {
+                throw new TemplateParseException("Property chain must not be empty", openPosition);
+            }
+
+            return result;
+        }
 
         public string PopVariableName()
         {

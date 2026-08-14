@@ -117,7 +117,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
 
         if (stopAtPipe)
         {
-            return chain.Build();
+            return chain.Build(openPosition);
         }
 
         if (!stopAtNewline && _tokens.Current is not CloseToken)
@@ -130,6 +130,6 @@ internal class PropertyChainParser(TokenCursor _tokens)
             _tokens.Advance();
         }
 
-        return chain.Build();
+        return chain.Build(openPosition);
     }
 }

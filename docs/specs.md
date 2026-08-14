@@ -48,6 +48,13 @@ name»
 
 resolves identically to `«full name»`.
 
+> [!WARNING]
+>
+> A property chain MUST contain at least one segment. `«»` is a parse error,
+> not a reference to the current scope — the same is true of a bare `.: ` or
+> `..: ` navigator with no property chain after it (see Scope Navigation,
+> below).
+
 ### Nested Property Access
 
 `:` is the property accessor. It drills into objects and, when it lands on a
@@ -80,13 +87,22 @@ blocks easier to read.
 
 Behavior is inferred from the resolved type of `name`:
 
-| Resolved type | Behavior         |
-| ---           | ---              |
-| boolean       | conditional (if) |
-| list          | loop             |
-| object        | scope            |
+| Resolved type    | Behavior                                                |
+| ---------------- | ------------------------------------------------------- |
+| boolean          | conditional (if)                                        |
+| list             | loop                                                    |
+| object           | scope                                                   |
+| string, number   | conditional (if) — truthy whenever the value is present |
+| null, unresolved | conditional (if) — always falsy                         |
 
-No keyword is required. The same syntax covers all three cases.
+No keyword is required. The same syntax covers all cases.
+
+> [!NOTE]
+>
+> For a string or number, truthiness is about *presence*, not content —
+> `""` and `0` are truthy, the same as any other value. Only `null` and an
+> unresolved chain are falsy. Use a filter or explicit comparison in the data
+> layer if you need "is this blank/zero" instead of "is this present".
 
 ```markdown
 ««individual
@@ -228,11 +244,13 @@ on its own, since a plain boolean field carries no display text of its own.
 
 ### Negation
 
-`!` prefix negates any boolean variable:
+`!` prefix negates the truthiness of any variable (see the type table under
+Blocks, above, for what counts as truthy per resolved type):
 
 ```markdown
-«!last»    → true when not last item
-«!first»   → true when not first item
+«!last»          → true when not last item
+«!first»         → true when not first item
+«!company name»  → true when company name is null or unresolved
 ```
 
 > [!WARNING]
