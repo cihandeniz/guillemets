@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 177 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 181 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -23,6 +23,14 @@ invariantly, matching `JTokenDataSource`) — see `PocoFilterCultureTests.cs`.
 Surfaced a follow-up gap during that fix (no plain-number-formatting filter),
 tracked below under P3 release readiness.
 
+Fixed: scalar truthiness. `AsBoolean()` was hardcoded `false` for every
+non-boolean kind across all three adapters and `StringDataSource`, which made
+`Negate()` always return `true` for strings/numbers *and* made
+`««company name»»` always take the else branch regardless of content — same
+root cause, one fix. Now presence-based: a resolved, non-null string or
+number is truthy (including `""` and `0`); `null`/undefined stay falsy. See
+`specs/02-conditional-blocks/010-negation-of-non-boolean.*`.
+
 Work TDD-style per `CLAUDE.md`: for each item, write/extend a failing test
 (prefer a `/specs` fixture when the bug is spec-observable behavior, otherwise
 a targeted unit test) before touching implementation code.
@@ -31,9 +39,6 @@ a targeted unit test) before touching implementation code.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- `IDataSource.Negate()` is wrong for every non-boolean — `AsBoolean()` is
-  hardcoded `false` for strings/numbers/undefined, so `!` on a non-empty
-  string or number is always `true`.
 - `«»` (empty property chain) parses without error and dumps the entire data
   model (`Project` with `Count == 0` returns the scope unchanged). Should be
   a parse error.
@@ -70,9 +75,6 @@ a targeted unit test) before touching implementation code.
   item's flag isn't a boolean (common with sparse JSON), and only handles
   single-segment chains — multi-level chains like `«quotes: prices: active»`
   never filter despite the spec's general rule.
-- Blocks over strings/numbers are always falsy (`AsBoolean()` unconditionally
-  `false` for scalars) — `««company name»»` meaning "if present" always
-  takes the else branch. Undocumented edge of the spec's type table.
 - POCO type mapping gaps: `DateTime`/`Guid`/enum fall through to
   `DataKind.Object` instead of being scalar/presence values; `IDictionary`
   matches `IEnumerable` first so dictionaries enumerate as `KeyValuePair`

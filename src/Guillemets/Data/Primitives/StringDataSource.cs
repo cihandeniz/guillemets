@@ -16,7 +16,7 @@ internal record StringDataSource(string Value)
         [];
 
     public bool AsBoolean() =>
-        false;
+        true;
 
     public string? AsDisplayString() =>
         Value;

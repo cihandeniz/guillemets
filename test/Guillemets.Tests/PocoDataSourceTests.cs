@@ -80,8 +80,12 @@ public class PocoDataSourceTests
         new PocoDataSource(value).AsBoolean().ShouldBe(value);
 
     [Test]
-    public void As_boolean_returns_false_for_non_boolean() =>
-        new PocoDataSource("Alice").AsBoolean().ShouldBeFalse();
+    public void As_boolean_returns_true_for_present_non_boolean() =>
+        new PocoDataSource("Alice").AsBoolean().ShouldBeTrue();
+
+    [Test]
+    public void As_boolean_returns_false_for_null() =>
+        new PocoDataSource(null).AsBoolean().ShouldBeFalse();
 
     [Test]
     public void As_display_string_returns_underlying_value_text()

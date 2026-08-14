@@ -48,8 +48,13 @@ public record PocoDataSource(object? Value)
                 .Cast<object?>().Select(item => (IDataSource)new PocoDataSource(item))
             : [];
 
-    public bool AsBoolean() =>
-        Kind == DataKind.Boolean && (bool)(Value ?? throw new InvalidOperationException("Boolean value was unexpectedly null."));
+    public bool AsBoolean() => Kind switch
+    {
+        DataKind.Boolean => (bool)(Value ?? throw new InvalidOperationException("Boolean value was unexpectedly null.")),
+        DataKind.String or DataKind.Number => true,
+        DataKind.Object or DataKind.Array or DataKind.Null or DataKind.Undefined => false,
+        _ => throw new ArgumentOutOfRangeException(nameof(Value), Kind, "Unrecognized data kind."),
+    };
 
     public string? AsDisplayString() =>
         Value is IFormattable formattable

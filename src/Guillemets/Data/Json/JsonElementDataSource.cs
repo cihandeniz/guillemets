@@ -35,8 +35,13 @@ public record JsonElementDataSource(JsonElement Element)
     public IEnumerable<IDataSource> EnumerateArray() =>
         Element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item));
 
-    public bool AsBoolean() =>
-        Kind == DataKind.Boolean && Element.GetBoolean();
+    public bool AsBoolean() => Kind switch
+    {
+        DataKind.Boolean => Element.GetBoolean(),
+        DataKind.String or DataKind.Number => true,
+        DataKind.Object or DataKind.Array or DataKind.Null or DataKind.Undefined => false,
+        _ => throw new ArgumentOutOfRangeException(nameof(Element), Kind, "Unrecognized data kind."),
+    };
 
     public string? AsDisplayString() =>
         Element.ToString();

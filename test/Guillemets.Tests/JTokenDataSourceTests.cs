@@ -64,8 +64,12 @@ public class JTokenDataSourceTests
         Wrap(new JValue(value)).AsBoolean().ShouldBe(value);
 
     [Test]
-    public void As_boolean_returns_false_for_non_boolean() =>
-        Wrap(new JValue("Alice")).AsBoolean().ShouldBeFalse();
+    public void As_boolean_returns_true_for_present_non_boolean() =>
+        Wrap(new JValue("Alice")).AsBoolean().ShouldBeTrue();
+
+    [Test]
+    public void As_boolean_returns_false_for_null() =>
+        Wrap(JValue.CreateNull()).AsBoolean().ShouldBeFalse();
 
     [Test]
     public void As_display_string_returns_underlying_value_text()

@@ -48,8 +48,13 @@ public record JTokenDataSource(JToken Element)
             ? Element.Children().Select(item => (IDataSource)new JTokenDataSource(item))
             : [];
 
-    public bool AsBoolean() =>
-        Kind == DataKind.Boolean && Element.Value<bool>();
+    public bool AsBoolean() => Kind switch
+    {
+        DataKind.Boolean => Element.Value<bool>(),
+        DataKind.String or DataKind.Number => true,
+        DataKind.Object or DataKind.Array or DataKind.Null or DataKind.Undefined => false,
+        _ => throw new ArgumentOutOfRangeException(nameof(Element), Kind, "Unrecognized data kind."),
+    };
 
     public string? AsDisplayString() =>
         Element.ToString();
