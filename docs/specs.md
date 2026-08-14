@@ -12,9 +12,9 @@ enforce.
 
 ## Delimiters
 
-`«»` — guillemets, pronounced *ghee-uh-MAY* — are angle quotation marks
-used for punctuation in French and several other languages. They're the
-only delimiter characters this engine recognizes.
+`«»` — guillemets, pronounced *ghee-uh-MAY* — are angle quotation marks used for
+punctuation in French and several other languages. They're the only delimiter
+characters this engine recognizes.
 
 Multi-guillemet depth (`««`, `«««`, ...) exists for readability at nesting
 levels. The engine accepts any consistent depth — the author chooses based on
@@ -33,6 +33,15 @@ Quote: «number»
 at depth 3 purely so the two are easier to tell apart on the page — depth 2 all
 the way down would behave identically.
 
+## Line Endings
+
+A template's own line-ending style (LF or CRLF, detected once from the template
+source) is authoritative for the entire rendered output. Any line breaks
+embedded in resolved data — a multi-line string value, say — are normalized to
+match, regardless of which style they originally used. The output always uses
+one consistent line ending throughout; data never forces a mix of styles into
+it.
+
 ## Variables
 
 A single-line or multi-line token that resolves to a scalar value.
@@ -50,10 +59,9 @@ resolves identically to `«full name»`.
 
 > [!WARNING]
 >
-> A property chain MUST contain at least one segment. `«»` is a parse error,
-> not a reference to the current scope — the same is true of a bare `.: ` or
-> `..: ` navigator with no property chain after it (see Scope Navigation,
-> below).
+> A property chain MUST contain at least one segment. `«»` is a parse error, not
+> a reference to the current scope — the same is true of a bare `.: ` or `..: `
+> navigator with no property chain after it (see Scope Navigation, below).
 
 ### Nested Property Access
 
@@ -90,12 +98,12 @@ Variables, above).
 
 > [!IMPORTANT]
 >
-> A literal may not share a line with the closing `»»` before it — that's a
-> hard parse error. After it, only a newline or the end of the template may
-> follow for it to count as a close at all; a template that ends right after
-> `»»`, with no trailing newline, closes normally. A `»»` followed by
-> anything else on the same line isn't recognized as a close — it's treated
-> as literal text and the search for the real closing `»»` continues.
+> A literal may not share a line with the closing `»»` before it — that's a hard
+> parse error. After it, only a newline or the end of the template may follow
+> for it to count as a close at all; a template that ends right after `»»`, with
+> no trailing newline, closes normally. A `»»` followed by anything else on the
+> same line isn't recognized as a close — it's treated as literal text and the
+> search for the real closing `»»` continues.
 
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
@@ -103,11 +111,11 @@ blocks easier to read.
 
 > [!TIP]
 >
-> A run of the same guillemet may not exceed 7 deep. Depth is only ever
-> compared to that same block's own open/close pair — never to a sibling's
-> or an ancestor's — so once you're past a readable depth you don't need to
-> keep growing it for each additional nesting level; reuse any depth up to
-> 7 for however much further you nest.
+> A run of the same guillemet may not exceed 7 deep. Depth is only ever compared
+> to that same block's own open/close pair — never to a sibling's or an
+> ancestor's — so once you're past a readable depth you don't need to keep
+> growing it for each additional nesting level; reuse any depth up to 7 for
+> however much further you nest.
 
 Behavior is inferred from the resolved type of `name`:
 
@@ -123,10 +131,10 @@ No keyword is required. The same syntax covers all cases.
 
 > [!NOTE]
 >
-> For a string or number, truthiness is about *presence*, not content —
-> `""` and `0` are truthy, the same as any other value. Only `null` and an
-> unresolved chain are falsy. Use a filter or explicit comparison in the data
-> layer if you need "is this blank/zero" instead of "is this present".
+> For a string or number, truthiness is about *presence*, not content — `""` and
+> `0` are truthy, the same as any other value. Only `null` and an unresolved
+> chain are falsy. Use a filter or explicit comparison in the data layer if you
+> need "is this blank/zero" instead of "is this present".
 
 ```markdown
 ««individual
@@ -273,10 +281,9 @@ on its own, since a plain boolean field carries no display text of its own.
 > ```
 >
 > The filtered list is whichever one the last segment is a direct boolean
-> property of, not necessarily the chain's first segment — here, each
-> quote's `prices`, flattened and scoped into the matched `price`, not
-> `quote`. A price missing `active` (sparse JSON) is just falsy, not an
-> error.
+> property of, not necessarily the chain's first segment — here, each quote's
+> `prices`, flattened and scoped into the matched `price`, not `quote`. A price
+> missing `active` (sparse JSON) is just falsy, not an error.
 
 ### Negation
 
@@ -388,8 +395,8 @@ the parent's own magic `«first»` too.
 > «.: .: name»
 > ```
 >
-> Both are invalid — a `..: ` climb or another `.: ` appearing after
-> `.: ` has already pinned the scope isn't allowed.
+> Both are invalid — a `..: ` climb or another `.: ` appearing after `.: ` has
+> already pinned the scope isn't allowed.
 
 Negation and filters both apply to the chain as a whole, after scope navigation
 has resolved it, exactly as they do without any navigator:
@@ -503,10 +510,10 @@ render once as a footer.
 
 > [!NOTE]
 >
-> A body with fewer than three rows isn't treated as a table — it
-> renders as a normal repeating block instead. A one-row body (just
-> `| «description» | «total» |`, no heading or divider) repeats that
-> single row for every item, exactly like a non-table loop body would.
+> A body with fewer than three rows isn't treated as a table — it renders as a
+> normal repeating block instead. A one-row body (just `| «description» |
+> «total» |`, no heading or divider) repeats that single row for every item,
+> exactly like a non-table loop body would.
 
 Column alignment across rows (matching `|` counts) is the author's
 responsibility — the engine doesn't parse or validate table structure at
@@ -795,10 +802,9 @@ value — `\n` there is just the two characters `\` and `n`.
 
 > [!NOTE]
 >
-> There's no `\:` — a filter clause only ever looks for the *first*
-> `: `, so nothing after it is re-scanned for another one. Writing
-> `truncate: 80: extra` doesn't need escaping to keep `: extra` as part
-> of the value; it already is.
+> There's no `\:` — a filter clause only ever looks for the *first* `: `, so
+> nothing after it is re-scanned for another one. Writing `truncate: 80: extra`
+> doesn't need escaping to keep `: extra` as part of the value; it already is.
 
 ## Glossary & Localization
 

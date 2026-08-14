@@ -9,9 +9,9 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 214 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 217 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
-surfaced 30 confirmed issues (24 remaining) that need fixing before release; every item was
+surfaced 30 confirmed issues (23 remaining) that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
 before being added here. Priorities adjusted per author call: POCO reflection
 caching deprioritized (production runs on JSON, not POCO), net8
@@ -21,9 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P1 — correctness bugs (parser/render)
 
-- `Template.Render`'s CRLF normalization (`rendered.Replace("\n", "\r\n")`)
-  is global — it rewrites `\n` embedded inside rendered *data* values too,
-  not just template structure.
 - `truncate` splits UTF-16 surrogate pairs (`value[..maxLength]`), and a
   bare/non-numeric `truncate` throws an unwrapped exception at render with
   no position — same unwrapped-exception asymmetry the currency/date filters
@@ -77,6 +74,10 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 - README doesn't document that `Template` is safe to reuse across threads
   (immutable AST, stateless filter singletons, fresh state per `Render`
   call) — real, good property, currently undocumented. Pure doc addition.
+- Remove any statement that claims «» is easy to type in docs. Docs should
+  rather admit that it's a sacrifice for readability over writability.
+  - This can be defended that no body writes by hand any more, AI writes docs
+    any way, but reading is more crucial at the age of GENAI
 - `make init` sudo-runs an unpinned script off `main` with no checksum. Pin
   to a tag/commit + checksum.
 
