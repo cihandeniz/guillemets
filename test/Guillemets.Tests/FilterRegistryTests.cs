@@ -30,4 +30,36 @@ public class FilterRegistryTests
 
         exception.Message.ShouldStartWith("Unknown filter 'truncate'");
     }
+
+    [Test]
+    public void Register_a_custom_filter_whose_class_name_is_shorter_than_the_Filter_suffix()
+    {
+        var data = JsonDocument.Parse("""{"Text": "hi"}""").RootElement;
+
+        var actual = Template.Create("«text / bold»", options => options.Filters.Register(new Bold())).Render(data);
+
+        actual.ShouldBe("**hi**");
+    }
+
+    [Test]
+    public void Register_a_custom_filter_whose_class_name_does_not_end_with_Filter()
+    {
+        var data = JsonDocument.Parse("""{"Text": "hi"}""").RootElement;
+
+        var actual = Template.Create("«text / uppercase»", options => options.Filters.Register(new Uppercase())).Render(data);
+
+        actual.ShouldBe("HI");
+    }
+
+    class Bold : IFilter
+    {
+        public IEnumerable<string> Apply(IEnumerable<string> values, string? arg) =>
+            values.Select(value => $"**{value}**");
+    }
+
+    class Uppercase : IFilter
+    {
+        public IEnumerable<string> Apply(IEnumerable<string> values, string? arg) =>
+            values.Select(value => value.ToUpperInvariant());
+    }
 }

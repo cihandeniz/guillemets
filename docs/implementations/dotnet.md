@@ -108,6 +108,15 @@ custom, making it unavailable (`«x / truncate»` then fails to parse with
 exactly this reason — any of them can be targeted by `Register`/`Remove`,
 not just `CurrencyFilter`/`TruncateFilter`.
 
+> [!NOTE]
+>
+> A brand-new custom `IFilter`'s template name is derived from its class
+> name: a trailing `Filter` suffix is stripped if present, and the rest is
+> lower-cased/word-split the same way property names are (`Bold` → `bold`,
+> `SmartQuotes` → `smart quotes`). A class name that doesn't end in `Filter`
+> just uses its full name as-is — it isn't an error, and nothing gets
+> mis-sliced.
+
 ## Number
 
 `number` parses the value with `decimal.Parse` (invariant culture, same

@@ -37,7 +37,10 @@ public class FilterRegistry
     }
 
     static string NameFor<TFilter>() =>
-        typeof(TFilter).Name[..^FILTER_SUFFIX.Length].ToLowerWords();
+        StripFilterSuffix(typeof(TFilter).Name).ToLowerWords();
+
+    static string StripFilterSuffix(string name) =>
+        name.EndsWith(FILTER_SUFFIX, StringComparison.Ordinal) ? name[..^FILTER_SUFFIX.Length] : name;
 
     internal bool TryGet(string name, [NotNullWhen(true)] out IFilter? filter) =>
         _filters.TryGetValue(name, out filter);
