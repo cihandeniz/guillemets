@@ -29,6 +29,11 @@ public class TruncateFilter : IFilter
             throw new InvalidOperationException($"The 'truncate' filter's argument must be a whole number, not '{arg}'");
         }
 
+        if (maxLength < 0)
+        {
+            throw new InvalidOperationException($"The 'truncate' filter's argument must be zero or greater, not '{arg}'");
+        }
+
         return maxLength;
     }
 

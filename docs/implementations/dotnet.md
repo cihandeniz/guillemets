@@ -157,10 +157,11 @@ appends `…` once the value exceeds the length given as its argument.
 > attempt full grapheme-cluster awareness (combining marks, ZWJ sequences)
 > beyond that.
 
-A missing or non-numeric argument (`truncate` with no value, or `truncate:
-abc`) throws a `TemplateParseException` at the filter's own position, not a
-raw .NET exception — every filter gets this for free via the same choke
-point (`FilterNode.Apply`), not just `truncate`.
+A missing, non-numeric, or negative argument (`truncate` with no value,
+`truncate: abc`, or `truncate: -10`) throws a `TemplateParseException` at
+the filter's own position, not a raw .NET exception — every filter gets
+this for free via the same choke point (`FilterNode.Apply`), not just
+`truncate`.
 
 ## Join
 

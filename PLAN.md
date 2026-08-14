@@ -9,25 +9,17 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 223 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 225 passed, 0 skipped, 0 failed. Language/implementation
 and P2 milestones are done; P1 reopened after a second external review pass
 turned up 3 more correctness bugs (2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled,
-now locked in by 2 new spec fixtures). 18 issues remain before release — see
+now locked in by 2 new spec fixtures). 17 issues remain before release — see
 P1, P3, and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P1 — correctness bugs
 
-- Negative truncate length: `«name / truncate: -10»` does get caught and
-  rewrapped as a `TemplateParseException` (`FilterNode.Apply`'s catch-all
-  in `src/Guillemets/Ast/FilterNode.cs`), but the message is a leaked BCL
-  string ("length ('-10') must be a non-negative value...") instead of a
-  clean message in the style `TruncateFilter.ParseMaxLength`
-  (`src/Guillemets/Filters/TruncateFilter.cs:20-33`) already uses for the
-  missing-arg/non-numeric-arg cases. Validate `>= 0` there with a matching
-  message.
 - `DateOnly`/`TimeOnly` misclassified as `Object`: `PocoDataSource.Kind`
   (`src/Guillemets/Data/Poco/PocoDataSource.cs:15-18`) maps `DateTime`/
   `Guid`/`Enum` to `DataKind.String` but not `DateOnly`/`TimeOnly`, so a
