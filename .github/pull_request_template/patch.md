@@ -4,9 +4,7 @@
 
 <!-- Here, the tasks to be completed before the release -->
 
-- [ ] Add release notes
 - [ ] Update `Guillemets` version
-    - [ ] `Directory.Build.props`
 - [ ] Publish package
 - [ ] Create GitHub release
 
