@@ -46,6 +46,8 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     bool TryParseFooter(out IReadOnlyList<FilterNode> footer)
     {
         footer = [];
+        if (!_tokens.LineReaches(CloseBlock)) { return false; }
+
         var checkpoint = _tokens.Position;
         if (!FilterParser.TryParse(expectLeadingDelimiter: false, out var pipeline) ||
             _tokens.AtEnd ||

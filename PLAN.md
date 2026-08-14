@@ -13,23 +13,13 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 16 issues remain before release — see P3
+locked in by 2 new spec fixtures). 15 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P3 — release readiness (packaging/process)
 
-- `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
-  result it discards, just to answer "does this scope own it" — `Project`'s
-  first-segment lookup immediately repeats the same call to get the actual
-  value. Fixing this means changing `FindOwner`'s contract to hand back the
-  already-resolved value, not just which scope owns it — not as cheap as it
-  looks, needs a separate design pass.
-- `BodyParser.TryParseFooter` speculatively allocates (`List<FilterNode>`,
-  `StringBuilder`, result records) on every line inside every block before
-  rewinding on failure, with no cheap pre-check — not as cheap as it looks,
-  needs a separate design pass.
 - `Glossary.CACHE` is a static, unbounded `ConcurrentDictionary` keyed on
   `(IStringLocalizer?, culture)`. Since `IStringLocalizer<T>` is typically
   scoped/transient in ASP.NET Core, this leaks in the intended host. Key on
@@ -55,6 +45,18 @@ and Explicitly deferred below.
 
 ### Explicitly deferred (not this pass)
 
+- `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
+  result it discards, just to answer "does this scope own it" —
+  `PropertyChainResolution.Project`'s first-segment lookup immediately
+  repeats the same call to get the actual value. Confirmed non-trivial on
+  inspection: `HasProperty` only checks `DataKind.Object` before calling
+  `TryGetProperty`, but `Project`'s per-step dispatch also handles
+  `DataKind.Null` (short-circuits to empty) and `DataKind.Array`
+  (flattens via `SelectMany`) first — a fix has to either share that
+  dispatch between the two or carefully replicate it, and `FindOwner`'s
+  fallback-to-`this`-when-nothing-found semantics has to keep working
+  too. A wrong version would silently change Array/Null-scope-data
+  behavior — needs a real design pass, not a quick fix.
 - String building is O(nesting) copies — `IRenderable.Render` returns
   `string` and every loop item/conditional/scope materializes its own
   `StringBuilder`, copied again into the parent. Threading one `StringBuilder`
