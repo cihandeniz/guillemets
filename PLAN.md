@@ -9,23 +9,14 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 225 passed, 0 skipped, 0 failed. Language/implementation
-and P2 milestones are done; P1 reopened after a second external review pass
-turned up 3 more correctness bugs (2 of that pass's other claims — empty
-`«»`/`«.: »`/`«..: »` property chains — turned out to already be handled,
-now locked in by 2 new spec fixtures). 17 issues remain before release — see
-P1, P3, and Explicitly deferred below.
+`dotnet test` is green: 227 passed, 0 skipped, 0 failed. Language/implementation,
+P1, and P2 milestones are done (P1 was reopened after a second external review
+pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
+`«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
+locked in by 2 new spec fixtures). 16 issues remain before release — see P3
+and Explicitly deferred below.
 
 ## Remaining milestones
-
-### P1 — correctness bugs
-
-- `DateOnly`/`TimeOnly` misclassified as `Object`: `PocoDataSource.Kind`
-  (`src/Guillemets/Data/Poco/PocoDataSource.cs:15-18`) maps `DateTime`/
-  `Guid`/`Enum` to `DataKind.String` but not `DateOnly`/`TimeOnly`, so a
-  POCO property of either type falls through to `DataKind.Object` —
-  wrong block-behavior inference (scope instead of plain value) for any
-  block keyed on one.
 
 ### P3 — release readiness (packaging/process)
 

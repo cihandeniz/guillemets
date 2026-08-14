@@ -27,29 +27,29 @@ reflects whoever's generating it, not a hardcoded locale.
 
 > [!NOTE]
 >
-> A custom format string's literal-looking separators aren't literal — `/`
-> means "the culture's date separator," not a slash. Under `tr-TR`, whose date
-> separator is `.`, `dd/MM/yyyy` renders `11.07.2026`, not `11/07/2026`. This
-> is .NET's own custom-format-string behavior, not something this filter adds
-> — escape a separator (`\/`) if a literal slash is genuinely intended
-> regardless of culture.
+> A custom format string's literal-looking separators aren't literal — `/` means
+> "the culture's date separator," not a slash. Under `tr-TR`, whose date
+> separator is `.`, `dd/MM/yyyy` renders `11.07.2026`, not `11/07/2026`. This is
+> .NET's own custom-format-string behavior, not something this filter adds —
+> escape a separator (`\/`) if a literal slash is genuinely intended regardless
+> of culture.
 >
 > That `\/` is a .NET format-string escape, evaluated by `DateTime.ToString()`
 > itself, and it collides with Guillemets' own `\/` (see Escaping in
 > [`specs.md`](../specs.md)): Guillemets unescapes every `\/` in a filter's
 > value before the value ever reaches the filter, so `dd\/MM\/yyyy` arrives at
 > `DateTime.ToString()` as `dd/MM/yyyy` — .NET never sees the backslashes, and
-> the date separator substitutes as normal. There's currently no way to ask
-> for a literal `/` inside a `date` format string specifically; only Guillemets'
-> own delimiter-escaping meaning of `\/` is honored.
+> the date separator substitutes as normal. There's currently no way to ask for
+> a literal `/` inside a `date` format string specifically; only Guillemets' own
+> delimiter-escaping meaning of `\/` is honored.
 
 ## Currency
 
 `currency` parses the value with `decimal.Parse` (invariant culture, same
 reasoning as `date` above) and formats it against the ambient culture's own
 currency convention — symbol, symbol placement, and default decimal count all
-come from the culture, not a hardcoded prefix. With no argument, it uses
-.NET's standard `"C"` format:
+come from the culture, not a hardcoded prefix. With no argument, it uses .NET's
+standard `"C"` format:
 
 ```markdown
 «amount / currency»
@@ -58,8 +58,8 @@ come from the culture, not a hardcoded prefix. With no argument, it uses
 → ₺1.234,50          (tr-TR)
 ```
 
-An argument overrides the decimal count while keeping the culture's own
-symbol and placement — `C0`/`C3` for zero/three decimal places, say:
+An argument overrides the decimal count while keeping the culture's own symbol
+and placement — `C0`/`C3` for zero/three decimal places, say:
 
 ```markdown
 «amount / currency: C0»
@@ -72,22 +72,22 @@ symbol and placement — `C0`/`C3` for zero/three decimal places, say:
 > The argument is a .NET format string, the same as `date`/`number` — it is
 > **not** a currency symbol prefix. `currency: $` is invalid; `$` isn't a
 > recognized custom numeric format specifier, so .NET treats it as a literal,
-> dropping the number entirely (`ToString("$", ...)` → `"$"`). Let the
-> culture supply the symbol; use the argument only to override decimal count
-> (`C0`, `C3`, ...).
+> dropping the number entirely (`ToString("$", ...)` → `"$"`). Let the culture
+> supply the symbol; use the argument only to override decimal count (`C0`,
+> `C3`, ...).
 
 > [!NOTE]
 >
-> Standard `"C"` also picks the culture's own symbol *placement*, not just
-> its symbol — trailing (`1.234,50 €`) for `de-DE`, leading (`$1,234.50`) for
-> `en-US`. That's .NET's own `"C"` behavior, not something this filter adds
-> or can turn off.
+> Standard `"C"` also picks the culture's own symbol *placement*, not just its
+> symbol — trailing (`1.234,50 €`) for `de-DE`, leading (`$1,234.50`) for
+> `en-US`. That's .NET's own `"C"` behavior, not something this filter adds or
+> can turn off.
 
 A host that always bills in one currency regardless of who's reading the
 document — everything is Turkish Lira, say, even when rendered for an
-English-speaking reader — can fix the *symbol* while still letting the
-ambient culture drive digit grouping and decimal separators, by registering
-its own `CurrencyFilter` instance:
+English-speaking reader — can fix the *symbol* while still letting the ambient
+culture drive digit grouping and decimal separators, by registering its own
+`CurrencyFilter` instance:
 
 ```csharp
 options => options.Filters.Register(new CurrencyFilter("TL"))
@@ -100,18 +100,17 @@ options => options.Filters.Register(new CurrencyFilter("TL"))
 ```
 
 `FilterRegistry.Register` takes an instance; re-registering an existing name
-replaces it (there's no separate "edit" — the default `currency` above is
-what's being replaced).
-`FilterRegistry.Remove<TFilter>()` drops a filter entirely, built-in or
-custom, making it unavailable (`«x / truncate»` then fails to parse with
-"Unknown filter 'truncate'"). Every built-in filter class is public for
-exactly this reason — any of them can be targeted by `Register`/`Remove`,
-not just `CurrencyFilter`/`TruncateFilter`.
+replaces it (there's no separate "edit" — the default `currency` above is what's
+being replaced). `FilterRegistry.Remove<TFilter>()` drops a filter entirely,
+built-in or custom, making it unavailable (`«x / truncate»` then fails to parse
+with "Unknown filter 'truncate'"). Every built-in filter class is public for
+exactly this reason — any of them can be targeted by `Register`/`Remove`, not
+just `CurrencyFilter`/`TruncateFilter`.
 
 > [!NOTE]
 >
-> A brand-new custom `IFilter`'s template name is derived from its class
-> name: a trailing `Filter` suffix is stripped if present, and the rest is
+> A brand-new custom `IFilter`'s template name is derived from its class name: a
+> trailing `Filter` suffix is stripped if present, and the rest is
 > lower-cased/word-split the same way property names are (`Bold` → `bold`,
 > `SmartQuotes` → `smart quotes`). A class name that doesn't end in `Filter`
 > just uses its full name as-is — it isn't an error, and nothing gets
@@ -120,10 +119,10 @@ not just `CurrencyFilter`/`TruncateFilter`.
 ## Number
 
 `number` parses the value with `decimal.Parse` (invariant culture, same
-reasoning as `date` above) and formats it back out against the ambient
-culture using a .NET standard or custom numeric format string given as its
-argument, e.g. `N2` — the same primitive `currency` wraps, minus the fixed
-`"N2"` and the prefix.
+reasoning as `date` above) and formats it back out against the ambient culture
+using a .NET standard or custom numeric format string given as its argument,
+e.g. `N2` — the same primitive `currency` wraps, minus the fixed `"N2"` and the
+prefix.
 
 ```markdown
 «amount / number: N2»
@@ -152,16 +151,14 @@ appends `…` once the value exceeds the length given as its argument.
 > [!NOTE]
 >
 > Counting UTF-16 characters, not grapheme clusters, can still land the cut
-> point mid-surrogate-pair (a multi-char emoji, say). `truncate` backs the
-> cut point off by one character rather than splitting the pair — it doesn't
-> attempt full grapheme-cluster awareness (combining marks, ZWJ sequences)
-> beyond that.
+> point mid-surrogate-pair (a multi-char emoji, say). `truncate` backs the cut
+> point off by one character rather than splitting the pair — it doesn't attempt
+> full grapheme-cluster awareness (combining marks, ZWJ sequences) beyond that.
 
 A missing, non-numeric, or negative argument (`truncate` with no value,
-`truncate: abc`, or `truncate: -10`) throws a `TemplateParseException` at
-the filter's own position, not a raw .NET exception — every filter gets
-this for free via the same choke point (`FilterNode.Apply`), not just
-`truncate`.
+`truncate: abc`, or `truncate: -10`) throws a `TemplateParseException` at the
+filter's own position, not a raw .NET exception — every filter gets this for
+free via the same choke point (`FilterNode.Apply`), not just `truncate`.
 
 ## Join
 
@@ -220,19 +217,18 @@ as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
 
 ## Glossary & Localization
 
-A glossary lets a template author write in their own words while the model
-stays in ordinary code-friendly names. Supply one via `ParseOptions.Localizer`
-— an `IStringLocalizer` (`Microsoft.Extensions.Localization.Abstractions`),
-the same abstraction ASP.NET Core already uses for resource lookup, so a
-glossary can be backed by a `.resx` file, a database, or a translation
-service:
+A glossary lets a template author write in their own words while the model stays
+in ordinary code-friendly names. Supply one via `ParseOptions.Localizer` — an
+`IStringLocalizer` (`Microsoft.Extensions.Localization.Abstractions`), the same
+abstraction ASP.NET Core already uses for resource lookup, so a glossary can be
+backed by a `.resx` file, a database, or a translation service:
 
 ```csharp
 Template.Create(text, options => options.Localizer = myLocalizer);
 ```
 
-A developer wires up each resource entry once; a translator only ever edits
-its localized text afterward. Guillemets uses that pairing in reverse from
+A developer wires up each resource entry once; a translator only ever edits its
+localized text afterward. Guillemets uses that pairing in reverse from
 `IStringLocalizer`'s usual purpose: the entry's `Name` identifies the model
 property, and its `Value` is what a template author actually types.
 
@@ -246,21 +242,20 @@ Name: FullName          Value: Tam Ad
 ```
 
 See [`specs.md`](../specs.md)'s Glossary & Localization section for the full
-matching/fallback contract — in short, a term with no matching entry falls
-back to direct resolution, so a glossary that's silent on a given term and no
+matching/fallback contract — in short, a term with no matching entry falls back
+to direct resolution, so a glossary that's silent on a given term and no
 glossary at all behave identically for that term.
 
 > [!WARNING]
 >
-> Two entries that translate to the same term (case-insensitively) — e.g.
-> both `OfferNo` and `InvoiceNo` localized to `Quote No` — make the
-> glossary ambiguous: which property should `«quote no»` resolve to? This
-> throws a `GlossaryException` naming every colliding entry, rather than
-> silently picking one. Fix the source data so each term maps to exactly
-> one property — or supply `ParseOptions.GlossaryCollisionResolver`
-> (`Func<IEnumerable<string>, string>`) to resolve it in code instead: it
-> receives the colliding entries' `Name`s and returns the one that should
-> win.
+> Two entries that translate to the same term (case-insensitively) — e.g. both
+> `OfferNo` and `InvoiceNo` localized to `Quote No` — make the glossary
+> ambiguous: which property should `«quote no»` resolve to? This throws a
+> `GlossaryException` naming every colliding entry, rather than silently picking
+> one. Fix the source data so each term maps to exactly one property — or supply
+> `ParseOptions.GlossaryCollisionResolver` (`Func<IEnumerable<string>, string>`)
+> to resolve it in code instead: it receives the colliding entries' `Name`s and
+> returns the one that should win.
 >
 > ```csharp
 > options.GlossaryCollisionResolver = names => names.First();
@@ -277,7 +272,8 @@ supply its own conversion instead, and have it apply everywhere a name gets
 resolved, not just wherever the glossary happens to cover:
 
 ```csharp
-options.PropertyNameConversion = key => string.Join("_", key.Split(' ').Select(w => w.ToLowerInvariant()));
+options.PropertyNameConversion =
+    key => string.Join("_", key.Split(' ').Select(w => w.ToLowerInvariant()));
 // «full name» and a glossary entry named "Full Name" both resolve to full_name
 ```
 
@@ -290,7 +286,25 @@ options.PropertyNameConversion = key => string.Join("_", key.Split(' ').Select(w
 > [!NOTE]
 >
 > A glossary re-resolves on every `Render` call, against whatever culture is
-> ambient on the calling thread — the same parsed `Template` can serve
-> multiple cultures without being re-created. A missing glossary, or one with
-> no entry for the current culture, just falls back to direct resolution for
-> that render.
+> ambient on the calling thread — the same parsed `Template` can serve multiple
+> cultures without being re-created. A missing glossary, or one with no entry
+> for the current culture, just falls back to direct resolution for that render.
+
+## Data Sources
+
+[`specs.md`](../specs.md) defines what a third-party `IDataSource` must do to
+behave consistently with the rest of the engine (see its Variables section). On
+this runtime, the three built-in adapters — `PocoDataSource`,
+`JsonElementDataSource`, `JTokenDataSource` — are plain `class`es with every
+interface member declared `virtual`. A consumer who only needs to tweak one
+adapter's behavior can subclass it and override just that member, instead of
+reimplementing all of `IDataSource` from scratch:
+
+```csharp
+class TitleCasingPocoDataSource(object? value)
+    : PocoDataSource(value)
+{
+    public override string? AsDisplayString() =>
+        base.AsDisplayString() is { } text ? CultureInfo.CurrentCulture.TextInfo.ToTitleCase(text) : null;
+}
+```

@@ -1,6 +1,6 @@
 namespace Guillemets.Data.Primitives;
 
-internal record BooleanDataSource(bool Value)
+internal class BooleanDataSource(bool _value)
     : IDataSource
 {
     public static readonly IDataSource TRUE = new BooleanDataSource(true);
@@ -19,8 +19,8 @@ internal record BooleanDataSource(bool Value)
         [];
 
     public bool AsBoolean() =>
-        Value;
+        _value;
 
     public string? AsDisplayString() =>
-        Value ? "true" : "false";
+        _value ? "true" : "false";
 }

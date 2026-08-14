@@ -3,10 +3,10 @@ using System.Text.Json;
 
 namespace Guillemets.Data.Json;
 
-public record JsonElementDataSource(JsonElement Element)
+public class JsonElementDataSource(JsonElement _element)
     : IDataSource
 {
-    public DataKind Kind => Element.ValueKind switch
+    public virtual DataKind Kind => _element.ValueKind switch
     {
         JsonValueKind.Object => DataKind.Object,
         JsonValueKind.Array => DataKind.Array,
@@ -15,14 +15,14 @@ public record JsonElementDataSource(JsonElement Element)
         JsonValueKind.True or JsonValueKind.False => DataKind.Boolean,
         JsonValueKind.Null => DataKind.Null,
         JsonValueKind.Undefined => DataKind.Undefined,
-        _ => throw new ArgumentOutOfRangeException(nameof(Element), Element.ValueKind, "Unrecognized JSON value kind."),
+        _ => throw new ArgumentOutOfRangeException(nameof(_element), _element.ValueKind, "Unrecognized JSON value kind."),
     };
 
-    public bool TryGetProperty(string name, out IDataSource value)
+    public virtual bool TryGetProperty(string name, out IDataSource value)
     {
         if (Kind == DataKind.Object)
         {
-            foreach (var property in Element.EnumerateObject())
+            foreach (var property in _element.EnumerateObject())
             {
                 if (!string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase)) { continue; }
 
@@ -37,19 +37,19 @@ public record JsonElementDataSource(JsonElement Element)
         return false;
     }
 
-    public IEnumerable<IDataSource> EnumerateArray() =>
+    public virtual IEnumerable<IDataSource> EnumerateArray() =>
         Kind == DataKind.Array
-            ? Element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item))
+            ? _element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item))
             : [];
 
-    public bool AsBoolean() => Kind switch
+    public virtual bool AsBoolean() => Kind switch
     {
-        DataKind.Boolean => Element.GetBoolean(),
+        DataKind.Boolean => _element.GetBoolean(),
         DataKind.String or DataKind.Number => true,
         DataKind.Object or DataKind.Array or DataKind.Null or DataKind.Undefined => false,
-        _ => throw new ArgumentOutOfRangeException(nameof(Element), Kind, "Unrecognized data kind."),
+        _ => throw new ArgumentOutOfRangeException(nameof(_element), Kind, "Unrecognized data kind."),
     };
 
-    public string? AsDisplayString() =>
-        Element.ToString();
+    public virtual string? AsDisplayString() =>
+        _element.ToString();
 }

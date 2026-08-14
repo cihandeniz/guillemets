@@ -3,10 +3,10 @@ using Newtonsoft.Json.Linq;
 
 namespace Guillemets.Data.Newtonsoft;
 
-public record JTokenDataSource(JToken Element)
+public class JTokenDataSource(JToken _element)
     : IDataSource
 {
-    public DataKind Kind => Element.Type switch
+    public virtual DataKind Kind => _element.Type switch
     {
         JTokenType.Object => DataKind.Object,
         JTokenType.Array => DataKind.Array,
@@ -26,12 +26,12 @@ public record JTokenDataSource(JToken Element)
         JTokenType.Constructor => DataKind.Undefined,
         JTokenType.Property => DataKind.Undefined,
         JTokenType.Comment => DataKind.Undefined,
-        _ => throw new ArgumentOutOfRangeException(nameof(Element), Element.Type, "Unrecognized JToken type."),
+        _ => throw new ArgumentOutOfRangeException(nameof(_element), _element.Type, "Unrecognized JToken type."),
     };
 
-    public bool TryGetProperty(string name, out IDataSource value)
+    public virtual bool TryGetProperty(string name, out IDataSource value)
     {
-        if (Kind == DataKind.Object && Element is JObject obj && obj.TryGetValue(name, StringComparison.OrdinalIgnoreCase, out var property))
+        if (Kind == DataKind.Object && _element is JObject obj && obj.TryGetValue(name, StringComparison.OrdinalIgnoreCase, out var property))
         {
             value = new JTokenDataSource(property);
 
@@ -43,19 +43,19 @@ public record JTokenDataSource(JToken Element)
         return false;
     }
 
-    public IEnumerable<IDataSource> EnumerateArray() =>
+    public virtual IEnumerable<IDataSource> EnumerateArray() =>
         Kind == DataKind.Array
-            ? Element.Children().Select(item => (IDataSource)new JTokenDataSource(item))
+            ? _element.Children().Select(item => (IDataSource)new JTokenDataSource(item))
             : [];
 
-    public bool AsBoolean() => Kind switch
+    public virtual bool AsBoolean() => Kind switch
     {
-        DataKind.Boolean => Element.Value<bool>(),
+        DataKind.Boolean => _element.Value<bool>(),
         DataKind.String or DataKind.Number => true,
         DataKind.Object or DataKind.Array or DataKind.Null or DataKind.Undefined => false,
-        _ => throw new ArgumentOutOfRangeException(nameof(Element), Kind, "Unrecognized data kind."),
+        _ => throw new ArgumentOutOfRangeException(nameof(_element), Kind, "Unrecognized data kind."),
     };
 
-    public string? AsDisplayString() =>
-        Element.ToString();
+    public virtual string? AsDisplayString() =>
+        _element.ToString();
 }

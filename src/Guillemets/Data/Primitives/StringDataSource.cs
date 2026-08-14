@@ -1,6 +1,6 @@
 namespace Guillemets.Data.Primitives;
 
-internal record StringDataSource(string Value)
+internal class StringDataSource(string _value)
     : IDataSource
 {
     public DataKind Kind => DataKind.String;
@@ -19,5 +19,5 @@ internal record StringDataSource(string Value)
         true;
 
     public string? AsDisplayString() =>
-        Value;
+        _value;
 }

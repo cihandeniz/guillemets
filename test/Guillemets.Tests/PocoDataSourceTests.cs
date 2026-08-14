@@ -105,6 +105,14 @@ public class PocoDataSourceTests : DataSourceSpec
         new PocoDataSource(DayOfWeek.Monday).Kind.ShouldBe(DataKind.String);
 
     [Test]
+    public void Kind_returns_string_for_date_only_value() =>
+        new PocoDataSource(DateOnly.FromDateTime(DateTime.Now)).Kind.ShouldBe(DataKind.String);
+
+    [Test]
+    public void Kind_returns_string_for_time_only_value() =>
+        new PocoDataSource(TimeOnly.FromDateTime(DateTime.Now)).Kind.ShouldBe(DataKind.String);
+
+    [Test]
     public void As_boolean_returns_true_for_datetime_value() =>
         new PocoDataSource(DateTime.Now).AsBoolean().ShouldBeTrue();
 
