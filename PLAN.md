@@ -13,7 +13,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 P1, and P2 milestones are done (P1 was reopened after a second external review
 pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 11 issues remain before release — see P3
+locked in by 2 new spec fixtures). 12 issues remain before release — see P3
 and Explicitly deferred below.
 
 ## Remaining milestones
@@ -30,6 +30,12 @@ and Explicitly deferred below.
 
 ### Explicitly deferred (not this pass)
 
+- No spec coverage for block syntax (if/loop/scope) or the Tables feature
+  (a dynamic table as a loop block's body) inside a markdown blockquote —
+  every line of the block prefixed with `>`. No fixture, no doc mention;
+  unknown whether this already works incidentally or needs dedicated
+  parser support. Needs its own investigation before deciding whether
+  it's a fixture-only addition or a real feature.
 - `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
   result it discards, just to answer "does this scope own it" —
   `PropertyChainResolution.Project`'s first-segment lookup immediately
