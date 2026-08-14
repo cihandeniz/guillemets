@@ -1,5 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <AssemblyTitle>Guillemets</AssemblyTitle>
+    <Title>Guillemets</Title>
+    <Description>A markdown-aware template engine for non-technical authors.</Description>
+    <PackageId>Guillemets</PackageId>
+    <PackageTags>template;templating;markdown</PackageTags>
+    <Authors>Mouseless</Authors>
+    <Company>Mouseless</Company>
+    <Copyright>Copyright (c) 2026 Mouseless</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/mouseless/guillemets</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mouseless/guillemets.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" />
     <PackageReference Include="Newtonsoft.Json" />

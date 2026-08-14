@@ -122,15 +122,13 @@ inside internal working docs themselves.
   stream — that's normal parser-writing.
 - Don't call `new SomeType(...)` inside a constructor body unless `SomeType` is
   a DTO or `record`. Real dependencies are constructor-injected and wired up at
-  the composition root. When two collaborators need each other, don't
-  resolve the cycle with a mutable/settable field assigned after
-  construction — use a `Lazy<T>`-backed field resolved through a shared
-  registry, applied uniformly to *every* registry-sourced collaborator,
-  not just the ones that are actually circular, so registration order
-  never becomes a hazard. (`TokenCursor`/cursor-`Rewind`-based speculative
-  parsing — try an interpretation, rewind and fall back if it doesn't pan
-  out — is a legitimate alternative for this general class of problem too;
-  don't treat its absence from the current code as a decision against it.)
+  the composition root. When two collaborators need each other, don't resolve
+  the cycle with a mutable/settable field assigned after construction — use a
+  `Lazy<T>`-backed field through a shared registry, applied uniformly to
+  *every* registry-sourced collaborator (not just the circular ones), so
+  registration order never becomes a hazard. (Cursor-`Rewind`-based
+  speculative parsing is a legitimate alternative for this same class of
+  problem; its absence from current code isn't a decision against it.)
 - A type that should be built at most once per some key (not per call site)
   gets a plain (no-modifier, so implicitly private per the rule above)
   constructor plus a `public static GetOrCreate(...)` factory backed by a
@@ -180,6 +178,16 @@ inside internal working docs themselves.
   parameter list: has `()` → method formatting; no `()` → property formatting.
 - Never write `sealed` — explicit house style; types stay open for inheritance
   even with no current subtypes.
+- When `GenerateDocumentationFile`/`TreatWarningsAsErrors` require XML doc
+  comments on the public surface: ground each `<summary>` in whatever
+  existing prose docs already describe that member, rather than inventing
+  a fresh description that risks drifting from it. An interface-implementing
+  member uses `<inheritdoc/>` instead of repeating the interface's own doc
+  per implementer. `///` lines wrap at 80 columns like this file. A test
+  project gets `<NoWarn>$(NoWarn);CS1591</NoWarn>` in its own `.csproj`
+  rather than disabling `GenerateDocumentationFile` outright — that flag
+  also gates `IDE0005` (unnecessary usings), so turning it off silently
+  drops that check too.
 - Naming: private instance fields are `_camelCase`; any `static` field,
   regardless of accessibility, is `SCREAMING_CASE` (a custom rule, since
   standard "static fields start uppercase" conventions would otherwise
@@ -203,16 +211,13 @@ inside internal working docs themselves.
   the better fit.
 - Avoid tuples/small one-off DTOs used purely to shuttle two or three values
   between methods. A success/failure method returns `bool` (mutating instance
-  state as a side effect); a method that needs to hand back one meaningful value
-  returns that value directly, typed explicitly. A method with one primary
-  return value plus an optional secondary one uses an `out` parameter for the
-  secondary value instead of wrapping both in a record. That changes once
-  there are genuinely three or more values to hand back, not just one
-  secondary alongside the main result: consolidate them into a nested
-  result record instead of piling up more `out` parameters, but keep the
-  method itself in the same `bool TryXxx(..., out result)` shape — return
-  the record via a single `out`, don't switch the method to returning the
-  record directly.
+  state as a side effect); a method with one meaningful value returns it
+  directly, typed explicitly; one primary value plus an optional secondary
+  one uses an `out` parameter for the secondary rather than wrapping both in
+  a record. Once there are genuinely three or more values, consolidate into
+  a nested result record — but keep the method in the same `bool
+  TryXxx(..., out result)` shape, returning the record via that single
+  `out` rather than switching to returning the record directly.
 - When a code-review comment names a specific refactoring technique by its
   actual term (e.g. "Method Object," "Inappropriate Intimacy" — both from
   Fowler's *Refactoring*), apply that exact technique, not a smaller

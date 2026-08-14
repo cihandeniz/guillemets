@@ -2,7 +2,9 @@
 FILE ?= file_name
 OWNER ?= $(shell whoami)
 CLAUDE_USER ?= claudeuser
-SETUP_SCRIPT_URL := https://raw.githubusercontent.com/cihandeniz/config-files/main/claude/setup-claudedev-sandbox.sh
+SETUP_SCRIPT_COMMIT := b02e0d4e11c04a80f774607d078c44481e332252
+SETUP_SCRIPT_URL := https://raw.githubusercontent.com/cihandeniz/config-files/$(SETUP_SCRIPT_COMMIT)/claude/setup-claudedev-sandbox.sh
+SETUP_SCRIPT_SHA256 := 672571d8412c65d8dbeb429346c25e5a4a751398814c33411cfb9f345e057e21
 SETUP_SCRIPT := .tmp/scripts/setup-claudedev-sandbox.sh
 
 format:
@@ -22,6 +24,7 @@ coverage:
 $(SETUP_SCRIPT):
 	@mkdir -p $(dir $(SETUP_SCRIPT))
 	@curl -fsSL $(SETUP_SCRIPT_URL) -o $(SETUP_SCRIPT)
+	@echo "$(SETUP_SCRIPT_SHA256)  $(SETUP_SCRIPT)" | sha256sum -c - || (rm -f $(SETUP_SCRIPT) && exit 1)
 	@chmod +x $(SETUP_SCRIPT)
 
 init: $(SETUP_SCRIPT)

@@ -141,17 +141,14 @@ and turns the item list into a natural "A, B and C" sentence with the `join` /
 
 ```csharp
 using Guillemets;
-using System.Text.Json;
 
 var template = Template.Create("Dear «full name»,");
-var data = JsonDocument.Parse("""{ "FullName": "Alice Smith" }""").RootElement;
-var output = template.Render(data);
+var output = template.RenderObject(new { FullName = "Alice Smith" });
 // => "Dear Alice Smith,"
 ```
 
-`Render`/`RenderObject` also accept plain C# objects
-(`template.RenderObject(new { FullName = "Alice Smith" })`) and
-`Newtonsoft.Json.Linq.JToken`.
+`Render`/`RenderObject` also accept `System.Text.Json.JsonElement`
+(`template.Render(jsonElement)`) and `Newtonsoft.Json.Linq.JToken`.
 
 A `Template` is immutable and stateless once created — parse it once and
 reuse the same instance for every `Render` call, including concurrently

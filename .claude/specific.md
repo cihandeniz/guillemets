@@ -6,8 +6,9 @@ are in `.claude/generic.md` — read both.
 ## Project
 
 Guillemets — a markdown-aware template engine for non-technical authors. `«»`
-(U+00AB/U+00BB) are the sole delimiters, chosen because they never collide with
-markdown and are easy to type via AltGr (e.g. Turkish keyboards).
+(U+00AB/U+00BB) are the sole delimiters, chosen for readability — they never
+collide with markdown — over writability; see `README.md` for the tradeoff
+and how to type them.
 
 **`docs/specs.md` is the source of truth for behavior**, authoritative over this
 file — resolve spec ambiguities there alongside the code change, don't just
@@ -105,27 +106,18 @@ C#/.NET, targeting `net10.0`. Layout:
   PascalCase-of-space-words resolution uses **Humanizer.Core**'s
   `.Dehumanize()`, not hand-rolled splitting.
 
-Exploit C# namespace lookup (see `.claude/generic.md`) deliberately for a
-public extension method meant to be broadly discoverable: `Template`'s
-`Render`/`RenderObject` extensions (`JsonElementExtensions.cs`/
-`PocoExtensions.cs`/`JTokenExtensions.cs`, one per adapter folder under
-`/src/Guillemets/Data`) live in the bare root `Guillemets` namespace, *not*
-nested under their adapter's own namespace (`Guillemets.Data.Json`/
-`Guillemets.Data.Poco`/`Guillemets.Data.Newtonsoft`, where the adapter types
-`JsonElementDataSource`/`PocoDataSource`/`JTokenDataSource` themselves stay) —
-so any consumer who already has `using Guillemets;` for `Template` gets the
-extension methods for free, no extra `using` needed. `Render(JsonElement)` and
-`Render(JToken)` are plain overloads of one name — their parameter types are
-concrete and unrelated, so there's no ambiguity. `RenderObject(object)` keeps
-its own name instead of also being called `Render`: `object` is broad enough
-that folding it into the same overload set would blur which one a call
-actually hits. A future adapter should follow the same split: adapter type in
-its own `Guillemets.Data.X` namespace, extension method named `Render` in the
-bare root `Guillemets` namespace if its parameter is a concrete type. All
-adapters — including Newtonsoft's `JTokenDataSource` — live in the one core
-`Guillemets` package; there's no per-adapter sibling project (decided when
-`JTokenDataSource` was added: one package is simpler while there's only a
-handful of adapters, and `Newtonsoft.Json` isn't a heavy dependency to carry).
+Exploit C# namespace lookup (see `.claude/generic.md`) for `Template`'s
+`Render`/`RenderObject` extensions: `JsonElementExtensions.cs`/
+`PocoExtensions.cs`/`JTokenExtensions.cs` live in the bare root `Guillemets`
+namespace, not their adapter's own (`Guillemets.Data.Json`/`.Poco`/
+`.Newtonsoft`, where the adapter types themselves stay) — so `using
+Guillemets;` alone pulls the extensions in too. `Render(JsonElement)`/
+`Render(JToken)` are unambiguous overloads (concrete, unrelated parameter
+types); `RenderObject` keeps its own name since `object` is too broad to
+safely fold into that overload set. A future adapter follows the same
+split. All adapters ship in one `Guillemets` package rather than
+per-adapter sibling projects — simpler while there's only a handful, and
+`Newtonsoft.Json` isn't heavy to carry.
 
 ## Core concepts
 
@@ -199,10 +191,26 @@ how they apply here.
 
 - `make init` (alias `make fix-owners` — same recipe, reach for whichever
   name fits: initial sandbox setup or a later ownership fix) downloads
-  `setup-claudedev-sandbox.sh` from `cihandeniz/config-files` into the
+  `setup-claudedev-sandbox.sh` from `cihandeniz/config-files`, pinned to a
+  specific commit (`SETUP_SCRIPT_COMMIT`) and verified against a SHA256
+  checksum (`SETUP_SCRIPT_SHA256`) before it's ever executed, into the
   gitignored `.tmp/scripts/` on first use (cached after that — delete
   `.tmp/` to force a re-download) and runs it with `sudo`. The script
   itself lives outside this repo now; don't recreate `scripts/` here.
+  Bumping the pin means updating both Makefile variables together — the
+  checksum exists specifically to catch a pin bumped without review.
+- CI (`.github/workflows/*`, PR templates, `make coverage`,
+  `.config/dotnet-tools.json`) is modeled on `github.com/mouseless/baked`,
+  adapted for this repo's single-package shape (no `core`/`ui` split, no
+  docs site, no npm). Repo is moving to `github.com/mouseless/guillemets`
+  — `RepositoryUrl`/`PackageProjectUrl`/publish-check URLs already assume
+  that. Gotcha when copying more from baked: its coverage uses the newer
+  `dotnet test --coverage` (Microsoft.Testing.Platform) flags, but this
+  repo's classic VSTest + `NUnit3TestAdapter` host doesn't support those
+  — coverage here goes through `coverlet.collector` instead, with its own
+  `test/runsettings.xml` schema (`Format`/`Exclude`/`ExcludeByAttribute`,
+  not baked's `ModulePaths`/`Attributes`). Don't copy baked's coverage
+  command verbatim without checking the test host first.
 - Run `dotnet test` from the repo root for the full fixture suite — each fixture
   becomes one NUnit test case, named by its relative path under `/specs`.
 - Engine work proceeds fixture-group by fixture-group, simplest → most complex —

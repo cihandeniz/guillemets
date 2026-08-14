@@ -116,21 +116,6 @@ internal class PropertyChainParser(TokenCursor _tokens)
             throw new TemplateParseException("Unclosed variable", openPosition);
         }
 
-        if (stopAtDelimiter)
-        {
-            return chain.Build(openPosition);
-        }
-
-        if (!stopAtNewline && _tokens.Current.Kind is not Close)
-        {
-            throw new TemplateParseException(stopAtNewline ? "Unclosed block header" : "Unclosed variable", openPosition);
-        }
-
-        if (!stopAtNewline)
-        {
-            _tokens.Advance();
-        }
-
         return chain.Build(openPosition);
     }
 }

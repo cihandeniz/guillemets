@@ -9,23 +9,12 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 228 passed, 0 skipped, 0 failed. Language/implementation,
-P1, and P2 milestones are done (P1 was reopened after a second external review
-pass turned up 3 more correctness bugs; 2 of that pass's other claims — empty
-`«»`/`«.: »`/`«..: »` property chains — turned out to already be handled, now
-locked in by 2 new spec fixtures). 11 issues remain before release — see P3
-and Explicitly deferred below.
+`dotnet test` is green: 228 passed, 0 skipped, 0 failed.
+Language/implementation, P1, P2, and P3 (release readiness) milestones are
+all done. Nothing left blocks release — only the Explicitly deferred items
+below remain, none of which are release blockers.
 
 ## Remaining milestones
-
-### P3 — release readiness (packaging/process)
-
-- No package metadata in `Guillemets.csproj` (`PackageId`, `Description`,
-  `Authors`, `PackageLicenseExpression`, `RepositoryUrl`). `Version` is
-  now set (`Directory.Build.props`, needed by `publish.yml`'s
-  version-check step) but the rest is still missing.
-- `make init` sudo-runs an unpinned script off `main` with no checksum. Pin
-  to a tag/commit + checksum.
 
 ### Explicitly deferred (not this pass)
 

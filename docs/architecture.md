@@ -197,10 +197,16 @@ segment itself. It defaults to `TextCasing.Dehumanize()`; a caller can replace
 it outright (not compose with it) to target a model whose properties aren't
 PascalCase/camelCase.
 
-`Glossary.GetOrCreate` caches built glossaries in a single process-wide
-`ConcurrentDictionary`, keyed by `(localizer, culture, propertyNameConversion)`,
-so two templates sharing the same `IStringLocalizer`, culture, and conversion
-function reuse the same built `Glossary`.
+`Glossary.GetOrCreate` caches built glossaries in a `ConditionalWeakTable`
+keyed by the `IStringLocalizer` instance itself (each entry a small
+`ConcurrentDictionary` keyed by `(culture, propertyNameConversion,
+collisionResolver)`), so two templates sharing the same `IStringLocalizer`,
+culture, and conversion function reuse the same built `Glossary` — while a
+scoped/transient localizer (the common ASP.NET Core lifetime) can still be
+garbage-collected once nothing else references it, instead of pinning
+every glossary ever built for the process's lifetime. A `null` localizer
+skips the cache entirely and builds a fresh (trivially cheap) `Glossary`
+each time.
 
 > [!IMPORTANT]
 >
