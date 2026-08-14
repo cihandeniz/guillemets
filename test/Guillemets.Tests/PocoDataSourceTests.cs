@@ -91,4 +91,33 @@ public class PocoDataSourceTests : DataSourceSpec
     [Test]
     public void As_display_string_returns_null_for_null_value() =>
         new PocoDataSource(null).AsDisplayString().ShouldBeNull();
+
+    [Test]
+    public void Kind_returns_string_for_datetime_value() =>
+        new PocoDataSource(DateTime.Now).Kind.ShouldBe(DataKind.String);
+
+    [Test]
+    public void Kind_returns_string_for_guid_value() =>
+        new PocoDataSource(Guid.NewGuid()).Kind.ShouldBe(DataKind.String);
+
+    [Test]
+    public void Kind_returns_string_for_enum_value() =>
+        new PocoDataSource(DayOfWeek.Monday).Kind.ShouldBe(DataKind.String);
+
+    [Test]
+    public void As_boolean_returns_true_for_datetime_value() =>
+        new PocoDataSource(DateTime.Now).AsBoolean().ShouldBeTrue();
+
+    [Test]
+    public void Kind_returns_object_for_dictionary() =>
+        new PocoDataSource(new Dictionary<string, int> { ["Age"] = 30 }).Kind.ShouldBe(DataKind.Object);
+
+    [Test]
+    public void Try_get_property_returns_wrapped_value_for_dictionary_key()
+    {
+        var source = new PocoDataSource(new Dictionary<string, int> { ["Age"] = 30 });
+
+        source.TryGetProperty("age", out var value).ShouldBeTrue();
+        value.AsDisplayString().ShouldBe("30");
+    }
 }

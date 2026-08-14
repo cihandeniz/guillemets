@@ -12,7 +12,10 @@ public record PocoDataSource(object? Value)
     {
         null => DataKind.Null,
         bool => DataKind.Boolean,
-        string => DataKind.String,
+        string or
+        DateTime or
+        Guid or
+        Enum => DataKind.String,
         sbyte or
         byte or
         short or
@@ -24,12 +27,18 @@ public record PocoDataSource(object? Value)
         float or
         double or
         decimal => DataKind.Number,
+        IDictionary => DataKind.Object,
         IEnumerable => DataKind.Array,
         _ => DataKind.Object,
     };
 
     public bool TryGetProperty(string name, out IDataSource value)
     {
+        if (Value is IDictionary dictionary)
+        {
+            return TryGetDictionaryEntry(dictionary, name, out value);
+        }
+
         var property = Kind == DataKind.Object
             ? Value?.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
             : null;
@@ -43,6 +52,22 @@ public record PocoDataSource(object? Value)
         value = new PocoDataSource(property.GetValue(Value));
 
         return true;
+    }
+
+    static bool TryGetDictionaryEntry(IDictionary dictionary, string name, out IDataSource value)
+    {
+        foreach (DictionaryEntry entry in dictionary)
+        {
+            if (entry.Key is not string key || !string.Equals(key, name, StringComparison.OrdinalIgnoreCase)) { continue; }
+
+            value = new PocoDataSource(entry.Value);
+
+            return true;
+        }
+
+        value = UndefinedDataSource.INSTANCE;
+
+        return false;
     }
 
     public IEnumerable<IDataSource> EnumerateArray() =>
