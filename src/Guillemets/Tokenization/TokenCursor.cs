@@ -1,13 +1,11 @@
-using Guillemets.Tokens;
-
 namespace Guillemets.Tokenization;
 
-internal class TokenCursor(List<IToken> _tokens)
+internal class TokenCursor(List<Token> _tokens)
 {
     int _position;
 
     public bool AtEnd => _position >= _tokens.Count;
-    public IToken Current => _tokens[_position];
+    public Token Current => _tokens[_position];
     public int Position => _position;
 
     public void Advance() =>

@@ -1,35 +1,34 @@
-using Guillemets.Tokens;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Guillemets.Tokenization;
 
-internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
+internal class SymbolTree(TokenKind? kind = null)
 {
     readonly Dictionary<char, SymbolTree> _children = [];
-    Func<TokenContext, IToken>? _createToken = createToken;
+    TokenKind? _kind = kind;
 
-    public Func<TokenContext, IToken> CreateToken =>
-        _createToken ?? throw new InvalidOperationException("Symbol tree node has no token factory.");
+    public TokenKind Kind =>
+        _kind ?? throw new InvalidOperationException("Symbol tree node has no token kind.");
 
-    public SymbolTree Add(ReadOnlySpan<char> path, Func<TokenContext, IToken> createToken,
+    public SymbolTree Add(ReadOnlySpan<char> path, TokenKind kind,
         bool repeat = false,
         bool newline = false
     )
     {
-        var node = AddPath(path, newline ? null : createToken, repeat);
+        var node = AddPath(path, newline ? null : kind, repeat);
         if (newline)
         {
-            node.AddPath([Position.NEWLINE], createToken, false);
+            node.AddPath([Position.NEWLINE], kind, false);
         }
 
         return this;
     }
 
-    SymbolTree AddPath(ReadOnlySpan<char> path, Func<TokenContext, IToken>? createToken, bool repeat)
+    SymbolTree AddPath(ReadOnlySpan<char> path, TokenKind? kind, bool repeat)
     {
         if (path.IsEmpty)
         {
-            _createToken = createToken;
+            _kind = kind;
 
             return this;
         }
@@ -44,36 +43,36 @@ internal class SymbolTree(Func<TokenContext, IToken>? createToken = null)
             child.Repeat(path[0]);
         }
 
-        return child.AddPath(path[1..], createToken, repeat);
+        return child.AddPath(path[1..], kind, repeat);
     }
 
     void Repeat(char symbol) =>
         _children[symbol] = this;
 
-    public bool TryMatchSymbol(ReadOnlySpan<char> text, [NotNullWhen(true)] out Func<TokenContext, IToken>? createToken, out int length)
+    public bool TryMatchSymbol(ReadOnlySpan<char> text, [NotNullWhen(true)] out TokenKind? kind, out int length)
     {
         length = 0;
-        createToken = null;
+        kind = null;
         if (text.IsEmpty) { return false; }
 
         var child = _children.GetValueOrDefault(text[0]);
         if (child is null) { return false; }
 
-        createToken = child.ExtendMatch(text, 1, out length);
+        kind = child.ExtendMatch(text, 1, out length);
 
-        return createToken is not null;
+        return kind is not null;
     }
 
-    Func<TokenContext, IToken>? ExtendMatch(ReadOnlySpan<char> text, int index, out int length)
+    TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, out int length)
     {
         length = index;
-        if (index >= text.Length) { return _createToken; }
+        if (index >= text.Length) { return _kind; }
 
         var nextChild = _children.GetValueOrDefault(text[index]);
-        if (nextChild is null) { return _createToken; }
+        if (nextChild is null) { return _kind; }
 
         var extended = nextChild.ExtendMatch(text, index + 1, out var extendedLength);
-        if (extended is null) { return _createToken; }
+        if (extended is null) { return _kind; }
 
         length = extendedLength;
 

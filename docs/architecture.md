@@ -40,7 +40,7 @@ Turns raw text into a flat list of tokens. It has no idea what any of it means �
 that's every later stage's job, not this one's.
 
 `SymbolTree` is a trie: each character read from the template walks one level
-deeper, and reaching a node that has a token factory attached is a match.
+deeper, and reaching a node that has a `TokenKind` attached is a match.
 Longest match wins, so depth (`«`, `««`, `«««`, ...) and the two
 scope-navigation markers (`.: `, `..: `) fall out for free from shared prefixes,
 instead of needing separate cases per case.
@@ -48,17 +48,17 @@ instead of needing separate cases per case.
 ```mermaid
 flowchart TB
     Root(("(root)"))
-    Root --> Open["«"] --> OpenToken["Open"]
-    Open --> OpenOpen["« (loops on «)"] --> OpenBlockToken["OpenBlock\n(depth = run length)"]
-    Root --> Close["»"] --> CloseToken["Close\n(literal text if nothing's open)"]
-    Close --> CloseClose["» (loops on »)"] --> CloseBlockToken["CloseBlock\n(depth) + trailing newline"]
-    Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedToken["Escaped literal"]
-    Root --> Colon[":"] --> BareColonToken["BareColon\n(malformed-filter signal)"]
-    Colon --> ColonSpace[" "] --> ColonToken["Colon"]
-    Root --> Dot["."] --> DotColon[":"] --> DotColonSpace[" "] --> LocalScopeToken["LocalScope\n(.: )"]
-    Dot --> DotDot["."] --> DotDotColon[":"] --> DotDotColonSpace[" "] --> ParentScopeToken["ParentScope\n(..: )"]
-    Root --> SpacePipeSpace[" | "] --> PipeToken["Pipe"]
-    Root -.no match anywhere.-> LiteralToken["Literal (fallback)"]
+    Root --> Open["«"] --> OpenKind["Open"]
+    Open --> OpenOpen["« (loops on «)"] --> OpenBlockKind["OpenBlock\n(depth = run length)"]
+    Root --> Close["»"] --> CloseKind["Close\n(literal text if nothing's open)"]
+    Close --> CloseClose["» (loops on »)"] --> CloseBlockKind["CloseBlock\n(depth) + trailing newline"]
+    Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedKind["Escaped literal"]
+    Root --> Colon[":"] --> BareColonKind["BareColon\n(malformed-filter signal)"]
+    Colon --> ColonSpace[" "] --> ColonKind["Colon"]
+    Root --> Dot["."] --> DotColon[":"] --> DotColonSpace[" "] --> LocalScopeKind["LocalScope\n(.: )"]
+    Dot --> DotDot["."] --> DotDotColon[":"] --> DotDotColonSpace[" "] --> ParentScopeKind["ParentScope\n(..: )"]
+    Root --> SpacePipeSpace[" | "] --> PipeKind["Pipe"]
+    Root -.no match anywhere.-> LiteralKind["Literal (fallback)"]
 ```
 
 Symbols are declared once, in `Symbols.cs`. Adding a new fixed symbol or
@@ -66,14 +66,20 @@ multi-character run is one line there; nothing else in the tokenizer changes.
 `Tokenizer` itself just asks the tree how far a match extends and moves its
 cursor past it — anything the tree doesn't recognize accumulates as plain text.
 
+There's one `Token` shape for every kind (a `readonly record struct` carrying
+a `TokenKind`, an offset/length pair into the template string, and a
+`Position`), not a type hierarchy — `Text` slices the source lazily off that
+offset, so a kind nothing ever reads `.Text` from (`Open`, for instance) never
+allocates a string for it.
+
 > [!NOTE]
 >
-> Several distinct token types — `ColonToken`, `BareColonToken`, `CloseToken`,
-> `LocalScopeToken`, `ParentScopeToken` — all implement `ITextToken`. That's
-> what lets each one fall back to rendering as ordinary literal text whenever it
-> shows up somewhere its special meaning doesn't apply (a stray `»`, a bare `:`
-> with no space, `.: ` in prose outside a property chain), without the tokenizer
-> itself needing to understand context.
+> Several kinds — `Colon`, `BareColon`, `Close`, `LocalScope`, `ParentScope` —
+> report `IsText: true`. That's what lets each one fall back to rendering as
+> ordinary literal text whenever it shows up somewhere its special meaning
+> doesn't apply (a stray `»`, a bare `:` with no space, `.: ` in prose outside
+> a property chain), without the tokenizer itself needing to understand
+> context.
 
 ## Parsing
 

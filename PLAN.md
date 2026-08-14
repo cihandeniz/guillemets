@@ -21,13 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- Merge the ~16 token record types under `src/Guillemets/Tokens/` (`OpenToken`,
-  `CloseToken`, `CloseBlockToken`, `PipeToken`, ...) into one `Token`
-  struct/class with a `TokenKind` enum and offsets into the source string.
-  Removes the unconditional per-token substring allocation in `Tokenizer.cs`
-  (kept even for token kinds like `OpenToken` that discard the text) and
-  replaces scattered `is OpenToken`/`is CloseToken` type-pattern dispatch with
-  an exhaustive switch over `TokenKind`.
 - No plain-number-formatting filter. Surfaced while fixing the culture
   round-trip bug: making `PocoDataSource.AsDisplayString()` invariant means
   plain `«amount»` (no filter) now renders flat invariant text (`1234.5`)

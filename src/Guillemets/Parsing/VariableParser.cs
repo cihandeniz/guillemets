@@ -1,6 +1,7 @@
 using Guillemets.Ast;
 using Guillemets.Tokenization;
-using Guillemets.Tokens;
+
+using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Parsing;
 
@@ -12,13 +13,12 @@ internal class VariableParser(TokenCursor _tokens, ParserRegistry _registry)
     PropertyChainParser PropertyChainParser => _lazyPropertyChainParser.Value;
     FilterParser FilterParser => _lazyFilterParser.Value;
 
-    public IRenderable Parse(IToken token)
+    public IRenderable Parse(Token open)
     {
-        var open = (OpenToken)token;
         _tokens.Advance();
         var chain = PropertyChainParser.Parse(open.Position, stopAtNewline: false, stopAtPipe: true);
         var filters = FilterParser.Parse(expectLeadingPipe: true);
-        if (_tokens.AtEnd || _tokens.Current is not CloseToken)
+        if (_tokens.AtEnd || _tokens.Current.Kind is not Close)
         {
             throw new TemplateParseException("Unclosed variable", open.Position);
         }

@@ -1,7 +1,8 @@
 using Guillemets.Ast;
 using Guillemets.Tokenization;
-using Guillemets.Tokens;
 using System.Text;
+
+using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Parsing;
 
@@ -17,18 +18,18 @@ internal class PropertyChainParser(TokenCursor _tokens)
 
     void ParseLeadingNavigator(PropertyChainNode.Builder chain)
     {
-        while (!_tokens.AtEnd && _tokens.Current is ParentScopeToken)
+        while (!_tokens.AtEnd && _tokens.Current.Kind is ParentScope)
         {
             chain.Climb();
             _tokens.Advance();
         }
 
-        if (_tokens.AtEnd || _tokens.Current is not LocalScopeToken) { return; }
+        if (_tokens.AtEnd || _tokens.Current.Kind is not LocalScope) { return; }
 
         chain.PinToCurrentScope();
         _tokens.Advance();
 
-        if (!_tokens.AtEnd && _tokens.Current is ParentScopeToken or LocalScopeToken)
+        if (!_tokens.AtEnd && _tokens.Current.Kind is ParentScope or LocalScope)
         {
             throw new TemplateParseException(
                 "A this-scope-only navigator must be the last one before the property chain",
@@ -53,7 +54,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
         {
             if (_tokens.AtEnd) { Flush(buffer, chain); break; }
 
-            if (_tokens.Current is NegationToken)
+            if (_tokens.Current.Kind is Negation)
             {
                 chain.Negate(_tokens.Current.Position);
                 _tokens.Advance();
@@ -61,19 +62,19 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
-            if (_tokens.Current is CloseToken)
+            if (_tokens.Current.Kind is Close)
             {
                 Flush(buffer, chain);
 
                 break;
             }
 
-            if (stopAtPipe && _tokens.Current is PipeToken)
+            if (stopAtPipe && _tokens.Current.Kind is Pipe)
             {
                 Flush(buffer, chain); break;
             }
 
-            if (stopAtNewline && _tokens.Current is NewlineToken)
+            if (stopAtNewline && _tokens.Current.Kind is Newline)
             {
                 Flush(buffer, chain);
                 _tokens.Advance();
@@ -81,7 +82,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 break;
             }
 
-            if (allowVariableDefinition && _tokens.Current is EqualsToken)
+            if (allowVariableDefinition && _tokens.Current.Kind is Assign)
             {
                 Flush(buffer, chain);
                 variableName = chain.PopVariableName();
@@ -90,15 +91,15 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
-            if (_tokens.Current is LiteralToken literal)
+            if (_tokens.Current.Kind is Literal or Escaped)
             {
-                buffer.Append(literal.Text);
+                buffer.Append(_tokens.Current.Text);
                 _tokens.Advance();
 
                 continue;
             }
 
-            if (_tokens.Current is NewlineToken)
+            if (_tokens.Current.Kind is Newline)
             {
                 buffer.Append(' ');
                 _tokens.Advance();
@@ -110,7 +111,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
             _tokens.Advance();
         }
 
-        if (_tokens.AtEnd || (stopAtPipe && _tokens.Current is not (CloseToken or PipeToken)))
+        if (_tokens.AtEnd || (stopAtPipe && _tokens.Current.Kind is not (Close or Pipe)))
         {
             throw new TemplateParseException("Unclosed variable", openPosition);
         }
@@ -120,7 +121,7 @@ internal class PropertyChainParser(TokenCursor _tokens)
             return chain.Build(openPosition);
         }
 
-        if (!stopAtNewline && _tokens.Current is not CloseToken)
+        if (!stopAtNewline && _tokens.Current.Kind is not Close)
         {
             throw new TemplateParseException(stopAtNewline ? "Unclosed block header" : "Unclosed variable", openPosition);
         }

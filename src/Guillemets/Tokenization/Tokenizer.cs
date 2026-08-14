@@ -1,10 +1,8 @@
-using Guillemets.Tokens;
-
 namespace Guillemets.Tokenization;
 
 internal class Tokenizer(string _template, SymbolTree _symbolTree)
 {
-    readonly List<IToken> _tokens = [];
+    readonly List<Token> _tokens = [];
 
     public TokenCursor Tokenize()
     {
@@ -14,7 +12,7 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         var pendingPosition = position;
         while (index < _template.Length)
         {
-            if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), out var createToken, out var length))
+            if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), out var kind, out var length))
             {
                 var unmatchedLength = Math.Max(length, 1);
                 position = position.Next(_template.AsSpan(index, unmatchedLength));
@@ -25,7 +23,7 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
 
             FlushPending(pendingStart, index, pendingPosition);
 
-            _tokens.Add(createToken(new(_template[index..(index + length)], position)));
+            _tokens.Add(new(kind.Value, _template, index, length, position));
             pendingPosition = position = position.Next(_template.AsSpan(index, length));
             pendingStart = index += length;
         }
@@ -39,6 +37,6 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
     {
         if (end <= start) { return; }
 
-        _tokens.Add(_symbolTree.CreateToken(new(_template[start..end], position)));
+        _tokens.Add(new(_symbolTree.Kind, _template, start, end - start, position));
     }
 }

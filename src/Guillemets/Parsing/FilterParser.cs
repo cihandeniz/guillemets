@@ -1,12 +1,11 @@
 using Guillemets.Ast;
 using Guillemets.Filters;
 using Guillemets.Tokenization;
-using Guillemets.Tokens;
 using System.Text;
 
 using static Guillemets.Position;
-using static Guillemets.Tokens.EscapedToken;
-using static Guillemets.Tokens.PipeToken;
+using static Guillemets.Tokenization.Symbols;
+using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Parsing;
 
@@ -17,21 +16,24 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
 
     static readonly string ESCAPED_NEWLINE = $"{BACKSLASH}n";
     static readonly string ESCAPED_TAB = $"{BACKSLASH}t";
-    static readonly string ESCAPED_PIPE = $"{BACKSLASH}{DELIMITER}";
+    static readonly string ESCAPED_PIPE = $"{BACKSLASH}{PIPE}";
     static readonly Position NO_ERROR_POSITION = new(0, 0);
 
-    static string SegmentText(IToken token, bool unescape) => token switch
+    static string SegmentText(Token token, bool unescape) => token.Kind switch
     {
-        NewlineToken => " ",
-        EscapedToken escaped => escaped.Text,
-        LiteralToken literal => unescape ? Unescape(literal.Text) : literal.Text,
-        _ => throw new InvalidOperationException($"Unexpected token '{token.GetType().Name}' in filter text."),
+        Newline => " ",
+        Escaped => token.Text,
+        Literal => unescape ? Unescape(token.Text) : token.Text,
+        Open or OpenBlock or Close or CloseBlock or Colon or BareColon or LocalScope
+            or ParentScope or Pipe or Else or Negation or Assign =>
+            throw new InvalidOperationException($"Unexpected token '{token.Kind}' in filter text."),
+        _ => throw new ArgumentOutOfRangeException(nameof(token), token.Kind, "Unrecognized token kind."),
     };
 
     static string Unescape(string text) =>
         text.Replace(ESCAPED_NEWLINE, NEWLINE.ToString())
             .Replace(ESCAPED_TAB, TAB.ToString())
-            .Replace(ESCAPED_PIPE, DELIMITER.ToString());
+            .Replace(ESCAPED_PIPE, PIPE.ToString());
 
     public IReadOnlyList<FilterNode> Parse(bool expectLeadingPipe)
     {
@@ -56,7 +58,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         var stages = new List<FilterNode>();
         if (!expectLeadingPipe && !TryParseAndAddStage(stopAtNewline, stages, out result)) { return false; }
 
-        while (!_tokens.AtEnd && _tokens.Current is PipeToken)
+        while (!_tokens.AtEnd && _tokens.Current.Kind is Pipe)
         {
             _tokens.Advance();
             if (_tokens.AtEnd) { break; }
@@ -94,12 +96,12 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
             return false;
         }
 
-        if (!_tokens.AtEnd && _tokens.Current is BareColonToken colon)
+        if (!_tokens.AtEnd && _tokens.Current.Kind is BareColon)
         {
-            throw new TemplateParseException("Expected a space after ':'", colon.Position.NextColumn());
+            throw new TemplateParseException("Expected a space after ':'", _tokens.Current.Position.NextColumn());
         }
 
-        if (_tokens.AtEnd || _tokens.Current is not ColonToken)
+        if (_tokens.AtEnd || _tokens.Current.Kind is not Colon)
         {
             result = new(new(filter, null), name, position);
 
@@ -128,5 +130,5 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     }
 
     bool ContinuesText(bool stopAtNewline) =>
-        _tokens.Current is LiteralToken || (_tokens.Current is NewlineToken && !stopAtNewline);
+        _tokens.Current.Kind is Literal or Escaped || (_tokens.Current.Kind is Newline && !stopAtNewline);
 }

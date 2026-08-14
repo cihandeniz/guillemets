@@ -1,6 +1,5 @@
 using static Guillemets.Position;
-using static Guillemets.Tokens.EscapedToken;
-using static Guillemets.Tokens.PipeToken;
+using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Tokenization;
 
@@ -14,26 +13,28 @@ internal static class Symbols
     const char EQUALS = '=';
     const char SPACE = ' ';
     const char DOT = '.';
+    internal const char BACKSLASH = '\\';
+    internal const char PIPE = '|';
 
     public static readonly SymbolTree TREE = BuildTree();
 
     static SymbolTree BuildTree() =>
-        new SymbolTree(Tokens.Literal)
-            .Add([OPEN], Tokens.Open)
-            .Add([OPEN, OPEN], Tokens.OpenBlock, repeat: true)
-            .Add([CLOSE], Tokens.Close)
-            .Add([CLOSE, CLOSE], Tokens.CloseBlock, repeat: true, newline: true)
-            .Add([BACKSLASH, OPEN], Tokens.Escaped)
-            .Add([BACKSLASH, CLOSE], Tokens.Escaped)
-            .Add([BACKSLASH, BACKSLASH], Tokens.Escaped)
-            .Add([BACKSLASH, TILDE], Tokens.Escaped)
-            .Add([COLON, SPACE], Tokens.Colon)
-            .Add([COLON], Tokens.BareColon)
-            .Add([DOT, COLON, SPACE], Tokens.LocalScope)
-            .Add([DOT, DOT, COLON, SPACE], Tokens.ParentScope)
-            .Add([SPACE, DELIMITER, SPACE], Tokens.Pipe)
-            .Add([TILDE], Tokens.Else, newline: true)
-            .Add([BANG], Tokens.Negation)
-            .Add([EQUALS], Tokens.Equals)
-            .Add([NEWLINE], Tokens.Newline);
+        new SymbolTree(Literal)
+            .Add([OPEN], Open)
+            .Add([OPEN, OPEN], OpenBlock, repeat: true)
+            .Add([CLOSE], Close)
+            .Add([CLOSE, CLOSE], CloseBlock, repeat: true, newline: true)
+            .Add([BACKSLASH, OPEN], Escaped)
+            .Add([BACKSLASH, CLOSE], Escaped)
+            .Add([BACKSLASH, BACKSLASH], Escaped)
+            .Add([BACKSLASH, TILDE], Escaped)
+            .Add([COLON, SPACE], Colon)
+            .Add([COLON], BareColon)
+            .Add([DOT, COLON, SPACE], LocalScope)
+            .Add([DOT, DOT, COLON, SPACE], ParentScope)
+            .Add([SPACE, PIPE, SPACE], Pipe)
+            .Add([TILDE], Else, newline: true)
+            .Add([BANG], Negation)
+            .Add([EQUALS], Assign)
+            .Add([NEWLINE], Newline);
 }

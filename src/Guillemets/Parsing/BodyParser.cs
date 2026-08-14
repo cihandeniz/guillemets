@@ -1,8 +1,8 @@
 using Guillemets.Ast;
 using Guillemets.Tokenization;
-using Guillemets.Tokens;
 
 using static Guillemets.Position;
+using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Parsing;
 
@@ -34,17 +34,19 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         {
             if (insideBlock && AtLineStart(nodes) && TryParseFooter(out footer)) { break; }
 
-            var node = _tokens.Current switch
-            {
-                OpenToken => VariableParser.Parse(_tokens.Current),
-                OpenBlockToken => BlockParser.Parse(_tokens.Current),
-                ITextToken => TextParser.Parse(_tokens.Current),
-                _ => throw new TemplateParseException($"Unexpected token '{_tokens.Current.GetType().Name}'", _tokens.Current.Position),
-            };
-            nodes.Add(node);
+            nodes.Add(ParseNode());
         }
 
         return nodes;
+    }
+
+    IRenderable ParseNode()
+    {
+        if (_tokens.Current.Kind is Open) { return VariableParser.Parse(_tokens.Current); }
+        if (_tokens.Current.Kind is OpenBlock) { return BlockParser.Parse(_tokens.Current); }
+        if (_tokens.Current.IsText) { return TextParser.Parse(_tokens.Current); }
+
+        throw new TemplateParseException($"Unexpected token '{_tokens.Current.Kind}'", _tokens.Current.Position);
     }
 
     bool TryParseFooter(out IReadOnlyList<FilterNode> footer)
@@ -53,7 +55,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         var checkpoint = _tokens.Position;
         if (!FilterParser.TryParse(expectLeadingPipe: false, out var pipeline) ||
             _tokens.AtEnd ||
-            _tokens.Current is not CloseBlockToken
+            _tokens.Current.Kind is not CloseBlock
         )
         {
             _tokens.Rewind(checkpoint);
@@ -67,8 +69,8 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     }
 
     bool ReachedClose(bool insideBlock) =>
-        insideBlock && _tokens.Current is CloseBlockToken;
+        insideBlock && _tokens.Current.Kind is CloseBlock;
 
     bool ReachedElse(bool stopAtElse) =>
-        stopAtElse && _tokens.Current is ElseToken;
+        stopAtElse && _tokens.Current.Kind is Else;
 }
