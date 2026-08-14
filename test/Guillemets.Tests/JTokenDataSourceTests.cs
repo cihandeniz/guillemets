@@ -5,8 +5,17 @@ using Shouldly;
 
 namespace Guillemets.Tests;
 
-public class JTokenDataSourceTests
+public class JTokenDataSourceTests : DataSourceSpec
 {
+    static JTokenDataSource Wrap(JToken token) =>
+        new(token);
+
+    protected override IDataSource CreateObjectWithFullName(string value) =>
+        Wrap(new JObject { ["fullName"] = value });
+
+    protected override IDataSource CreateScalar(string value) =>
+        Wrap(new JValue(value));
+
     [Test]
     public void Kind_returns_object_for_j_object() =>
         Wrap(new JObject()).Kind.ShouldBe(DataKind.Object);
@@ -43,23 +52,6 @@ public class JTokenDataSourceTests
     }
 
     [Test]
-    public void Try_get_property_returns_false_when_property_missing() =>
-        Wrap(new JObject { ["Name"] = "Alice" }).TryGetProperty("Age", out _).ShouldBeFalse();
-
-    [Test]
-    public void Try_get_property_is_case_insensitive()
-    {
-        var source = Wrap(new JObject { ["fullName"] = "Alice" });
-
-        source.TryGetProperty("FullName", out var value).ShouldBeTrue();
-        value.AsDisplayString().ShouldBe("Alice");
-    }
-
-    [Test]
-    public void Try_get_property_returns_false_when_not_an_object() =>
-        Wrap(new JValue("Alice")).TryGetProperty("Length", out _).ShouldBeFalse();
-
-    [Test]
     public void Enumerate_array_returns_wrapped_items()
     {
         var items = Wrap(new JArray("a", "b")).EnumerateArray().ToList();
@@ -73,10 +65,6 @@ public class JTokenDataSourceTests
         Wrap(new JValue(value)).AsBoolean().ShouldBe(value);
 
     [Test]
-    public void As_boolean_returns_true_for_present_non_boolean() =>
-        Wrap(new JValue("Alice")).AsBoolean().ShouldBeTrue();
-
-    [Test]
     public void As_boolean_returns_false_for_null() =>
         Wrap(JValue.CreateNull()).AsBoolean().ShouldBeFalse();
 
@@ -86,7 +74,4 @@ public class JTokenDataSourceTests
         Wrap(new JValue("Alice")).AsDisplayString().ShouldBe("Alice");
         Wrap(new JValue(42)).AsDisplayString().ShouldBe("42");
     }
-
-    static JTokenDataSource Wrap(JToken token) =>
-        new(token);
 }

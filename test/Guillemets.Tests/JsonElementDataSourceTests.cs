@@ -5,8 +5,17 @@ using System.Text.Json;
 
 namespace Guillemets.Tests;
 
-public class JsonElementDataSourceTests
+public class JsonElementDataSourceTests : DataSourceSpec
 {
+    static JsonElementDataSource Parse(string json) =>
+        new(JsonDocument.Parse(json).RootElement);
+
+    protected override IDataSource CreateObjectWithFullName(string value) =>
+        Parse($$"""{"fullName": "{{value}}"}""");
+
+    protected override IDataSource CreateScalar(string value) =>
+        Parse($"\"{value}\"");
+
     [Test]
     public void Kind_returns_object_for_json_object() =>
         Parse("{}").Kind.ShouldBe(DataKind.Object);
@@ -42,23 +51,6 @@ public class JsonElementDataSourceTests
     }
 
     [Test]
-    public void Try_get_property_returns_false_when_property_missing() =>
-        Parse("""{"Name": "Alice"}""").TryGetProperty("Age", out _).ShouldBeFalse();
-
-    [Test]
-    public void Try_get_property_is_case_insensitive()
-    {
-        var source = Parse("""{"fullName": "Alice"}""");
-
-        source.TryGetProperty("FullName", out var value).ShouldBeTrue();
-        value.AsDisplayString().ShouldBe("Alice");
-    }
-
-    [Test]
-    public void Try_get_property_returns_false_when_not_an_object() =>
-        Parse("\"Alice\"").TryGetProperty("Length", out _).ShouldBeFalse();
-
-    [Test]
     public void Enumerate_array_returns_wrapped_items()
     {
         var items = Parse("""["a", "b"]""").EnumerateArray().ToList();
@@ -72,10 +64,6 @@ public class JsonElementDataSourceTests
         Parse(json).AsBoolean().ShouldBe(expected);
 
     [Test]
-    public void As_boolean_returns_true_for_present_non_boolean() =>
-        Parse("\"Alice\"").AsBoolean().ShouldBeTrue();
-
-    [Test]
     public void As_boolean_returns_false_for_null() =>
         Parse("null").AsBoolean().ShouldBeFalse();
 
@@ -85,7 +73,4 @@ public class JsonElementDataSourceTests
         Parse("\"Alice\"").AsDisplayString().ShouldBe("Alice");
         Parse("42").AsDisplayString().ShouldBe("42");
     }
-
-    static JsonElementDataSource Parse(string json) =>
-        new(JsonDocument.Parse(json).RootElement);
 }

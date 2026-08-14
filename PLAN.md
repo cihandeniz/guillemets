@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 193 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 199 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -18,17 +18,6 @@ caching deprioritized (production runs on JSON, not POCO), net8
 multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ## Remaining milestones
-
-### P0 — silent/data-corrupting bugs (fix first)
-
-- `IDataSource`/`IFilter` contract inconsistencies across adapters (e.g.
-  `EnumerateArray()` throwing vs. returning empty) — worth a pass once the
-  case-sensitivity fix touches all three adapters anyway. Pairs naturally
-  with a shared abstract `DataSourceSpec`-style test base (parameterized over
-  a factory the concrete `*DataSourceTests` classes supply) that all three
-  adapters — and any future one — inherit, so a contract requirement like
-  case-insensitive `TryGetProperty` or presence-based `AsBoolean()` is
-  enforced automatically instead of copy-pasted per adapter test file.
 
 ### P1 — correctness bugs (parser/render)
 

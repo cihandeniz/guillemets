@@ -38,7 +38,9 @@ public record JsonElementDataSource(JsonElement Element)
     }
 
     public IEnumerable<IDataSource> EnumerateArray() =>
-        Element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item));
+        Kind == DataKind.Array
+            ? Element.EnumerateArray().Select(item => (IDataSource)new JsonElementDataSource(item))
+            : [];
 
     public bool AsBoolean() => Kind switch
     {
