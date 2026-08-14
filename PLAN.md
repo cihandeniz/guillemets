@@ -9,24 +9,17 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 222 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 223 passed, 0 skipped, 0 failed. Language/implementation
 and P2 milestones are done; P1 reopened after a second external review pass
 turned up 3 more correctness bugs (2 of that pass's other claims — empty
 `«»`/`«.: »`/`«..: »` property chains — turned out to already be handled,
-now locked in by 2 new spec fixtures). 19 issues remain before release — see
+now locked in by 2 new spec fixtures). 18 issues remain before release — see
 P1, P3, and Explicitly deferred below.
 
 ## Remaining milestones
 
 ### P1 — correctness bugs
 
-- Duplicate glossary translations: `Glossary`'s constructor
-  (`src/Guillemets/Rendering/Glossary.cs:23`) builds `_entries` via
-  `.ToDictionary(entry => entry.Value, ...)` — two localization keys with
-  the same translated value make it throw a raw, unhandled
-  `ArgumentException` instead of a `TemplateParseException`. Detect the
-  collision and report a clear template error, or define deterministic
-  precedence.
 - Negative truncate length: `«name / truncate: -10»` does get caught and
   rewrapped as a `TemplateParseException` (`FilterNode.Apply`'s catch-all
   in `src/Guillemets/Ast/FilterNode.cs`), but the message is a leaked BCL

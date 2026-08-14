@@ -36,7 +36,7 @@ public class Template
 
     public string Render(IDataSource data)
     {
-        var glossary = Glossary.GetOrCreate(_options.Localizer, _options.PropertyNameConversion);
+        var glossary = Glossary.GetOrCreate(_options.Localizer, _options.PropertyNameConversion, _options.GlossaryCollisionResolver);
         var propertyResolver = new PropertyResolver(glossary);
         var renderer = new Renderer(propertyResolver);
 

@@ -249,6 +249,24 @@ matching/fallback contract — in short, a term with no matching entry falls
 back to direct resolution, so a glossary that's silent on a given term and no
 glossary at all behave identically for that term.
 
+> [!WARNING]
+>
+> Two entries that translate to the same term (case-insensitively) — e.g.
+> both `OfferNo` and `InvoiceNo` localized to `Quote No` — make the
+> glossary ambiguous: which property should `«quote no»` resolve to? This
+> throws a `GlossaryException` naming every colliding entry, rather than
+> silently picking one. Fix the source data so each term maps to exactly
+> one property — or supply `ParseOptions.GlossaryCollisionResolver`
+> (`Func<IEnumerable<string>, string>`) to resolve it in code instead: it
+> receives the colliding entries' `Name`s and returns the one that should
+> win.
+>
+> ```csharp
+> options.GlossaryCollisionResolver = names => names.First();
+> // both "OfferNo" and "InvoiceNo" translate to "Quote No" — the first
+> // localizer entry wins, instead of throwing
+> ```
+
 Not every model is PascalCase, though. `ParseOptions.PropertyNameConversion`
 (`Func<string, string>`) turns a glossary entry's `Name` — or, when nothing
 matches, the template segment itself — into the actual property name. It

@@ -255,6 +255,19 @@ inside internal working docs themselves.
   at some point, use `?? throw new InvalidOperationException(...)` instead — it
   fails loudly at the point of use if the invariant is ever broken, rather than
   risking a `NullReferenceException` downstream.
+- Shouldly: asserting a thrown exception binds the delegate to a `var
+  actual` first, then chains the fluent `.ShouldThrow<TException>()`
+  extension directly off it — `.Message`/other assertions chain onto that
+  same call rather than capturing the exception into its own variable
+  (`actual.ShouldThrow<T>().Message.ShouldBe(...);`, not `var exception =
+  actual.ShouldThrow<T>(); exception.Message.ShouldBe(...);`) — rather
+  than the static `Should.Throw<TException>(() => ...)` form.
+- Tests follow Arrange-Act-Assert as three visually distinct groups
+  separated by a blank line — never blank lines *within* a group. Act is
+  a single line assigned to `var actual` (a value, or a delegate when
+  the act is expected to throw); Assert is whatever chain of
+  `actual.Should...` calls follows, kept together as one group even when
+  it spans a couple of chained/related assertions.
 
 ## Parking (ending a session)
 
