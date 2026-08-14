@@ -23,6 +23,7 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 - A block whose final `»»` has no trailing newline never closes (`Symbols`
   only registers `CloseBlock` as `»»` + `\n`) — wrong error, wrong location.
+  - IN PROGRESS: see `PARKED-DECISIONS.md`
 - `~` (else) isn't required to be at line start (`BodyParser.ReachedElse` has
   no `AtLineStart` guard, unlike `ValidateNotSharingCloseLine`) — a stray
   trailing `~` anywhere silently truncates the truthy body.
@@ -102,10 +103,10 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### Explicitly deferred (not this pass)
 
-- POCO reflection is uncached (`PocoDataSource.TryGetProperty` calls
-  `GetType().GetProperty(name)` every access). Deprioritized by author call —
-  production runs on the JSON adapter, not POCO, so this isn't on the hot
-  path. Revisit if POCO usage becomes real.
+- Friendly parse/render diagnostics (source-context error messages) — a
+  feature, not a bug fix.
+- Benchmark project / fuzz target — recommended before making performance
+  claims, not a blocker for fixing the perf issues already identified.
 - `net10.0`-only target excludes net8 LTS users — multi-targeting
   `net8.0;net10.0` skipped for now (author call).
 - Newtonsoft.Json as a hard core dependency / splitting into
@@ -114,7 +115,7 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 - The larger architectural rewrite proposed in review (line-oriented grammar
   restructuring, explicit `Bind()` step, parser/AST consolidation) — real
   value, but a redesign, not a bug/perf pass. Revisit once this backlog ships.
-- Friendly parse/render diagnostics (source-context error messages) — a
-  feature, not a bug fix.
-- Benchmark project / fuzz target — recommended before making performance
-  claims, not a blocker for fixing the perf issues already identified.
+- POCO reflection is uncached (`PocoDataSource.TryGetProperty` calls
+  `GetType().GetProperty(name)` every access). Deprioritized by author call —
+  production runs on the JSON adapter, not POCO, so this isn't on the hot
+  path. Revisit if POCO usage becomes real.

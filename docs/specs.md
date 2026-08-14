@@ -88,6 +88,13 @@ line. The double guillemet marks it as a block, not an inline variable — an
 inline variable always uses a single `«»`, even across multiple lines (see
 Variables, above).
 
+> [!IMPORTANT]
+>
+> "On its own line" is enforced on both sides of the closing `»»` — nothing
+> else may share that line, before or after it. Only a newline or the end of
+> the template may follow; a template that ends right after `»»`, with no
+> trailing newline at all, closes normally.
+
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
 blocks easier to read.

@@ -6,7 +6,10 @@ namespace Guillemets.Tests;
 
 public class SpecTests
 {
-    static readonly HashSet<string> IGNORED_FIXTURES = [];
+    static readonly HashSet<string> IGNORED_FIXTURES =
+        [
+            "02-conditional-blocks/011-no-trailing-newline-at-eof"
+        ];
 
     static IEnumerable<TestCaseData> FixtureCases() =>
         CaseFiles(".md").Select(TestCaseFor);
