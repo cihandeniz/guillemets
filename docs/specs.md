@@ -266,6 +266,18 @@ to scope into — each matched item's own display representation is used directl
 auto-joined like any other list (see Inline Lists, above). This is rarely useful
 on its own, since a plain boolean field carries no display text of its own.
 
+> [!NOTE]
+>
+> ```markdown
+> «quotes: prices: active»
+> ```
+>
+> The filtered list is whichever one the last segment is a direct boolean
+> property of, not necessarily the chain's first segment — here, each
+> quote's `prices`, flattened and scoped into the matched `price`, not
+> `quote`. A price missing `active` (sparse JSON) is just falsy, not an
+> error.
+
 ### Negation
 
 `!` prefix negates the truthiness of any variable (see the type table under
@@ -385,6 +397,15 @@ has resolved it, exactly as they do without any navigator:
 ```markdown
 «..: !active»
 «..: name / upper»
+```
+
+The same holds for filtering out items in a list (see Filtering Out Items in
+Lists, above) — a navigator only changes which scope the chain starts
+resolving from, not whether list-filtering applies to it:
+
+```markdown
+«.: items: active»
+«..: quotes: active»
 ```
 
 ## Variable Definitions

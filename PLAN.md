@@ -9,9 +9,9 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 205 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 207 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
-surfaced 30 confirmed issues (26 remaining) that need fixing before release; every item was
+surfaced 30 confirmed issues (25 remaining) that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
 before being added here. Priorities adjusted per author call: POCO reflection
 caching deprioritized (production runs on JSON, not POCO), net8
@@ -21,10 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P1 — correctness bugs (parser/render)
 
-- Filtered-item-scope degrades silently to a whole-list truthy check if any
-  item's flag isn't a boolean (common with sparse JSON), and only handles
-  single-segment chains — multi-level chains like `«quotes: prices: active»`
-  never filter despite the spec's general rule.
 - POCO type mapping gaps: `DateTime`/`Guid`/enum fall through to
   `DataKind.Object` instead of being scalar/presence values; `IDictionary`
   matches `IEnumerable` first so dictionaries enumerate as `KeyValuePair`

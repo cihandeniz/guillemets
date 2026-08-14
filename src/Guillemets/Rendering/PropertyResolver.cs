@@ -13,6 +13,6 @@ internal class PropertyResolver(Glossary _glossary)
     {
         var resolution = new PropertyChainResolution(scope, properties, _glossary);
 
-        return resolution.TryFilteredItemScope(out items) || resolution.TryArrayItems(out items);
+        return resolution.TryFilteringItems(out items) || resolution.TryArrayItems(out items);
     }
 }

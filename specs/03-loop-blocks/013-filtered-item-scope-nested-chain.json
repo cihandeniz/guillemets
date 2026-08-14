@@ -1,0 +1,15 @@
+{
+  "Quotes": [
+    {
+      "Prices": [
+        { "Active": true, "Amount": 100 },
+        { "Active": false, "Amount": 150 }
+      ]
+    },
+    {
+      "Prices": [
+        { "Active": true, "Amount": 300 }
+      ]
+    }
+  ]
+}

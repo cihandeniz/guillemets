@@ -11,98 +11,88 @@ internal class PropertyChainResolution(Scope _scope,
 )
 {
     Scope? ClimbedScope => _scope.Climb(_properties.ClimbLevels);
-    Scope? Owner =>
-        ClimbedScope switch
-        {
-            null => null,
-            { } scope => _properties.ThisScopeOnly ? scope : scope.FindOwner(_properties),
-        };
+    Scope? Owner => _properties.ThisScopeOnly ? ClimbedScope : ClimbedScope?.FindOwner(_properties);
 
     public IEnumerable<IDataSource> Resolve()
     {
-        if (TryMagic(out var magic))
+        if (!_properties.ThisScopeOnly)
         {
-            yield return magic;
-            yield break;
+            if (TryMagicVariable(out var magic)) { return [magic]; }
+            if (TryVariableDefinition(out var defined)) { return [defined]; }
         }
 
-        if (TryDefinedVariable(out var defined))
-        {
-            yield return defined;
-            yield break;
-        }
+        if (TryFilteringItems(out var filtered)) { return filtered; }
+        if (TryPlainProjection(out var projected)) { return projected; }
 
-        if (TryFilteredItemScope(out var filtered))
-        {
-            foreach (var item in filtered)
-            {
-                yield return item;
-            }
-
-            yield break;
-        }
-
-        if (Owner is not { } owner) { yield break; }
-
-        foreach (var result in Project(owner.Data, _properties))
-        {
-            yield return result;
-        }
+        return [];
     }
 
-    bool TryMagic(out IDataSource value)
+    bool TryMagicVariable(out IDataSource value)
     {
         value = UndefinedDataSource.INSTANCE;
+        var scope = ClimbedScope;
 
-        return !_properties.ThisScopeOnly &&
-            _properties.Count == 1 &&
-            ClimbedScope is { } scope &&
+        return _properties.Count == 1 &&
+            scope is not null &&
             scope.TryGetMagic(_properties[0], _properties.LastSegmentNegated, out value);
     }
 
-    bool TryDefinedVariable(out IDataSource value)
+    bool TryVariableDefinition(out IDataSource value)
     {
         value = UndefinedDataSource.INSTANCE;
+        var scope = ClimbedScope;
 
-        return !_properties.ThisScopeOnly &&
-            _properties.Count == 1 &&
-            ClimbedScope is { } scope &&
+        return _properties.Count == 1 &&
+            scope is not null &&
             scope.TryResolveVariable(_properties[0], out value);
     }
 
-    public bool TryFilteredItemScope([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    public bool TryFilteringItems([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
         items = null;
-        if (_properties.ThisScopeOnly || _properties.Count <= 1 || ClimbedScope is not { } scope) { return false; }
+        if (Owner is null) { return false; }
 
-        var containers = Project(scope.FindOwner(_properties).Data, _properties.WithoutLast()).ToList();
-        if (containers.Count != 1 || containers[0].Kind != DataKind.Array) { return false; }
+        var lists = Project(Owner.Data, _properties.WithoutLast()).ToList();
+        if (lists.Count == 0 || lists.Any(list => list.Kind is not DataKind.Array)) { return false; }
 
-        var lastSegment = _properties.LastSegment();
-        var matches = new List<IDataSource>();
-        foreach (var item in containers[0].EnumerateArray())
+        var candidates = lists.SelectMany(list => list.EnumerateArray());
+        var filterPath = _properties.LastSegment();
+
+        var result = new List<IDataSource>();
+        foreach (var item in candidates)
         {
-            var flag = Project(item, lastSegment).SingleOrDefault();
-            if (flag is not { Kind: DataKind.Boolean }) { return false; }
-            if (!flag.AsBoolean()) { continue; }
+            var itemValues = Project(item, filterPath).ToList();
+            if (itemValues.Count > 1) { return false; }
 
-            matches.Add(item);
+            var filterValue = itemValues.SingleOrDefault();
+            if (filterValue is null) { continue; }
+            if (filterValue.Kind is DataKind.Null or DataKind.Undefined) { continue; }
+            if (filterValue.Kind is not DataKind.Boolean) { return false; }
+            if (!filterValue.AsBoolean()) { continue; }
+
+            result.Add(item);
         }
 
-        items = matches;
+        items = result;
+
+        return true;
+    }
+
+    bool TryPlainProjection([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
+    {
+        items = null;
+        if (Owner is null) { return false; }
+
+        items = Project(Owner.Data, _properties).ToList();
 
         return true;
     }
 
     public bool TryArrayItems([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
     {
+        items = null;
         var resolved = Resolve().ToList();
-        if (resolved.Count == 0 || resolved.Any(result => result.Kind != DataKind.Array))
-        {
-            items = null;
-
-            return false;
-        }
+        if (resolved.Count == 0 || resolved.Any(result => result.Kind is not DataKind.Array)) { return false; }
 
         items = [.. resolved.SelectMany(result => result.EnumerateArray())];
 
@@ -111,37 +101,21 @@ internal class PropertyChainResolution(Scope _scope,
 
     IEnumerable<IDataSource> Project(IDataSource current, PropertyChainNode properties)
     {
-        if (properties.Count == 0)
+        if (properties.Count == 0) { return [current]; }
+        if (current.Kind is DataKind.Null) { return []; }
+
+        if (current.Kind is DataKind.Array)
         {
-            yield return current;
-            yield break;
+            return current.EnumerateArray().SelectMany(item => Project(item, properties));
         }
 
-        if (current.Kind == DataKind.Null)
+        var propertyName = _glossary[properties[0]];
+        current.TryGetProperty(propertyName, out var propertyValue);
+        if (properties.Count == 1 && properties.LastSegmentNegated)
         {
-            yield break;
+            propertyValue = propertyValue.Negate();
         }
 
-        if (current.Kind == DataKind.Array)
-        {
-            foreach (var item in current.EnumerateArray())
-            {
-                foreach (var result in Project(item, properties))
-                {
-                    yield return result;
-                }
-            }
-
-            yield break;
-        }
-
-        var name = _glossary[properties[0]];
-        current.TryGetProperty(name, out var next);
-        if (properties.Count == 1 && properties.LastSegmentNegated) { next = next.Negate(); }
-
-        foreach (var result in Project(next, properties.Tail()))
-        {
-            yield return result;
-        }
+        return Project(propertyValue, properties.Tail());
     }
 }
