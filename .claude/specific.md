@@ -156,8 +156,8 @@ handful of adapters, and `Newtonsoft.Json` isn't a heavy dependency to carry).
 - **Inline lists**: scalar lists auto-join with `, `; override via the
   `join`/`join last` filters, usable inline or as the last line of a loop
   block.
-- **Filters**: `name: value` chained with ` | ` after a property chain or
-  another filter, no parens — `«expr | filter: value»`. `: ` (colon+space)
+- **Filters**: `name: value` chained with ` / ` after a property chain or
+  another filter, no parens — `«expr / filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
   `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
   `join`, `join last`, `upper`, `lower`, `default`. New built-in filter names

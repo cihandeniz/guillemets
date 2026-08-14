@@ -9,19 +9,51 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 220 passed, 0 skipped, 0 failed. Language/implementation,
-P1, and P2 milestones are done. 18 issues remain before release — see P3 and
-Explicitly deferred below.
+`dotnet test` is green: 222 passed, 0 skipped, 0 failed. Language/implementation
+and P2 milestones are done; P1 reopened after a second external review pass
+turned up 3 more correctness bugs (2 of that pass's other claims — empty
+`«»`/`«.: »`/`«..: »` property chains — turned out to already be handled,
+now locked in by 2 new spec fixtures). 19 issues remain before release — see
+P1, P3, and Explicitly deferred below.
 
 ## Remaining milestones
 
+### P1 — correctness bugs
+
+- Duplicate glossary translations: `Glossary`'s constructor
+  (`src/Guillemets/Rendering/Glossary.cs:23`) builds `_entries` via
+  `.ToDictionary(entry => entry.Value, ...)` — two localization keys with
+  the same translated value make it throw a raw, unhandled
+  `ArgumentException` instead of a `TemplateParseException`. Detect the
+  collision and report a clear template error, or define deterministic
+  precedence.
+- Negative truncate length: `«name / truncate: -10»` does get caught and
+  rewrapped as a `TemplateParseException` (`FilterNode.Apply`'s catch-all
+  in `src/Guillemets/Ast/FilterNode.cs`), but the message is a leaked BCL
+  string ("length ('-10') must be a non-negative value...") instead of a
+  clean message in the style `TruncateFilter.ParseMaxLength`
+  (`src/Guillemets/Filters/TruncateFilter.cs:20-33`) already uses for the
+  missing-arg/non-numeric-arg cases. Validate `>= 0` there with a matching
+  message.
+- `DateOnly`/`TimeOnly` misclassified as `Object`: `PocoDataSource.Kind`
+  (`src/Guillemets/Data/Poco/PocoDataSource.cs:15-18`) maps `DateTime`/
+  `Guid`/`Enum` to `DataKind.String` but not `DateOnly`/`TimeOnly`, so a
+  POCO property of either type falls through to `DataKind.Object` —
+  wrong block-behavior inference (scope instead of plain value) for any
+  block keyed on one.
+
 ### P3 — release readiness (packaging/process)
 
-- No CI at all — no `.github/` directory. "175 tests green" is currently
-  unverified by anything but the author's machine. Add a GitHub Actions
-  workflow (build + test on push/PR) first — it de-risks every fix above.
-- No package metadata in `Guillemets.csproj` (`PackageId`, `Description`,
-  `Authors`, `PackageLicenseExpression`, `RepositoryUrl`, version).
+- `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
+  result it discards, just to answer "does this scope own it" — `Project`'s
+  first-segment lookup immediately repeats the same call to get the actual
+  value. Fixing this means changing `FindOwner`'s contract to hand back the
+  already-resolved value, not just which scope owns it — not as cheap as it
+  looks, needs a separate design pass.
+- `BodyParser.TryParseFooter` speculatively allocates (`List<FilterNode>`,
+  `StringBuilder`, result records) on every line inside every block before
+  rewinding on failure, with no cheap pre-check — not as cheap as it looks,
+  needs a separate design pass.
 - `Glossary.CACHE` is a static, unbounded `ConcurrentDictionary` keyed on
   `(IStringLocalizer?, culture)`. Since `IStringLocalizer<T>` is typically
   scoped/transient in ASP.NET Core, this leaks in the intended host. Key on
@@ -37,21 +69,16 @@ Explicitly deferred below.
   rather admit that it's a sacrifice for readability over writability.
   - This can be defended that no body writes by hand any more, AI writes docs
     any way, but reading is more crucial at the age of GENAI
+- No CI at all — no `.github/` directory. "175 tests green" is currently
+  unverified by anything but the author's machine. Add a GitHub Actions
+  workflow (build + test on push/PR) first — it de-risks every fix above.
+- No package metadata in `Guillemets.csproj` (`PackageId`, `Description`,
+  `Authors`, `PackageLicenseExpression`, `RepositoryUrl`, version).
 - `make init` sudo-runs an unpinned script off `main` with no checksum. Pin
   to a tag/commit + checksum.
 
 ### Explicitly deferred (not this pass)
 
-- `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
-  result it discards, just to answer "does this scope own it" — `Project`'s
-  first-segment lookup immediately repeats the same call to get the actual
-  value. Fixing this means changing `FindOwner`'s contract to hand back the
-  already-resolved value, not just which scope owns it — not as cheap as it
-  looks, needs a separate design pass.
-- `BodyParser.TryParseFooter` speculatively allocates (`List<FilterNode>`,
-  `StringBuilder`, result records) on every line inside every block before
-  rewinding on failure, with no cheap pre-check — not as cheap as it looks,
-  needs a separate design pass.
 - String building is O(nesting) copies — `IRenderable.Render` returns
   `string` and every loop item/conditional/scope materializes its own
   `StringBuilder`, copied again into the parent. Threading one `StringBuilder`
@@ -74,6 +101,8 @@ Explicitly deferred below.
   restructuring, explicit `Bind()` step, parser/AST consolidation) — real
   value, but a redesign, not a bug/perf pass. Revisit once this backlog ships.
 - POCO reflection is uncached (`PocoDataSource.TryGetProperty` calls
-  `GetType().GetProperty(name)` every access). Deprioritized by author call —
-  production runs on the JSON adapter, not POCO, so this isn't on the hot
-  path. Revisit if POCO usage becomes real.
+  `GetType().GetProperty(name)` every access), and its dictionary path
+  (`TryGetDictionaryEntry`, same file) does a linear scan of the
+  `IDictionary` on every lookup instead of an O(1) key access. Deprioritized
+  by author call — production runs on the JSON adapter, not POCO, so
+  neither is on the hot path. Revisit if POCO usage becomes real.
