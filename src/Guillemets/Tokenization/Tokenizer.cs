@@ -14,7 +14,7 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         {
             if (!_symbolTree.TryMatchSymbol(_template.AsSpan(index), position, out var kind, out var length))
             {
-                var unmatchedLength = Math.Max(length, 1);
+                var unmatchedLength = length > 0 ? length : SkipToNextLeadingChar(index);
                 position = position.Next(_template.AsSpan(index, unmatchedLength));
                 index += unmatchedLength;
 
@@ -31,6 +31,13 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         FlushPending(pendingStart, index, pendingPosition);
 
         return new(_tokens);
+    }
+
+    int SkipToNextLeadingChar(int index)
+    {
+        var next = _template.AsSpan(index + 1).IndexOfAny(_symbolTree.LeadingChars);
+
+        return next < 0 ? _template.Length - index : next + 1;
     }
 
     void FlushPending(int start, int end, Position position)

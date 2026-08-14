@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Guillemets.Tokenization;
@@ -9,6 +10,10 @@ internal class SymbolTree(TokenKind? kind = null)
     readonly Dictionary<char, SymbolTree> _children = [];
     TokenKind? _kind = kind;
     TokenKind? _kindAtEnd;
+    SearchValues<char>? _leadingChars;
+
+    public SearchValues<char> LeadingChars =>
+        _leadingChars ??= SearchValues.Create([.. _children.Keys]);
 
     public TokenKind Kind =>
         _kind ?? throw new InvalidOperationException("Symbol tree node has no token kind.");

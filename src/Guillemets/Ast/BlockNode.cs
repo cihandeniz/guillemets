@@ -42,12 +42,12 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
 
     IBlockBehavior ResolveBehavior(RenderContext context, Scope scope)
     {
-        if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items))
+        if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items, out var resolved))
         {
             return new LoopBehavior(scope, items);
         }
 
-        var value = context.PropertyResolver.Resolve(scope, Properties).SingleOrDefault() ?? UndefinedDataSource.INSTANCE;
+        var value = resolved.SingleOrDefault() ?? UndefinedDataSource.INSTANCE;
         if (value.Kind == DataKind.Object)
         {
             return new ScopeBehavior(scope, value);

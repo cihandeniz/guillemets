@@ -13,6 +13,7 @@ internal class Glossary
 
     readonly Dictionary<string, string>? _entries;
     readonly Func<string, string> _propertyNameConversion;
+    readonly ConcurrentDictionary<string, string> _conversionCache = new();
 
     Glossary(IStringLocalizer? localizer, Func<string, string> propertyNameConversion)
     {
@@ -23,5 +24,7 @@ internal class Glossary
     }
 
     public string this[string segment] =>
-        _entries is not null && _entries.TryGetValue(segment, out var mapped) ? mapped : _propertyNameConversion(segment);
+        _entries is not null && _entries.TryGetValue(segment, out var mapped)
+            ? mapped
+            : _conversionCache.GetOrAdd(segment, _propertyNameConversion);
 }

@@ -13,15 +13,15 @@ internal class PropertyChainResolution(Scope _scope,
     Scope? ClimbedScope => _scope.Climb(_properties.ClimbLevels);
     Scope? Owner => _properties.ThisScopeOnly ? ClimbedScope : ClimbedScope?.FindOwner(_properties);
 
-    public IEnumerable<IDataSource> Resolve()
+    public IEnumerable<IDataSource> Resolve(bool withoutFiltering = false)
     {
         if (!_properties.ThisScopeOnly)
         {
-            if (TryMagicVariable(out var magic)) { return [magic]; }
-            if (TryVariableDefinition(out var defined)) { return [defined]; }
+            if (TryMagicVariable(out var value)) { return [value]; }
+            if (TryVariableDefinition(out value)) { return [value]; }
         }
 
-        if (TryFilteringItems(out var filtered)) { return filtered; }
+        if (!withoutFiltering && TryFilteringItems(out var filtered)) { return filtered; }
         if (TryPlainProjection(out var projected)) { return projected; }
 
         return [];
@@ -84,17 +84,6 @@ internal class PropertyChainResolution(Scope _scope,
         if (Owner is null) { return false; }
 
         items = Project(Owner.Data, _properties).ToList();
-
-        return true;
-    }
-
-    public bool TryArrayItems([NotNullWhen(true)] out IReadOnlyList<IDataSource>? items)
-    {
-        items = null;
-        var resolved = Resolve().ToList();
-        if (resolved.Count == 0 || resolved.Any(result => result.Kind is not DataKind.Array)) { return false; }
-
-        items = [.. resolved.SelectMany(result => result.EnumerateArray())];
 
         return true;
     }

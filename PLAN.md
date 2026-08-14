@@ -9,41 +9,11 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 220 passed, 0 skipped, 0 failed. Language/implementation
-milestones are done. All P1 correctness bugs are resolved. A round of external
-review (bug/perf/packaging audit) surfaced 30 confirmed issues (21 remaining)
-that need fixing before release; every item was
-independently verified against source (exact file/line, not just reported)
-before being added here. Priorities adjusted per author call: POCO reflection
-caching deprioritized (production runs on JSON, not POCO), net8
-multi-targeting and the Newtonsoft package split are both skipped for now.
+`dotnet test` is green: 220 passed, 0 skipped, 0 failed. Language/implementation,
+P1, and P2 milestones are done. 18 issues remain before release — see P3 and
+Explicitly deferred below.
 
 ## Remaining milestones
-
-### P2 — obvious performance issues (render-time, scale with row count)
-
-- `Dehumanize()` runs on every uncovered lookup in `Glossary` and
-  `VariableStore`, uncached — chain segments are fixed at parse time, so
-  resolve once per (chain, culture) and cache on the node. (Partially
-  subsumed by the case-sensitivity fix's Humanizer removal above — re-check
-  remaining cost once that lands.)
-- Resolution happens twice: `BlockNode.ResolveBehavior` re-resolves after
-  `TryResolveLoopItems` already did a full resolution on the non-array path;
-  `Scope.HasProperty` does a `TryGetProperty` that `Project` immediately
-  repeats. A nested-loop variable pays for this at every scope level.
-- `JoinFilter` double-enumerates its lazy pipeline
-  (`values.Any() ? [...] : values`) — the entire upstream resolution chain
-  runs twice. Materialize once.
-- String building is O(nesting) copies — `IRenderable.Render` returns
-  `string` and every loop item/conditional/scope materializes its own
-  `StringBuilder`, copied again into the parent. Thread one `StringBuilder`
-  through the render call chain instead.
-- Tokenizer scans char-by-char for non-matching text (dictionary probe per
-  char, no `SearchValues`/`IndexOfAny` fast skip) and allocates a substring
-  for every symbol token unconditionally, even when the token discards text.
-- `BodyParser.TryParseFooter` speculatively allocates (`List<FilterNode>`,
-  `StringBuilder`, result records) on every line inside every block before
-  rewinding on failure, with no cheap pre-check.
 
 ### P3 — release readiness (packaging/process)
 
@@ -72,6 +42,25 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### Explicitly deferred (not this pass)
 
+- `Scope.HasProperty` (inside `FindOwner`) does a `TryGetProperty` whose
+  result it discards, just to answer "does this scope own it" — `Project`'s
+  first-segment lookup immediately repeats the same call to get the actual
+  value. Fixing this means changing `FindOwner`'s contract to hand back the
+  already-resolved value, not just which scope owns it — not as cheap as it
+  looks, needs a separate design pass.
+- `BodyParser.TryParseFooter` speculatively allocates (`List<FilterNode>`,
+  `StringBuilder`, result records) on every line inside every block before
+  rewinding on failure, with no cheap pre-check — not as cheap as it looks,
+  needs a separate design pass.
+- String building is O(nesting) copies — `IRenderable.Render` returns
+  `string` and every loop item/conditional/scope materializes its own
+  `StringBuilder`, copied again into the parent. Threading one `StringBuilder`
+  through the render call chain instead would fix it, but touches the
+  `IRenderable`/`IBlockBehavior` interfaces and all 8 implementers — too
+  large for a single reviewable pass, and `BlockNode`'s footer-filter path
+  needs each loop item as a separate string anyway (`join`/`truncate` operate
+  on `IEnumerable<string>`), so a naive shared-builder doesn't fully replace
+  it. Needs a real design pass, not a quick fix.
 - Friendly parse/render diagnostics (source-context error messages) — a
   feature, not a bug fix.
 - Benchmark project / fuzz target — recommended before making performance
