@@ -105,30 +105,59 @@ as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
 
 ## Glossary & Localization
 
-A glossary is supplied at parse time, via `Template.Create`'s `configure`
-callback setting `ParseOptions.Glossary` (see `README.md`'s Custom filters
-section for the same callback's other use), as an `IStringLocalizer`
-(`Microsoft.Extensions.Localization.Abstractions`). This is the same abstraction
-ASP.NET Core apps already use for culture-aware resource lookup, so a glossary
-can plug into whatever localization provider (`.resx`, a database, a translation
-service) the host application already has, rather than the engine inventing its
-own format.
+A glossary lets a template author write in their own words while the model
+stays in ordinary code-friendly names. Supply one via `ParseOptions.Localizer`
+— an `IStringLocalizer` (`Microsoft.Extensions.Localization.Abstractions`),
+the same abstraction ASP.NET Core already uses for resource lookup, so a
+glossary can be backed by a `.resx` file, a database, or a translation
+service:
 
-The mapping direction is inverted from `IStringLocalizer`'s usual
-key-to-display-string use: the resource *key* is the property name, and its
-*value* is the localized term a template author types for it. Resolution
-enumerates `IStringLocalizer.GetAllStrings()` and matches a template segment
-against each entry's `Value`, case-insensitively, taking the matching entry's
-`Name` as the property name. See [`specs.md`](../specs.md)'s Glossary &
-Localization section for the full matching/fallback behavior contract — a term
-with no entry falls back to direct (PascalCase-of-space-words, matched
-case-insensitively against the model) resolution, so a glossary that's silent
-on a given term and no glossary at all behave identically for that term.
+```csharp
+Template.Create(text, options => options.Localizer = myLocalizer);
+```
 
-Because that lookup happens during `Render`, not `Create`, the same parsed
-`Template` re-resolves against whatever culture is ambient
-(`CultureInfo.CurrentUICulture`) on the calling thread at each render call. A
-`null`/absent glossary, or one with no entry for a given culture, just falls
-back to direct resolution for that render. `Render` itself takes no separate
-culture parameter — the ambient culture is the only input, consistent with how
-`IStringLocalizer` already resolves elsewhere in a .NET host.
+A developer wires up each resource entry once; a translator only ever edits
+its localized text afterward. Guillemets uses that pairing in reverse from
+`IStringLocalizer`'s usual purpose: the entry's `Name` identifies the model
+property, and its `Value` is what a template author actually types.
+
+```
+Name: FullName          Value: Tam Ad
+```
+
+```markdown
+«tam ad»
+→ resolves the model's FullName property
+```
+
+See [`specs.md`](../specs.md)'s Glossary & Localization section for the full
+matching/fallback contract — in short, a term with no matching entry falls
+back to direct resolution, so a glossary that's silent on a given term and no
+glossary at all behave identically for that term.
+
+Not every model is PascalCase, though. `ParseOptions.PropertyNameConversion`
+(`Func<string, string>`) turns a glossary entry's `Name` — or, when nothing
+matches, the template segment itself — into the actual property name. It
+defaults to `Dehumanize()` (`full name` → `FullName`), so ordinary
+PascalCase/camelCase models need no configuration. A `snake_case` model can
+supply its own conversion instead, and have it apply everywhere a name gets
+resolved, not just wherever the glossary happens to cover:
+
+```csharp
+options.PropertyNameConversion = key => string.Join("_", key.Split(' ').Select(w => w.ToLowerInvariant()));
+// «full name» and a glossary entry named "Full Name" both resolve to full_name
+```
+
+> [!NOTE]
+>
+> Setting `PropertyNameConversion` replaces the default outright — it doesn't
+> run on top of it. Pass the identity function (`key => key`) to use
+> segments/resource keys exactly as written, with no normalization at all.
+
+> [!NOTE]
+>
+> A glossary re-resolves on every `Render` call, against whatever culture is
+> ambient on the calling thread — the same parsed `Template` can serve
+> multiple cultures without being re-created. A missing glossary, or one with
+> no entry for the current culture, just falls back to direct resolution for
+> that render.

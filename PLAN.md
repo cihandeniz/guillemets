@@ -9,7 +9,7 @@ documentation — see `README.md`/`docs/` for that. For *how* it's built, see
 
 ## Status
 
-`dotnet test` is green: 187 passed, 0 skipped, 0 failed. Language/implementation
+`dotnet test` is green: 191 passed, 0 skipped, 0 failed. Language/implementation
 milestones are done. A round of external review (bug/perf/packaging audit)
 surfaced 30 confirmed issues that need fixing before release; every item was
 independently verified against source (exact file/line, not just reported)
@@ -21,19 +21,6 @@ multi-targeting and the Newtonsoft package split are both skipped for now.
 
 ### P0 — silent/data-corrupting bugs (fix first)
 
-- `Glossary` uses a localizer resource entry's key (`entry.Name`) verbatim as
-  the model property name (`Glossary.cs:20`: `.ToDictionary(entry =>
-  entry.Value, entry => entry.Name, ...)`). The resource key's naming
-  convention is under the *localization resource author's* control, not the
-  model's — a resource key written as `Full Name` (matching how translators
-  naturally write it) won't match a model property named `FullName`, even
-  after the case-insensitivity fix above (that fixes casing, not spacing).
-  Add a key-conversion function to `ParseOptions` (default: identity, i.e.
-  today's behavior) that `Glossary` applies to `entry.Name` while building its
-  map, so the resource key can be normalized to the model's actual property
-  name independently of how the translator wrote it. Expected usage: the
-  template's words live in the glossary's *values* (unchanged), the
-  underlying object's property lives in the glossary's *keys* (this item).
 - Merge the ~16 token record types under `src/Guillemets/Tokens/` (`OpenToken`,
   `CloseToken`, `CloseBlockToken`, `PipeToken`, ...) into one `Token`
   struct/class with a `TokenKind` enum and offsets into the source string.

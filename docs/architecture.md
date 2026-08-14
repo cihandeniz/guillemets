@@ -183,13 +183,18 @@ enclosing-scope fallback in favor of the current scope's own data only, and `..:
 
 `Rendering.Glossary` turns one property-chain segment (`quote no`) into the
 model's actual property name (`OfferNo`), wrapping whatever `IStringLocalizer`
-the caller set on `ParseOptions.Glossary`. It falls back to Humanizer's
-`.Dehumanize()` for any segment the glossary doesn't cover, or when there's no
-glossary at all.
+the caller set on `ParseOptions.Localizer`. Both that lookup and its fallback
+route through one function, `ParseOptions.PropertyNameConversion` — it
+converts a matched glossary entry's `Name` into a property name, and, for any
+segment the glossary doesn't cover (or when there's no glossary at all), the
+segment itself. It defaults to `TextCasing.Dehumanize()`; a caller can replace
+it outright (not compose with it) to target a model whose properties aren't
+PascalCase/camelCase.
 
 `Glossary.GetOrCreate` caches built glossaries in a single process-wide
-`ConcurrentDictionary`, keyed by `(localizer, culture)`, so two templates
-sharing the same `IStringLocalizer` reuse the same built `Glossary`.
+`ConcurrentDictionary`, keyed by `(localizer, culture, propertyNameConversion)`,
+so two templates sharing the same `IStringLocalizer`, culture, and conversion
+function reuse the same built `Glossary`.
 
 > [!IMPORTANT]
 >
@@ -217,7 +222,7 @@ the block-footer join.
 `IFilter` is the one interface behind a pipeline stage — a sequence-in,
 sequence-out transform. `Template.Create`'s optional `Action<ParseOptions>`
 callback exposes both `ParseOptions.Filters` (register your own alongside the
-built-ins) and `ParseOptions.Glossary`, so both concerns configure through one
+built-ins) and `ParseOptions.Localizer`, so both concerns configure through one
 place.
 
 A bare filter stage (no `: value` at all) can mean something different depending

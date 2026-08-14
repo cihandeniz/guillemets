@@ -172,7 +172,7 @@ var template = Template.Create(text,
 // «text | reverse» reverses each value
 ```
 
-The same `configure` callback also sets `options.Glossary`, an
+The same `configure` callback also sets `options.Localizer`, an
 `IStringLocalizer` that bridges a template's business vocabulary to model
 property names when they don't already match — see
 [`docs/specs.md`](docs/specs.md)'s Glossary & Localization section.

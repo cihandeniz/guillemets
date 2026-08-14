@@ -6,5 +6,6 @@ namespace Guillemets;
 public class ParseOptions
 {
     public FilterRegistry Filters { get; } = FilterRegistry.CreateDefault();
-    public IStringLocalizer? Glossary { get; set; }
+    public IStringLocalizer? Localizer { get; set; }
+    public Func<string, string> PropertyNameConversion { get; set; } = TextCasing.Dehumanize;
 }

@@ -18,7 +18,7 @@ public class GlossaryResourceIntegrationTests
     {
         var data = JsonDocument.Parse("""{"OfferNo": "2026-0711"}""").RootElement;
 
-        var actual = Template.Create("Quote No: «quote no»", options => options.Glossary = CreateLocalizer()).Render(data);
+        var actual = Template.Create("Quote No: «quote no»", options => options.Localizer = CreateLocalizer()).Render(data);
 
         actual.ShouldBe("Quote No: 2026-0711");
     }
@@ -28,7 +28,7 @@ public class GlossaryResourceIntegrationTests
     {
         var data = JsonDocument.Parse("""{"FullName": "Alice Smith"}""").RootElement;
 
-        var actual = Template.Create("«full name»", options => options.Glossary = CreateLocalizer()).Render(data);
+        var actual = Template.Create("«full name»", options => options.Localizer = CreateLocalizer()).Render(data);
 
         actual.ShouldBe("Alice Smith");
     }

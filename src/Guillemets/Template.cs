@@ -3,7 +3,6 @@ using Guillemets.Data;
 using Guillemets.Parsing;
 using Guillemets.Rendering;
 using Guillemets.Tokenization;
-using Microsoft.Extensions.Localization;
 
 namespace Guillemets;
 
@@ -21,19 +20,23 @@ public class Template
         var tokens = new Tokenizer(normalized, Symbols.TREE).Tokenize();
         var nodes = new Parser(tokens, options.Filters).Parse();
 
-        return new(nodes, lineEnding, options.Glossary);
+        return new(nodes, lineEnding, options);
     }
 
     readonly IReadOnlyList<IRenderable> _nodes;
     readonly string _lineEnding;
-    readonly IStringLocalizer? _localizer;
+    readonly ParseOptions _options;
 
-    internal Template(IReadOnlyList<IRenderable> nodes, string lineEnding, IStringLocalizer? localizer) =>
-        (_nodes, _lineEnding, _localizer) = (nodes, lineEnding, localizer);
+    internal Template(IReadOnlyList<IRenderable> nodes, string lineEnding, ParseOptions options)
+    {
+        _nodes = nodes;
+        _lineEnding = lineEnding;
+        _options = options;
+    }
 
     public string Render(IDataSource data)
     {
-        var glossary = Glossary.GetOrCreate(_localizer);
+        var glossary = Glossary.GetOrCreate(_options.Localizer, _options.PropertyNameConversion);
         var propertyResolver = new PropertyResolver(glossary);
         var renderer = new Renderer(propertyResolver);
 

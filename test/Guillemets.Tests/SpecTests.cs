@@ -16,7 +16,7 @@ public class SpecTests
 
     static TestCaseData TestCaseFor(string path)
     {
-        var testCase = new TestCaseData(TemplateFor(path), DataPathFor(path), GlossaryFor(path), path).SetName(FixtureName(path));
+        var testCase = new TestCaseData(TemplateFor(path), DataPathFor(path), LocalizerFor(path), path).SetName(FixtureName(path));
 
         return IGNORED_FIXTURES.Contains(FixtureName(path)) ? testCase.Ignore("not yet implemented") : testCase;
     }
@@ -58,7 +58,7 @@ public class SpecTests
         return document.RootElement.Clone();
     }
 
-    static IStringLocalizer? GlossaryFor(string casePath)
+    static IStringLocalizer? LocalizerFor(string casePath)
     {
         var basePath = BasePath(casePath);
         var directory = Path.GetDirectoryName(basePath)
@@ -74,24 +74,24 @@ public class SpecTests
     }
 
     [TestCaseSource(nameof(FixtureCases))]
-    public void Fixture_renders_expected_output(string templatePath, string dataPath, IStringLocalizer? glossary, string expectedPath)
+    public void Fixture_renders_expected_output(string templatePath, string dataPath, IStringLocalizer? localizer, string expectedPath)
     {
         var template = File.ReadAllText(templatePath);
         var expected = File.ReadAllText(expectedPath);
 
-        var actual = Template.Create(template, options => options.Glossary = glossary).Render(ReadData(dataPath));
+        var actual = Template.Create(template, options => options.Localizer = localizer).Render(ReadData(dataPath));
 
         actual.ShouldBe(expected);
     }
 
     [TestCaseSource(nameof(ErrorFixtureCases))]
-    public void Fixture_throws_expected_error(string templatePath, string dataPath, IStringLocalizer? glossary, string errorPath)
+    public void Fixture_throws_expected_error(string templatePath, string dataPath, IStringLocalizer? localizer, string errorPath)
     {
         var template = File.ReadAllText(templatePath);
         var expectedError = File.ReadAllText(errorPath).Trim();
 
         var exception = Should.Throw<TemplateParseException>(
-            () => Template.Create(template, options => options.Glossary = glossary).Render(ReadData(dataPath))
+            () => Template.Create(template, options => options.Localizer = localizer).Render(ReadData(dataPath))
         );
 
         exception.Message.ShouldBe(expectedError);

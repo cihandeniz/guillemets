@@ -24,7 +24,7 @@ public class GlossaryCacheTests
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
         try
         {
-            return Template.Create(template, options => options.Glossary = localizer).Render(data);
+            return Template.Create(template, options => options.Localizer = localizer).Render(data);
         }
         finally
         {
