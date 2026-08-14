@@ -1,18 +1,12 @@
 using Guillemets.Ast;
 using Guillemets.Tokenization;
 
-using static Guillemets.Position;
 using static Guillemets.Tokenization.TokenKind;
 
 namespace Guillemets.Parsing;
 
 internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
 {
-    internal static bool AtLineStart(IReadOnlyList<IRenderable> nodes) =>
-        nodes.Count == 0 ||
-        nodes[^1] is BlockNode ||
-        (nodes[^1] is LiteralNode { Text: var text } && text.EndsWith(NEWLINE));
-
     readonly Lazy<VariableParser> _lazyVariableParser = _registry.GetLazy<VariableParser>();
     readonly Lazy<BlockParser> _lazyBlockParser = _registry.GetLazy<BlockParser>();
     readonly Lazy<TextParser> _lazyTextParser = _registry.GetLazy<TextParser>();
@@ -32,7 +26,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         var nodes = new List<IRenderable>();
         while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse))
         {
-            if (insideBlock && AtLineStart(nodes) && TryParseFooter(out footer)) { break; }
+            if (insideBlock && _tokens.Current.Position.AtLineStart && TryParseFooter(out footer)) { break; }
 
             nodes.Add(ParseNode());
         }
@@ -72,5 +66,5 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         insideBlock && _tokens.Current.Kind is CloseBlock;
 
     bool ReachedElse(bool stopAtElse) =>
-        stopAtElse && _tokens.Current.Kind is Else;
+        stopAtElse && _tokens.Current.Kind is Else && _tokens.Current.Position.AtLineStart;
 }

@@ -13,6 +13,9 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     IReadOnlyList<FilterNode>? Footer = null
 ) : IRenderable
 {
+    public bool EndsAtLineEnd =>
+        true;
+
     public string Render(RenderContext context, Scope scope)
     {
         var items = ResolveBehavior(context, scope).Render(context, Body, ElseBody);

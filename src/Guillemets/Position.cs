@@ -5,6 +5,9 @@ public record Position(int Line, int Column)
     public const char NEWLINE = '\n';
     public const char TAB = '\t';
 
+    public bool AtLineStart =>
+        Column == 1;
+
     internal Position NextLine(int count = 1) =>
         new(Line + count, 1);
 
