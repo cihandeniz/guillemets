@@ -6,6 +6,17 @@
     <Description>A markdown-aware template engine for non-technical authors.</Description>
     <PackageId>Guillemets</PackageId>
     <PackageTags>template;templating;markdown</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RootNamespace>Guillemets</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Guillemets</Product>
+    <Version>0.1.0</Version>
     <Authors>Mouseless</Authors>
     <Company>Mouseless</Company>
     <Copyright>Copyright (c) 2026 Mouseless</Copyright>
@@ -14,7 +25,6 @@
     <PackageProjectUrl>https://github.com/mouseless/guillemets</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mouseless/guillemets.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <EnablePackageValidation>true</EnablePackageValidation>
   </PropertyGroup>
 
   <ItemGroup>
