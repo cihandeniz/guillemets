@@ -1,3 +1,4 @@
 Tags:
+
 - philosophy
 - wisdom

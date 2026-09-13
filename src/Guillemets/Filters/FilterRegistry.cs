@@ -22,6 +22,7 @@ public class FilterRegistry
             .Register(new CurrencyFilter())
             .Register(new NumberFilter())
             .Register(new TruncateFilter())
+            .Register(new TrimFilter())
         ;
 
     readonly Dictionary<string, IFilter> _filters = [];

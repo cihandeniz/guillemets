@@ -134,58 +134,6 @@ After.
 > of template may follow it to count as a close. Anything else on that
 > line makes it ordinary text, and the search for a real close continues.
 
-> [!NOTE]
->
-> Adjacent or nested blocks share one blank line at their boundary, not
-> two; the start/end of a template (or enclosing block) needs none.
->
-> ```markdown
-> ««individual
->
-> Dear «full name»,
->
-> »»
->
-> ««company
->
-> «company name»
->
-> »»
-> ```
->
-> One blank line separates the two blocks — it satisfies both the first
-> block's after-close and the second's before-open at once, not two in a
-> row.
->
-> A footer line needs a blank line before it too, same as `»»` — only its
-> own gluing to `»»` is exempt. An empty body needs one blank line, not
-> two.
-
-> [!NOTE]
->
-> Blank lines beyond the ones the syntax requires are the author's, and
-> render as written — however many there are, before a block, after it, or
-> anywhere in its body. A block that renders nothing leaves a single blank
-> line where it stood, so the text around it reads as two paragraphs.
->
-> ```markdown
-> Done.
->
-> ««show note
->
-> »»
->
-> Bye.
-> ```
->
-> renders, given `{ "ShowNote": false }`, as
->
-> ```markdown
-> Done.
->
-> Bye.
-> ```
-
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
 blocks easier to read.
@@ -250,6 +198,81 @@ Quote No: «quote no»
 month.
 
 »»
+```
+
+### Sharing a Blank Line
+
+Adjacent or nested blocks share one blank line at their boundary, not two; the
+start or end of a template (or of an enclosing block) needs none.
+
+```markdown
+««individual
+
+Dear «full name»,
+
+»»
+
+««company
+
+«company name»
+
+»»
+```
+
+One blank line separates the two blocks — it satisfies both the first block's
+after-close and the second's before-open at once, not two in a row.
+
+A footer line needs a blank line before it too, same as `»»` — only its own
+gluing to `»»` is exempt. An empty body needs one blank line, not two.
+
+### Blank Lines in the Output
+
+Blank lines beyond the ones the syntax requires are the author's, and render as
+written — however many there are, before a block, after it, or anywhere in its
+body. A block that renders nothing leaves a single blank line where it stood,
+so the text around it reads as two paragraphs.
+
+```markdown
+Done.
+
+««show note
+
+»»
+
+Bye.
+```
+
+renders, given `{ "ShowNote": false }`, as
+
+```markdown
+Done.
+
+Bye.
+```
+
+The one exception is the very end of the output, where a blank line has nothing
+left to separate. A trailing run of them is trimmed back to a single newline.
+
+A loop renders its items one after another. When every item is a single
+paragraph they follow each other directly, so a body of `- «name»` gives a tight
+markdown list. When any item spans two or more paragraphs, a blank line goes
+between all of them instead, so the repeated chunks stay separate paragraphs
+rather than running together. The `trim` filter (see Filters, below) overrides
+this and keeps the items tight.
+
+```markdown
+««items
+
+- «name»
+
+»»
+```
+
+renders, given two items, as
+
+```markdown
+- alpha
+- beta
 ```
 
 ### Resolving the Block Name
@@ -802,6 +825,42 @@ Given `nickname` is missing entirely, this renders `N/A`; given
 `nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
 reason as `upper`/`lower` — it's a direct string substitution, not a
 wrapper around a host-specific parsing/formatting primitive.
+
+### Trim
+
+`trim` strips the newlines around a value, leaving the text inside it
+untouched. Its use is as a block footer, where it drops the blank line each
+iteration is otherwise padded with, so the block renders as one run of lines
+rather than one paragraph per item (see Blocks, above, for when that padding
+appears at all).
+
+```markdown
+««tags
+
+«name»
+
+«««featured
+
+(featured)
+
+»»»
+
+trim»»
+```
+
+renders, given a featured `alpha` and a plain `beta`, as
+
+```markdown
+alpha
+
+(featured)
+beta
+```
+
+Without `trim`, a blank line would sit between `(featured)` and `beta`,
+because one of the items spans two paragraphs. It's guaranteed for the same
+reason as `upper`/`lower` — it only removes characters, and it's the author's
+only handle on a whitespace rule the language itself defines.
 
 Other utility filters — formatting a date, a currency amount, truncating text,
 and so on — are commonly provided but implementation-defined, not part of this

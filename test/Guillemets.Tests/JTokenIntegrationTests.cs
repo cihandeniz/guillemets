@@ -15,7 +15,7 @@ public class JTokenIntegrationTests
         actual.ShouldBe("Hello Alice!");
     }
 
-    [Test, Ignore("not yet implemented")]
+    [Test]
     public void Render_produces_customer_offer_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");
@@ -28,7 +28,7 @@ public class JTokenIntegrationTests
         template.Render(data).ShouldBe(File.ReadAllText(expectedPath));
     }
 
-    [Test, Ignore("not yet implemented")]
+    [Test]
     public void Render_produces_almost_errors_integration_output()
     {
         var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");

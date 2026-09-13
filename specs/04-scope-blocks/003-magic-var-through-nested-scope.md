@@ -1,3 +1,5 @@
 Acme Inc.: Springfield
-(head office)
+
+> (head office)
+
 Globex Corp.: Shelbyville

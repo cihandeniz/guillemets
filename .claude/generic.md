@@ -219,6 +219,12 @@ inside internal working docs themselves.
 - Every `static` member — constant, field, or method alike — goes at the top
   of its class, above all instance members, rather than next to whichever
   instance code happens to use it.
+- Extension methods use C# 14's `extension(Receiver name) { ... }` block
+  rather than a `this`-prefixed first parameter. Members inside the block
+  drop both `static` and `this`. Use a second block when a different
+  receiver name reads better for some of the members (`extension(Token
+  close)` alongside `extension(Token token)`) rather than settling for one
+  vague name across all of them.
 - Naming: private instance fields are `_camelCase`; any `static` field,
   regardless of accessibility, is `SCREAMING_CASE` (a custom rule, since
   standard "static fields start uppercase" conventions would otherwise

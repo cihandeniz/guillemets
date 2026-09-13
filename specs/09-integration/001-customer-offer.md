@@ -1,6 +1,5 @@
 # Quote #2026-0711
 
-
 **Customer:** representatives of Acme Consulting Inc.
 **Date:** 2026-07-11
 **Valid Until:** 2026-08-11

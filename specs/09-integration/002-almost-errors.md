@@ -16,9 +16,9 @@ No reviewers listed.
 Nobody has approved yet.
 
 Approvers on file:
+
 - join: not a footer, just this item's caption — Bob
 - join: not a footer, just this item's caption — Carol
-
 
 Single tag: urgent
 No tags: 

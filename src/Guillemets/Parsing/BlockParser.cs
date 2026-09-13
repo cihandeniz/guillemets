@@ -9,13 +9,6 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
 {
     const int BLANK_LINE = 2;
 
-    static void SwallowTrailingBlankLine(List<IRenderable> body)
-    {
-        if (body is not [.., LiteralNode last]) { return; }
-
-        body[^1] = last.WithoutTrailingNewline();
-    }
-
     readonly Lazy<BodyParser> _lazyBodyParser = _registry.GetLazy<BodyParser>();
     readonly Lazy<PropertyChainParser> _lazyPropertyChainParser = _registry.GetLazy<PropertyChainParser>();
 
@@ -74,8 +67,6 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         {
             _tokens.Current.ValidateAsBlockClose();
         }
-
-        SwallowTrailingBlankLine(body);
 
         return body;
     }

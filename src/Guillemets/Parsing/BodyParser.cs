@@ -26,7 +26,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         var nodes = new List<IRenderable>();
         while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse))
         {
-            if (insideBlock && _tokens.Current.Position.AtLineStart && TryParseFooter(out footer)) { break; }
+            if (insideBlock && _tokens.Current.Position.AtLineStart && TryParseFooter(_tokens.Current, out footer)) { break; }
 
             nodes.Add(ParseNode());
         }
@@ -43,7 +43,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         throw new TemplateParseException($"Unexpected token '{_tokens.Current.Kind}'", _tokens.Current.Position);
     }
 
-    bool TryParseFooter(out IReadOnlyList<FilterNode> footer)
+    bool TryParseFooter(Token start, out IReadOnlyList<FilterNode> footer)
     {
         footer = [];
         if (!_tokens.LineReaches(CloseBlock)) { return false; }
@@ -59,6 +59,7 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
             return false;
         }
 
+        start.ValidateAsBlockFooter();
         footer = pipeline;
 
         return true;
@@ -67,10 +68,13 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     bool ReachedClose(bool insideBlock) =>
         insideBlock && _tokens.Current.Kind is CloseBlock && _tokens.Current.EndsLine;
 
-    bool ReachedElse(bool stopAtElse) =>
-        stopAtElse &&
-        _tokens.Current.Kind is Else &&
-        _tokens.Current.EndsLine &&
-        _tokens.Current.PrecededByBlankLine &&
-        _tokens.Current.FollowedByBlankLine;
+    bool ReachedElse(bool stopAtElse)
+    {
+        if (!stopAtElse || _tokens.Current.Kind is not Else) { return false; }
+        if (!_tokens.Current.Position.AtLineStart || !_tokens.Current.EndsLine) { return false; }
+
+        _tokens.Current.ValidateAsBlockElse();
+
+        return true;
+    }
 }

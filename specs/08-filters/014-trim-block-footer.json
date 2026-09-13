@@ -1,0 +1,6 @@
+{
+  "Tags": [
+    { "Name": "alpha", "Featured": true },
+    { "Name": "beta", "Featured": false }
+  ]
+}

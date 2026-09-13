@@ -130,21 +130,19 @@ grammar layered on top of a chain or a block's footer.
 
 ### Blank lines around block markers
 
-Every block marker line needs a blank line on each side (see
-[specs.md](specs.md)). `Token` checks that. `BlockParser` removes the whitespace
-the syntax owns, and only that: each marker's own line, plus the blank line just
-inside it. In practice that means the line after `««name`, after `~` and after
-`»»`, and the blank line a body ends with.
+The blank line a block marker needs on either side (see [specs.md](specs.md))
+is enforced and consumed in three places, split by what each one can know:
 
-Everything else survives. `TokenCursor.ConsumeNewlines` takes a fixed count off
-the front of a newline run and leaves the remainder in place as a shorter token.
-Three blank lines in a row still render as three.
+- `Token` answers whether a marker has a blank line beside it, reading the
+  characters around its own slice, and throws when it doesn't.
+- `BlockParser` consumes the newlines the syntax owns. `TokenCursor` takes a
+  fixed count off the front of a newline run and leaves the rest in place, so
+  anything the author wrote beyond the requirement survives untouched.
+- `BlockNode` settles what depends on data — whether the block rendered
+  anything at all, and whether a loop's items read as separate paragraphs.
 
-One part of the rule can't be settled until data arrives: whether the block
-renders anything at all. `BlockParser` records on `BlockNode` whether it
-swallowed the blank line after `»»`. `BlockNode` puts that line back only if its
-body produced output. So a block that renders nothing leaves one blank line
-behind, not two.
+`Template.Render` then trims a trailing run of newlines back to one. That is
+the only place output whitespace is touched after parsing.
 
 ## Ast
 
@@ -155,10 +153,11 @@ Most node types implement `IRenderable`, the one interface `Renderer` walks:
 `BlockNode` for a `««...»»`. Each holds what it needs to render itself — a
 property chain, a nested body of child `IRenderable`s, a filter pipeline.
 
-Two node types are data only and never render themselves. `PropertyChainNode` is
-a resolved property chain with its navigation and negation flags. `FilterNode`
-is one pipeline stage. `Rendering` resolves or applies these rather than calling
-`Render` on them.
+A few node types are data only and never render themselves. `PropertyChainNode`
+is a resolved property chain with its navigation and negation flags.
+`FilterNode` is one pipeline stage. `TableBody` is a loop body already cut into
+heading, repeating row and footer, built once by the `BlockNode` that owns it.
+`Rendering` resolves or applies these rather than calling `Render` on them.
 
 ## Rendering
 

@@ -8,7 +8,7 @@ internal static class Symbols
     const char OPEN = '«';
     internal const char CLOSE = '»';
     const char COLON = ':';
-    const char TILDE = '~';
+    internal const char TILDE = '~';
     const char BANG = '!';
     const char EQUALS = '=';
     const char SPACE = ' ';

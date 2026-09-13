@@ -5,8 +5,6 @@ namespace Guillemets.Tokenization;
 
 internal readonly record struct Token(TokenKind Kind, string Source, int Start, int Length, Position Position)
 {
-    static readonly string CLOSE_BLOCK = new(Symbols.CLOSE, 2);
-
     public bool IsText =>
         Kind is not (Open or OpenBlock);
 
@@ -42,51 +40,6 @@ internal readonly record struct Token(TokenKind Kind, string Source, int Start, 
             Length = Length - count,
             Position = Position.NextLine(count),
         };
-
-    public void ValidateAsBlockOpen()
-    {
-        if (PrecededByBlankLine) { return; }
-
-        throw new TemplateParseException("Expected a blank line right before the block's opening", Position);
-    }
-
-    public void ValidateAsBlockClose()
-    {
-        if (!Position.AtLineStart)
-        {
-            throw new TemplateParseException(
-                $"A literal may not share a line with the block's closing {CLOSE_BLOCK}",
-                Position
-            );
-        }
-
-        if (PrecededByBlankLine) { return; }
-
-        throw new TemplateParseException(
-            $"Expected a blank line right before the block's closing {CLOSE_BLOCK}",
-            Position
-        );
-    }
-
-    public void ValidateBlankLineAfterBlockClose()
-    {
-        if (FollowedByBlankLine) { return; }
-
-        throw new TemplateParseException(
-            $"Expected a blank line right after the block's closing {CLOSE_BLOCK}",
-            Position.NextLine()
-        );
-    }
-
-    public void ValidateDepthMatches(Token open)
-    {
-        if (Depth == open.Depth) { return; }
-
-        throw new TemplateParseException(
-            $"Block opened with {open.Text} but closed with {Text}",
-            Position
-        );
-    }
 
     bool LineBreakBefore(int distance) =>
         Start - distance < 0 || Source[Start - distance] == NEWLINE;
