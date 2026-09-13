@@ -91,6 +91,9 @@ C#/.NET, targeting `net10.0`. Layout:
   (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `SpecTests.cs`
   matches a case to its template by leading digits. Group folders are numbered
   on disk for sort order only — refer to fixtures by name in prose, not number.
+  Feature groups run from `00-` upwards and `99-errors` sits deliberately at
+  the end, so a new feature group appends at the next free number without
+  anything being renumbered. Keep `99-errors` last; don't close the gap.
   `08-filters` only holds cases for the mechanism `docs/specs.md` actually
   guarantees (`join`/`join last`/`upper`/`lower`/`default`); a case whose
   expected output depends on `date`/`currency`/`truncate`'s exact .NET
