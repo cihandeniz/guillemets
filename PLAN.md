@@ -1,5 +1,14 @@
 # Implementation plan
 
+> [!NOTE]
+>
+> ## Migration Notice
+>
+> Plan is moved to github and this file is now obsolete. Check current git
+> branch using, find the matching PR in [pulls][] and get its description. Bring
+> that task list to below if not brought already, and fix tasks one by one.
+> (Follow issue links when a task contains them).
+
 Living roadmap for building the guillemets engine against the `/specs` fixture
 corpus. This file shrinks as milestones complete — it's *what's left*, not a
 history of what's done. Agent/contributor working file, not published
@@ -14,10 +23,4 @@ Language/implementation, P1, P2, and P3 (release readiness) milestones are
 all done. Nothing left blocks release — only the Explicitly deferred items
 below remain, none of which are release blockers.
 
-## Next
-
-Check [Maintenance Issues][] for items to do. If none check [Idea Issues][] and
-ask which one to implement.
-
-[Maintenance Issues]: https://github.com/mouseless/guillemets/issues?q=is%3Aissue%20state%3Aopen%20milestone%3Aideas
-[Idea Issues]: https://github.com/mouseless/guillemets/issues?q=is%3Aissue%20state%3Aopen%20milestone%3Aidea
+[pulls]: https://github.com/mouseless/guillemets/pulls
