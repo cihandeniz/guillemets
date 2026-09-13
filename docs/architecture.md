@@ -83,6 +83,9 @@ One `Newline` token covers a whole run of consecutive newlines. Its length is
 how many the author wrote. `Parsing` can then take only the newlines a block
 marker is owed and leave the rest alone.
 
+The parse rules that read those answers and throw live in `TokenExtensions`,
+next door, rather than on `Token` itself.
+
 `Token` also answers the three questions that consumption needs — `EndsLine`,
 `PrecededByBlankLine`, `FollowedByBlankLine` — by reading the characters either
 side of its own slice. No parser reaches into the template string.

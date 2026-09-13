@@ -132,8 +132,8 @@ per-adapter sibling projects — simpler while there's only a handful, and
   or more (`««`, `«««`, ...) opens a block, closed by the exact same run length
   or `TemplateParseException` is thrown — depth beyond 2 is cosmetic (fixtures
   go one guillemet deeper per nesting level, for readability, not because the
-  parser requires it), validated via
-  `OpenBlockToken.Depth`/`CloseBlockToken.Depth` in `Parser.ParseBlock`.
+  parser requires it), validated via `Token.Depth` in
+  `TokenExtensions.ValidateDepthMatches`.
 - **Property access**: `:` drills into objects and projects over lists
   (`.Select()`); chained across lists it flattens (`.SelectMany()`).
 - **Scope navigation**: `.: name` pins resolution to the current scope only,
@@ -142,6 +142,12 @@ per-adapter sibling projects — simpler while there's only a handful, and
 - **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type of
   `name` — boolean → if, list → loop, object → scope. No keywords, same syntax
   for all three. Variable lookup falls back to enclosing scopes.
+- **Blank lines**: a blank line MUST surround every `««name`, `~` and `»»`, and
+  the marker line plus the blank just inside it is swallowed; everything else
+  the author wrote survives. A loop separates its items with a blank line only
+  when one of them spans paragraphs. See "Blank Lines in the Output" in
+  `docs/specs.md` — it is the whole contract, and the rendering rules are
+  easy to re-derive wrongly from the code alone.
 - **Else**: `~` on its own line splits truthy/falsy (or non-null/null) branches
   inside a block.
 - **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
@@ -157,8 +163,9 @@ per-adapter sibling projects — simpler while there's only a handful, and
   another filter, no parens — `«expr / filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
   `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
-  `join`, `join last`, `upper`, `lower`, `default`. New built-in filter names
-  should read as verbs (an action performed on a value) rather than nouns —
+  `join`, `join last`, `upper`, `lower`, `default`, `trim`. New built-in filter
+  names should read as verbs (an action performed on a value) rather than
+  nouns —
   `truncate`, not `length` — but this is a default, not absolute: a short,
   conventional name matching what other templating engines call the same
   operation can win, as `upper`/`lower` did over `uppercase`/`lowercase`.
