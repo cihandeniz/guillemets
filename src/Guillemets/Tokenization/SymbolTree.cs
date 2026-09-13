@@ -65,12 +65,12 @@ internal class SymbolTree(TokenKind? kind = null)
         var child = _children.GetValueOrDefault(text[0]);
         if (child is null) { return false; }
 
-        kind = child.ExtendMatch(text, 1, position, out length);
+        kind = child.ExtendMatch(text, 1, 1, position, out length);
 
         return kind is not null;
     }
 
-    TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, Position startPosition, out int length)
+    TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, int runLength, Position startPosition, out int length)
     {
         length = index;
         if (index >= text.Length) { return _kind; }
@@ -78,7 +78,8 @@ internal class SymbolTree(TokenKind? kind = null)
         var nextChild = _children.GetValueOrDefault(text[index]);
         if (nextChild is null) { return _kind; }
 
-        if (ReferenceEquals(nextChild, this) && _repeatLimited && index + 1 > MAX_REPEAT)
+        var nextRunLength = text[index] == text[index - 1] ? runLength + 1 : 1;
+        if (ReferenceEquals(nextChild, this) && _repeatLimited && nextRunLength > MAX_REPEAT)
         {
             throw new TemplateParseException(
                 $"A run of the same guillemet may not exceed {MAX_REPEAT} deep - reuse a depth instead of nesting further",
@@ -86,7 +87,7 @@ internal class SymbolTree(TokenKind? kind = null)
             );
         }
 
-        var extended = nextChild.ExtendMatch(text, index + 1, startPosition, out var extendedLength);
+        var extended = nextChild.ExtendMatch(text, index + 1, nextRunLength, startPosition, out var extendedLength);
         if (extended is null) { return _kind; }
 
         length = extendedLength;

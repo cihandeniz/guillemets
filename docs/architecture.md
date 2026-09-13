@@ -51,6 +51,9 @@ flowchart TB
     Open --> OpenOpen["« (loops on «)"] --> OpenBlockKind["OpenBlock\n(depth = run length)"]
     Root --> Close["»"] --> CloseKind["Close\n(literal text if nothing's open)"]
     Close --> CloseClose["» (loops on »)"] --> CloseBlockKind["CloseBlock\n(depth = run length)"]
+    OpenOpen --> OpenTrim["~"] --> OpenBlockKind
+    Root --> Tilde["~"] --> ElseKind["Else"]
+    Tilde --> TildeClose["»» (loops on »)"] --> CloseBlockKind
     Root --> NewlineChar["newline (loops on newline)"] --> NewlineKind["Newline\n(run length = how many)"]
     Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedKind["Escaped literal"]
     Root --> Colon[":"] --> BareColonKind["BareColon\n(malformed-filter signal)"]
@@ -82,6 +85,11 @@ asked, so a kind nobody reads `.Text` from never allocates a string.
 One `Newline` token covers a whole run of consecutive newlines. Its length is
 how many the author wrote. `Parsing` can then take only the newlines a block
 marker is owed and leave the rest alone.
+
+A block marker's optional `~` (`««~`, `~»»`) is a child hung off the repeating
+node, so it matches at any depth without the tree growing a branch per depth. It
+does not change the token's kind — `Token` reports it as
+`TrimsBlankLineBefore`/`TrimsBlankLineAfter` and subtracts it from `Depth`.
 
 The parse rules that read those answers and throw live in `TokenExtensions`,
 next door, rather than on `Token` itself.
@@ -120,7 +128,10 @@ never a hazard.
 
 `PropertyChainParser` owns the scope-navigation syntax (`.: ` and `..: `), which
 it parses up front, before the rest of a chain. `FilterParser` is a small
-grammar layered on top of a chain or a block's footer.
+grammar layered on top of a chain or a block's footer. It reads a stage's name
+and its value with two different stop sets: a name ends at the first symbol,
+while a value runs to the next ` / ` or closing guillemet and treats every other
+symbol as plain text.
 
 > [!NOTE]
 >
@@ -143,6 +154,13 @@ is enforced and consumed in three places, split by what each one can know:
   anything the author wrote beyond the requirement survives untouched.
 - `BlockNode` settles what depends on data — whether the block rendered
   anything at all, and whether a loop's items read as separate paragraphs.
+
+A `~` marker only ever subtracts one newline from that, at whichever of those
+points already owns it. The blank line before an opening belongs to the
+enclosing text, so `TextParser` drops it while emitting the run; the one after a
+closing is already swallowed by `BlockParser`, so `BlockNode` simply doesn't put
+it back. Neither path removes a line break, which is why two markers sharing one
+blank line cannot join the lines around it.
 
 `Template.Render` then trims a trailing run of newlines back to one. That is
 the only place output whitespace is touched after parsing.

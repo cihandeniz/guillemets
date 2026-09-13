@@ -8,7 +8,6 @@ public class SpecTests
 {
     static readonly HashSet<string> IGNORED_FIXTURES =
         [
-            "08-filters/014-trim-block-footer",
             "10-whitespace/002-line-wrap-drops-required-space",
         ];
 

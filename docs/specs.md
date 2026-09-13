@@ -257,8 +257,8 @@ A loop renders its items one after another. When every item is a single
 paragraph they follow each other directly, so a body of `- «name»` gives a tight
 markdown list. When any item spans two or more paragraphs, a blank line goes
 between all of them instead, so the repeated chunks stay separate paragraphs
-rather than running together. The `trim` filter (see Filters, below) overrides
-this and keeps the items tight.
+rather than running together. Trimming a nested block's blank lines (see
+below) can change which of the two cases an item falls into.
 
 ```markdown
 ««items
@@ -274,6 +274,96 @@ renders, given two items, as
 - alpha
 - beta
 ```
+
+### Trimming Blank Lines Around a Block
+
+A `~` written inside a block marker removes the blank line on that marker's
+outer side. `««~` drops the blank line before the block's opening, `~»»` drops
+the one after its closing. Each marker acts on its own side, so write both to
+close the gap above and below, or one to close a single side.
+
+```markdown
+Tags:
+
+««~tags
+
+- «name»
+
+~»»
+
+Done.
+```
+
+renders, given two tags, as
+
+```markdown
+Tags:
+- alpha
+- beta
+Done.
+```
+
+The blank lines stay REQUIRED in the template. `~` changes what is rendered,
+never what may be written — a block carrying one is laid out exactly like any
+other block.
+
+Because the marker sits inside the guillemets, it never competes with the
+negation, scope-navigation or footer slots: `««~!active`, `««~.: items` and
+`join: , ~»»` all parse. A footer value that itself ends in `~` needs the `\~`
+escape (see Escaping, below) so it isn't read as the marker — `join: \~~»»`
+joins with a literal `~` and still trims. This is the same escaping a value
+ending in `»` or containing `/` already needs.
+
+> [!NOTE]
+>
+> `~` is also the else marker (see Else, below), but the two never collide. An
+> else `~` stands alone on its line; a trim `~` is written flush against a
+> guillemet run. Longest match decides, so `~»»` is always a trimmed close and
+> a lone `~` is always an else.
+
+`~` binds to the guillemet run, so depth costs nothing extra — `«««~` opens a
+depth-3 block and `~»»»` closes one. The marker plays no part in depth
+matching: a block opened with `«««~` closes with either `»»»` or `~»»»`.
+
+Trimming composes with the rules above rather than overriding them. A trimmed
+nested block no longer leaves a blank line inside the item that encloses it, so
+that item may stop spanning paragraphs — which in turn decides whether the loop
+separates its items:
+
+```markdown
+««tags
+
+«name»
+
+«««~featured
+
+(featured)
+
+~»»»
+
+»»
+```
+
+renders, given a featured `alpha` and a plain `beta`, as
+
+```markdown
+alpha
+(featured)
+beta
+```
+
+Without the inner `~` markers the `alpha` item would span two paragraphs, and a
+blank line would then separate every item.
+
+Three rules settle the edges:
+
+- A blank line that two trimmed markers share is removed once, not twice.
+  Trimming never joins two lines into one.
+- `~` removes only the single blank line the syntax requires. Blank lines
+  beyond it are the author's and still render, as everywhere else.
+- A marker with no blank line to remove — at the start or end of the template,
+  or flush against an enclosing block's boundary — does nothing, and is not an
+  error.
 
 ### Resolving the Block Name
 
@@ -725,8 +815,10 @@ same as property access above — it marks where a filter's value starts.
 >
 > Whatever follows `: `, up to the next ` / ` or the end of the token, is the
 > value exactly as written — nothing is trimmed automatically. `truncate: 80 `
-> keeps its trailing space as part of the value. See Escaping, below, for how to
-> fit a literal `/` or `»`, or an actual newline/tab, inside a value.
+> keeps its trailing space as part of the value. Symbols that carry meaning
+> elsewhere in the language — `~`, `!`, `=`, `: `, `.: `, `..: ` — are plain
+> text inside a value and need no escape. See Escaping, below, for how to fit a
+> literal `/` or `»`, or an actual newline/tab, inside a value.
 
 A filter's value is optional — write the bare name, with no `: value` at all, to
 use its default; what that default resolves to, and whether a bare name is even
@@ -825,42 +917,6 @@ Given `nickname` is missing entirely, this renders `N/A`; given
 `nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
 reason as `upper`/`lower` — it's a direct string substitution, not a
 wrapper around a host-specific parsing/formatting primitive.
-
-### Trim
-
-`trim` strips the newlines around a value, leaving the text inside it
-untouched. Its use is as a block footer, where it drops the blank line each
-iteration is otherwise padded with, so the block renders as one run of lines
-rather than one paragraph per item (see Blocks, above, for when that padding
-appears at all).
-
-```markdown
-««tags
-
-«name»
-
-«««featured
-
-(featured)
-
-»»»
-
-trim»»
-```
-
-renders, given a featured `alpha` and a plain `beta`, as
-
-```markdown
-alpha
-
-(featured)
-beta
-```
-
-Without `trim`, a blank line would sit between `(featured)` and `beta`,
-because one of the items spans two paragraphs. It's guaranteed for the same
-reason as `upper`/`lower` — it only removes characters, and it's the author's
-only handle on a whitespace rule the language itself defines.
 
 Other utility filters — formatting a date, a currency amount, truncating text,
 and so on — are commonly provided but implementation-defined, not part of this

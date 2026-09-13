@@ -37,6 +37,14 @@ inside a fenced snippet, with the exact raw text preserved separately in
 a `<details><summary>Raw output</summary>` block for anyone who wants
 the literal characters.
 
+When adding a symbol to the language, check it against markdown rendering
+of the *template* itself, not just the output — a `.guil.md` gets read on
+GitHub, so a marker that pairs into emphasis/strikethrough (or opens a
+fence) would defeat the point of picking `«»`. `pandoc -f gfm -t html` on
+the fixtures, with a known-positive control, settles it. The blank lines
+#7 requires around block markers are what keep the `~` in `««~`/`~»»`
+alone in its own paragraph, and so unpaired.
+
 When a new template-language feature raises a "what if X doesn't exist /
 goes too far" question (see the general rule in `.claude/generic.md`),
 check first whether resolving to nothing at render time (falsy, like
@@ -145,9 +153,11 @@ per-adapter sibling projects — simpler while there's only a handful, and
 - **Blank lines**: a blank line MUST surround every `««name`, `~` and `»»`, and
   the marker line plus the blank just inside it is swallowed; everything else
   the author wrote survives. A loop separates its items with a blank line only
-  when one of them spans paragraphs. See "Blank Lines in the Output" in
-  `docs/specs.md` — it is the whole contract, and the rendering rules are
-  easy to re-derive wrongly from the code alone.
+  when one of them spans paragraphs. `««~` and `~»»` trim the blank line on a
+  marker's outer side at render time only — the template MUST still be written
+  with it. See "Blank Lines in the Output" and "Trimming Blank Lines Around a
+  Block" in `docs/specs.md` — together they are the whole contract, and the
+  rendering rules are easy to re-derive wrongly from the code alone.
 - **Else**: `~` on its own line splits truthy/falsy (or non-null/null) branches
   inside a block.
 - **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
@@ -162,8 +172,11 @@ per-adapter sibling projects — simpler while there's only a handful, and
 - **Filters**: `name: value` chained with ` / ` after a property chain or
   another filter, no parens — `«expr / filter: value»`. `: ` (colon+space)
   is a fixed token, same as property access; nothing after it is trimmed.
+  A value is text to the next ` / ` or closing guillemet, so `~`/`!`/`=`/
+  `: ` need no escape there; only `«`, `»` and ` / ` do. A filter *name*
+  still stops at any symbol.
   `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
-  `join`, `join last`, `upper`, `lower`, `default`, `trim`. New built-in filter
+  `join`, `join last`, `upper`, `lower`, `default`. New built-in filter
   names should read as verbs (an action performed on a value) rather than
   nouns —
   `truncate`, not `length` — but this is a default, not absolute: a short,

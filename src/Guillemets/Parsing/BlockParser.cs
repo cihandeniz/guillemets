@@ -39,11 +39,13 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         close.ValidateBlankLineAfterBlockClose();
         _tokens.Advance();
 
+        var swallowedBlankLine = _tokens.ConsumeNewlines(BLANK_LINE) == BLANK_LINE;
+
         return new BlockNode(properties, truthy,
             ElseBody: falsy,
             VariableName: variableName,
             Footer: footer,
-            SwallowedBlankLineAfterClose: _tokens.ConsumeNewlines(BLANK_LINE) == BLANK_LINE
+            BlankLineAfterClose: swallowedBlankLine && !close.TrimsBlankLineAfter
         );
     }
 

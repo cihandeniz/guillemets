@@ -11,14 +11,14 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     IReadOnlyList<IRenderable>? ElseBody = null,
     string? VariableName = null,
     IReadOnlyList<FilterNode>? Footer = null,
-    bool SwallowedBlankLineAfterClose = false
+    bool BlankLineAfterClose = false
 ) : IRenderable
 {
     static readonly string BLANK_LINE = new(NEWLINE, 2);
     static readonly string BLANK_LINE_SEPARATOR = NEWLINE.ToString();
 
     static string WithoutBodyPadding(string item) =>
-        item.EndsWith(NEWLINE) ? item[..^1] : item;
+        item.EndsWith(BLANK_LINE, StringComparison.Ordinal) ? item[..^1] : item;
 
     static bool SpansParagraphs(string body) =>
         body.Contains(BLANK_LINE, StringComparison.Ordinal);
@@ -37,7 +37,7 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     }
 
     string RestoreBlankLineAfterClose(string rendered) =>
-        SwallowedBlankLineAfterClose && rendered.Length > 0 ? rendered + NEWLINE : rendered;
+        BlankLineAfterClose && rendered.Length > 0 ? rendered + NEWLINE : rendered;
 
     string JoinItems(IEnumerable<string> items)
     {

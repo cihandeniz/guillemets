@@ -1,6 +1,8 @@
 using Guillemets.Ast;
 using Guillemets.Tokenization;
 
+using static Guillemets.Tokenization.TokenKind;
+
 namespace Guillemets.Parsing;
 
 internal class TextParser(TokenCursor _tokens)
@@ -9,6 +11,9 @@ internal class TextParser(TokenCursor _tokens)
     {
         _tokens.Advance();
 
-        return new LiteralNode(token.Text);
+        return new LiteralNode(PrecedesTrimmedOpen(token) ? token.Text[..^1] : token.Text);
     }
+
+    bool PrecedesTrimmedOpen(Token token) =>
+        token.Kind is Newline && !_tokens.AtEnd && _tokens.Current.TrimsBlankLineBefore;
 }

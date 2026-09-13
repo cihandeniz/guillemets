@@ -23,9 +23,15 @@ internal readonly record struct Token(TokenKind Kind, string Source, int Start, 
     public bool FollowedByBlankLine =>
         LineBreakAfter(0) && LineBreakAfter(1);
 
+    public bool TrimsBlankLineBefore =>
+        Kind is OpenBlock && Source[End - 1] == Symbols.TILDE;
+
+    public bool TrimsBlankLineAfter =>
+        Kind is CloseBlock && Source[Start] == Symbols.TILDE;
+
     public int Depth => Kind switch
     {
-        OpenBlock or CloseBlock => Length,
+        OpenBlock or CloseBlock => Length - TrimMarkerLength,
         Literal or Escaped or Open or Close or Colon
             or BareColon or LocalScope or ParentScope or FilterDelimiter
             or Newline or Else or Negation or Assign =>
@@ -40,6 +46,9 @@ internal readonly record struct Token(TokenKind Kind, string Source, int Start, 
             Length = Length - count,
             Position = Position.NextLine(count),
         };
+
+    int TrimMarkerLength =>
+        TrimsBlankLineBefore || TrimsBlankLineAfter ? 1 : 0;
 
     bool LineBreakBefore(int distance) =>
         Start - distance < 0 || Source[Start - distance] == NEWLINE;

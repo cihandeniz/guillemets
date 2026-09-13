@@ -24,8 +24,9 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         Newline => " ",
         Escaped => token.Text,
         Literal => unescape ? Unescape(token.Text) : token.Text,
-        Open or OpenBlock or Close or CloseBlock or Colon or BareColon or LocalScope
-            or ParentScope or FilterDelimiter or Else or Negation or Assign =>
+        Colon or BareColon or LocalScope or ParentScope or Else or Negation or Assign =>
+            token.Text,
+        Open or OpenBlock or Close or CloseBlock or FilterDelimiter =>
             throw new InvalidOperationException($"Unexpected token '{token.Kind}' in filter text."),
         _ => throw new ArgumentOutOfRangeException(nameof(token), token.Kind, "Unrecognized token kind."),
     };
@@ -88,7 +89,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     bool TryParseStage(bool stopAtNewline, out StageResult result)
     {
         var position = _tokens.Current.Position;
-        var name = ReadText(unescape: false, stopAtNewline).Trim();
+        var name = ReadName(stopAtNewline).Trim();
         if (!_filters.TryGet(name, out var filter))
         {
             result = new(null, name, position);
@@ -114,13 +115,16 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         return true;
     }
 
-    string ReadValue(bool stopAtNewline) =>
-        ReadText(unescape: true, stopAtNewline);
+    string ReadName(bool stopAtNewline) =>
+        ReadText(unescape: false, stopAtNewline, inValue: false);
 
-    string ReadText(bool unescape, bool stopAtNewline)
+    string ReadValue(bool stopAtNewline) =>
+        ReadText(unescape: true, stopAtNewline, inValue: true);
+
+    string ReadText(bool unescape, bool stopAtNewline, bool inValue)
     {
         var builder = new StringBuilder();
-        while (!_tokens.AtEnd && ContinuesText(stopAtNewline))
+        while (!_tokens.AtEnd && ContinuesText(stopAtNewline, inValue))
         {
             builder.Append(SegmentText(_tokens.Current, unescape));
             _tokens.Advance();
@@ -129,6 +133,12 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         return builder.ToString();
     }
 
-    bool ContinuesText(bool stopAtNewline) =>
-        _tokens.Current.Kind is Literal or Escaped || (_tokens.Current.Kind is Newline && !stopAtNewline);
+    bool ContinuesText(bool stopAtNewline, bool inValue) => _tokens.Current.Kind switch
+    {
+        Newline => !stopAtNewline,
+        Literal or Escaped => true,
+        Open or OpenBlock or Close or CloseBlock or FilterDelimiter => false,
+        Colon or BareColon or LocalScope or ParentScope or Else or Negation or Assign => inValue,
+        _ => throw new ArgumentOutOfRangeException(nameof(inValue), _tokens.Current.Kind, "Unrecognized token kind."),
+    };
 }
