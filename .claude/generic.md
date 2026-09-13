@@ -109,6 +109,18 @@ inside internal working docs themselves.
 - Known flaky MSBuild issue in this sandbox: `MSB3374` (can't set
   last-write-time on an `obj/**/*.Up2Date` file) — not a real problem,
   just retry the build once.
+- Sandbox gotcha: the repo directory is owned by the human user, but
+  Claude runs as a different OS user, so plain `git` fails with "detected
+  dubious ownership" until `make init`/`make fix-owners` (see
+  `.claude/specific.md`) chowns it — that needs an interactive `sudo`
+  password, so ask the user to run it rather than attempting it. Until
+  then (or for a one-off read before asking), `git -c safe.directory='*'
+  <command>` works around it without touching any config file — prefer
+  this over `git config --global --add safe.directory`, which would be a
+  persisted config write and is off-limits per the Git Safety Protocol.
+  `gh` is unauthenticated in this sandbox too; fall back to the public
+  GitHub REST API via `curl` for read-only lookups (PRs, issues) on a
+  public repo.
 
 ## C# code style
 

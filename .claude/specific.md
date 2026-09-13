@@ -48,7 +48,13 @@ and Resolving the Block Name in `docs/specs.md`) before reaching for a
 
 **Cold start?** Find the GitHub PR matching the current branch (see
 `.claude/generic.md`) for implementation status and remaining tasks, then
-read `docs/architecture.md` for how the engine is actually built.
+read `docs/architecture.md` for how the engine is actually built. The
+project's canonical repo is `mouseless/guillemets` — PRs and issues live
+there regardless of what a local checkout's `origin` happens to point to
+(a contributor's own fork). Check `mouseless/guillemets` for the PR
+matching the current branch, not whatever `origin`/`git remote -v` shows.
+A PR task phrased as "Fixes #N" is a GitHub issue on that same repo; read
+the issue itself for the real detail behind the one-line task.
 
 This file and `.claude/generic.md` are agent/contributor working files,
 not published documentation — neither should be linked from `README.md`

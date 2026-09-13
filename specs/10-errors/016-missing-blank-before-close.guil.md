@@ -1,7 +1,4 @@
-Before.
-
 ««company
 
 test
-
 »»
