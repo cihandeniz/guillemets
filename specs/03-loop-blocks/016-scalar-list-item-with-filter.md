@@ -1,0 +1,2 @@
+- PHILOSOPHY false
+- WISDOM true
