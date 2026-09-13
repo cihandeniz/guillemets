@@ -821,6 +821,32 @@ value — `\n` there is just the two characters `\` and `n`.
 > nothing after it is re-scanned for another one. Writing `truncate: 80: extra`
 > doesn't need escaping to keep `: extra` as part of the value; it already is.
 
+## Comments
+
+No dedicated comment syntax — a template is markdown, and markdown already
+has one. An HTML comment isn't `«»` syntax, so the engine treats it as
+ordinary literal text and passes it through unchanged; it renders into the
+output exactly as written and disappears only once that markdown is itself
+turned into HTML, the same as any HTML comment authored by hand.
+
+```markdown
+<!-- reminder: confirm pricing before this goes out -->
+Hello, «name»!
+```
+
+renders as
+
+```markdown
+<!-- reminder: confirm pricing before this goes out -->
+Hello, Ada!
+```
+
+> [!TIP]
+>
+> The comment is still present in the rendered markdown — Guillemets never
+> strips it. Only a markdown-to-HTML renderer downstream makes it invisible,
+> the same way it would for a comment authored directly in markdown.
+
 ## Glossary & Localization
 
 Template authors write variable names as natural, space-separated words —
