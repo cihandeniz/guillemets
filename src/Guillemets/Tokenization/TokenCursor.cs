@@ -14,6 +14,17 @@ internal class TokenCursor(List<Token> _tokens)
     public void Rewind(int position) =>
         _position = position;
 
+    public int ConsumeNewlines(int count)
+    {
+        if (AtEnd || Current.Kind is not TokenKind.Newline) { return 0; }
+
+        var available = Math.Min(count, Current.Length);
+        if (available == Current.Length) { Advance(); }
+        else { _tokens[_position] = Current.Skip(available); }
+
+        return available;
+    }
+
     public bool LineReaches(TokenKind kind)
     {
         for (var i = _position; i < _tokens.Count; i++)

@@ -7,7 +7,8 @@ namespace Guillemets.Ast;
 internal record LiteralNode(string Text)
     : IRenderable
 {
-    public bool EndsAtLineEnd { get; } = Text.EndsWith(NEWLINE);
+    public LiteralNode WithoutTrailingNewline() =>
+        Text.EndsWith(NEWLINE) ? new(Text[..^1]) : this;
 
     public string Render(RenderContext context, Scope scope) =>
         Text;

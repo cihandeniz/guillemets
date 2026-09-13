@@ -77,7 +77,6 @@ internal class PropertyChainParser(TokenCursor _tokens)
             if (stopAtNewline && _tokens.Current.Kind is Newline)
             {
                 Flush(buffer, chain);
-                _tokens.Advance();
 
                 break;
             }

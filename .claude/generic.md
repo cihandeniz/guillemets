@@ -216,6 +216,9 @@ inside internal working docs themselves.
   rather than disabling `GenerateDocumentationFile` outright — that flag
   also gates `IDE0005` (unnecessary usings), so turning it off silently
   drops that check too.
+- Every `static` member — constant, field, or method alike — goes at the top
+  of its class, above all instance members, rather than next to whichever
+  instance code happens to use it.
 - Naming: private instance fields are `_camelCase`; any `static` field,
   regardless of accessibility, is `SCREAMING_CASE` (a custom rule, since
   standard "static fields start uppercase" conventions would otherwise

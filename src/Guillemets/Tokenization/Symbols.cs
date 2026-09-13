@@ -6,7 +6,7 @@ namespace Guillemets.Tokenization;
 internal static class Symbols
 {
     const char OPEN = '«';
-    const char CLOSE = '»';
+    internal const char CLOSE = '»';
     const char COLON = ':';
     const char TILDE = '~';
     const char BANG = '!';
@@ -23,7 +23,7 @@ internal static class Symbols
             .Add([OPEN], Open)
             .Add([OPEN, OPEN], OpenBlock, repeat: true)
             .Add([CLOSE], Close)
-            .Add([CLOSE, CLOSE], CloseBlock, repeat: true, newline: true)
+            .Add([CLOSE, CLOSE], CloseBlock, repeat: true)
             .Add([BACKSLASH, OPEN], Escaped)
             .Add([BACKSLASH, CLOSE], Escaped)
             .Add([BACKSLASH, BACKSLASH], Escaped)
@@ -33,8 +33,8 @@ internal static class Symbols
             .Add([DOT, COLON, SPACE], LocalScope)
             .Add([DOT, DOT, COLON, SPACE], ParentScope)
             .Add([SPACE, SLASH, SPACE], FilterDelimiter)
-            .Add([TILDE], Else, newline: true)
+            .Add([TILDE], Else)
             .Add([BANG], Negation)
             .Add([EQUALS], Assign)
-            .Add([NEWLINE], Newline);
+            .Add([NEWLINE], Newline, repeat: true, limitRepeat: false);
 }

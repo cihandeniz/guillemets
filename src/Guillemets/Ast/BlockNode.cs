@@ -10,22 +10,23 @@ namespace Guillemets.Ast;
 internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderable> Body,
     IReadOnlyList<IRenderable>? ElseBody = null,
     string? VariableName = null,
-    IReadOnlyList<FilterNode>? Footer = null
+    IReadOnlyList<FilterNode>? Footer = null,
+    bool SwallowedBlankLineAfterClose = false
 ) : IRenderable
 {
-    public bool EndsAtLineEnd =>
-        true;
-
     public string Render(RenderContext context, Scope scope)
     {
         var items = ResolveBehavior(context, scope).Render(context, Body, ElseBody);
         var rendered = string.Concat(ApplyFooter(items));
-        if (VariableName is null) { return rendered; }
+        if (VariableName is null) { return RestoreBlankLineAfterClose(rendered); }
 
         scope.DefineVariable(VariableName, rendered.TrimEnd(NEWLINE));
 
         return string.Empty;
     }
+
+    string RestoreBlankLineAfterClose(string rendered) =>
+        SwallowedBlankLineAfterClose && rendered.Length > 0 ? rendered + NEWLINE : rendered;
 
     IEnumerable<string> ApplyFooter(IEnumerable<string> items)
     {

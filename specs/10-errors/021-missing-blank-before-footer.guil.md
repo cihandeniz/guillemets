@@ -1,0 +1,4 @@
+««items
+
+- «name»
+join: , »»

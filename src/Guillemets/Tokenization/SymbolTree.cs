@@ -9,8 +9,8 @@ internal class SymbolTree(TokenKind? kind = null)
 
     readonly Dictionary<char, SymbolTree> _children = [];
     TokenKind? _kind = kind;
-    TokenKind? _kindAtEnd;
     SearchValues<char>? _leadingChars;
+    bool _repeatLimited;
 
     public SearchValues<char> LeadingChars =>
         _leadingChars ??= SearchValues.Create([.. _children.Keys]);
@@ -20,26 +20,21 @@ internal class SymbolTree(TokenKind? kind = null)
 
     public SymbolTree Add(ReadOnlySpan<char> path, TokenKind kind,
         bool repeat = false,
-        bool newline = false
+        bool limitRepeat = true
     )
     {
-        var node = AddPath(path, newline ? null : kind, repeat);
-        if (newline)
-        {
-            node._kindAtEnd = kind;
-            node.AddPath([Position.NEWLINE], kind, false);
-        }
+        AddPath(path, kind, repeat, limitRepeat);
 
         return this;
     }
 
-    SymbolTree AddPath(ReadOnlySpan<char> path, TokenKind? kind, bool repeat)
+    void AddPath(ReadOnlySpan<char> path, TokenKind kind, bool repeat, bool limitRepeat)
     {
         if (path.IsEmpty)
         {
             _kind = kind;
 
-            return this;
+            return;
         }
 
         if (!_children.TryGetValue(path[0], out var child))
@@ -49,14 +44,17 @@ internal class SymbolTree(TokenKind? kind = null)
 
         if (repeat && path.Length == 1)
         {
-            child.Repeat(path[0]);
+            child.Repeat(path[0], limitRepeat);
         }
 
-        return child.AddPath(path[1..], kind, repeat);
+        child.AddPath(path[1..], kind, repeat, limitRepeat);
     }
 
-    void Repeat(char symbol) =>
+    void Repeat(char symbol, bool limited)
+    {
         _children[symbol] = this;
+        _repeatLimited = limited;
+    }
 
     public bool TryMatchSymbol(ReadOnlySpan<char> text, Position position, [NotNullWhen(true)] out TokenKind? kind, out int length)
     {
@@ -75,12 +73,12 @@ internal class SymbolTree(TokenKind? kind = null)
     TokenKind? ExtendMatch(ReadOnlySpan<char> text, int index, Position startPosition, out int length)
     {
         length = index;
-        if (index >= text.Length) { return _kindAtEnd ?? _kind; }
+        if (index >= text.Length) { return _kind; }
 
         var nextChild = _children.GetValueOrDefault(text[index]);
         if (nextChild is null) { return _kind; }
 
-        if (ReferenceEquals(nextChild, this) && index + 1 > MAX_REPEAT)
+        if (ReferenceEquals(nextChild, this) && _repeatLimited && index + 1 > MAX_REPEAT)
         {
             throw new TemplateParseException(
                 $"A run of the same guillemet may not exceed {MAX_REPEAT} deep - reuse a depth instead of nesting further",

@@ -99,8 +99,7 @@ would otherwise merge a marker into an adjacent paragraph and corrupt the
 template. Only the two blank lines *inside* the block (right after `««name`,
 right before `»»`) are swallowed — they're the block's own body padding.
 The two *outside* it (right before `««name`, right after `»»`) are ordinary
-surrounding text, rendered exactly as written; the block only requires that
-they're there.
+surrounding text; the block only requires that they're there.
 
 ```markdown
 Before.
@@ -161,6 +160,31 @@ After.
 > A footer line needs a blank line before it too, same as `»»` — only its
 > own gluing to `»»` is exempt. An empty body needs one blank line, not
 > two.
+
+> [!NOTE]
+>
+> Blank lines beyond the ones the syntax requires are the author's, and
+> render as written — however many there are, before a block, after it, or
+> anywhere in its body. A block that renders nothing leaves a single blank
+> line where it stood, so the text around it reads as two paragraphs.
+>
+> ```markdown
+> Done.
+>
+> ««show note
+>
+> »»
+>
+> Bye.
+> ```
+>
+> renders, given `{ "ShowNote": false }`, as
+>
+> ```markdown
+> Done.
+>
+> Bye.
+> ```
 
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested

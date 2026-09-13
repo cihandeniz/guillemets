@@ -65,8 +65,12 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     }
 
     bool ReachedClose(bool insideBlock) =>
-        insideBlock && _tokens.Current.Kind is CloseBlock;
+        insideBlock && _tokens.Current.Kind is CloseBlock && _tokens.Current.EndsLine;
 
     bool ReachedElse(bool stopAtElse) =>
-        stopAtElse && _tokens.Current.Kind is Else && _tokens.Current.Position.AtLineStart;
+        stopAtElse &&
+        _tokens.Current.Kind is Else &&
+        _tokens.Current.EndsLine &&
+        _tokens.Current.PrecededByBlankLine &&
+        _tokens.Current.FollowedByBlankLine;
 }
