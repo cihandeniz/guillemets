@@ -1,0 +1,2 @@
+- philosophy negated is false
+- wisdom negated is false

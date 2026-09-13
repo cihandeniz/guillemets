@@ -11,7 +11,7 @@ internal record Scope(IDataSource Data,
     Glossary? Glossary = null
 )
 {
-    const string THIS = "this";
+    internal const string THIS = "this";
     const string FIRST = "first";
     const string LAST = "last";
 

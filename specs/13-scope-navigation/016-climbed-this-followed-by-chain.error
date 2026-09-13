@@ -1,0 +1,1 @@
+'this' must be the whole property chain - use '.: name' to reach the current scope's own property at line 1, column 1.

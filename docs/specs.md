@@ -274,6 +274,47 @@ No items.
 »»
 ```
 
+### The Current Value
+
+`«this»` renders the value the current scope sits on, whatever that value is.
+It's injected automatically in every scope, not only inside a loop.
+
+Its main use is a loop over a list of scalars, where an item has no property to
+name:
+
+```markdown
+Tags:
+
+««tags
+
+- «this»
+
+»»
+```
+
+Given `tags` is `["philosophy", "wisdom"]`, this renders a `- philosophy` line
+and a `- wisdom` line. Without `«this»` such a list can only be rendered
+inline, auto-joined onto one line (see Inline Lists, below).
+
+`this` sits in a chain position like any other name, so it composes with
+everything else: `«this / upper»` filters it, `«!this»` negates it, a table row
+cell (`| «this» |`) renders it per item, `««this` opens a block on it, and
+`«..: this»` reaches the enclosing scope's value (see Scope Navigation, below).
+
+On an object, `«this»` renders that object's own display representation, which
+is rarely useful and whose exact text depends on the data adapter — the same
+caveat as inline filtering (see Filtering Out Items in Lists, below). Open a
+block to reach an object's fields instead.
+
+`this` always takes precedence over a property of the same name, exactly as
+`first`/`last` do — a `this` field in the data is unreachable via `«this»` and
+needs `«.: this»` (see This Scope Only, below).
+
+`this` also stands alone: it can't be followed by `: ` to drill further, since
+`«this: name»` could only ever mean `«.: name»`, so it's rejected as an error
+naming that replacement. Pinning first keeps `this` an ordinary property name,
+so `«.: this: name»` reads the data's own `this` field and drills into that.
+
 ### Magic Loop Variables
 
 The following variables are injected automatically inside every loop block:
@@ -1032,8 +1073,9 @@ Resolving a property chain (see Nested Property Access, above) normally searches
 the current scope first, then falls back through each enclosing scope in turn
 (see Blocks, above) — but only when the name isn't found locally. A property
 that already exists in the current scope shadows same-named properties further
-out. Inside a loop, the magic `«first»`/ `«last»` variables always win over an
-item property of the same name too (see Magic Loop Variables, above).
+out. The magic `«this»` variable — and, inside a loop, `«first»`/ `«last»` —
+always win over a property of the same name too (see The Current Value and
+Magic Loop Variables, above).
 
 `.: ` and `..: ` are two markers, written at the very start of a property chain,
 that override this default and pin resolution to an exact scope instead.
@@ -1047,14 +1089,16 @@ space, neither is recognized as a navigator at all.
 `.: name` resolves `name` against the current scope's own data only — no falling
 back to an enclosing scope, no magic-var shadowing, and no shadowing by a
 defined variable (see Variable Definitions, above) of the same name either, so
-`.: first`/`.: last` reach the current scope's own `first`/`last` property even
-where the magic `«first»`/`«last»` would otherwise shadow it:
+`.: first`/`.: last`/`.: this` reach the current scope's own `first`/`last`/
+`this` property even where the magic `«first»`/`«last»`/`«this»` would otherwise
+shadow it:
 
 ```markdown
 ««items
 
 «first»    → the magic variable
 «.: first» → the item's own "first" property, ignoring the magic variable
+«.: this»  → the item's own "this" property, ignoring the magic variable
 
 »»
 ```
