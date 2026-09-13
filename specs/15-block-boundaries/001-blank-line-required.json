@@ -1,0 +1,11 @@
+{
+  "Individual": true,
+  "FullName": "Alice Smith",
+  "Quote": {
+    "Tags": [
+      { "Name": "philosophy" },
+      { "Name": "wisdom" }
+    ]
+  },
+  "ShowNote": false
+}

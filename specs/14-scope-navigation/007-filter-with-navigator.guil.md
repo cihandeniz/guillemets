@@ -1,5 +1,9 @@
 ««company
-««quotes
+
+«««quotes
+
 Quote «number»: «..: name / upper»
-»»
+
+»»»
+
 »»

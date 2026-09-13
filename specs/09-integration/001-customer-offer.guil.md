@@ -1,9 +1,13 @@
 # Quote #«Quote No»
 
 ««Contact Person = individual
+
 «Full Name»
+
 ~
+
 representatives of «Company Name»
+
 »»
 
 **Customer:** «Contact Person»
@@ -21,12 +25,14 @@ your satisfaction at every step.
 ## Items
 
 ««items
+
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
 | «description» | «quantity» «unit» | «unit price»          | «total»       |
 |               |                   | **Subtotal**          | «subtotal»    |
 |               |                   | **Tax (%«tax rate»)** | «tax»         |
 |               |                   | **Grand Total**       | «grand total» |
+
 »»
 
 ---

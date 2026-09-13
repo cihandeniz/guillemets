@@ -39,18 +39,24 @@ Replacements… → `+` → add `<<` → `«`, then `>>` → `»`.
 Hi «first name»,
 
 ««is member
+
 Welcome back — thanks for being a member!
+
 ~
+
 Thanks for placing your first order with us!
+
 »»
 
 **Order #«order id»** — placed «order date / date: MMMM d, yyyy»
 
 ««items
+
 | Item   | Qty        | Price              | Total                    |
 | ------ | ---------- | ------------------ | ------------------------ |
 | «name» | «quantity» | «price / currency» | «total / currency»       |
 |        |            | **Order total**    | «order total / currency» |
+
 »»
 
 You ordered «items: name / join last:  and  / join: , ».
@@ -128,6 +134,8 @@ Thanks for shopping with us!
 ```
 
 </details>
+
+Try it in .NET Fiddle [here](https://dotnetfiddle.net/S6JocQ)!
 
 ---
 

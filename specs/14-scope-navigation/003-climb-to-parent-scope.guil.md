@@ -1,6 +1,11 @@
 ««quotes
+
 Quote: «name»
-««items
+
+«««items
+
 Item: «name», quote: «..: name»
-»»
+
+»»»
+
 »»

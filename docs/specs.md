@@ -23,10 +23,15 @@ surrounding context.
 
 ```markdown
 ««company
+
 Tax No: «tax no»
+
 «««quotes
+
 Quote: «number»
+
 »»»
+
 »»
 ```
 
@@ -88,14 +93,74 @@ line. The double guillemet marks it as a block, not an inline variable — an
 inline variable always uses a single `«»`, even across multiple lines (see
 Variables, above).
 
+A blank line MUST surround `««name` and `»»` on every side — before and
+after each marker line. A markdown formatter treats them as plain text, and
+would otherwise merge a marker into an adjacent paragraph and corrupt the
+template. Only the two blank lines *inside* the block (right after `««name`,
+right before `»»`) are swallowed — they're the block's own body padding.
+The two *outside* it (right before `««name`, right after `»»`) are ordinary
+surrounding text, rendered exactly as written; the block only requires that
+they're there.
+
+```markdown
+Before.
+
+««individual
+
+Dear «full name»,
+
+»»
+
+After.
+```
+
+renders, given `{ "Individual": true, "FullName": "Alice Smith" }`, as
+
+```markdown
+Before.
+
+Dear Alice Smith,
+
+After.
+```
+
 > [!IMPORTANT]
 >
-> A literal may not share a line with the closing `»»` before it — that's a hard
-> parse error. After it, only a newline or the end of the template may follow
-> for it to count as a close at all; a template that ends right after `»»`, with
-> no trailing newline, closes normally. A `»»` followed by anything else on the
-> same line isn't recognized as a close — it's treated as literal text and the
-> search for the real closing `»»` continues.
+> Missing any of the four is a hard parse error. Escape with `\«` for a
+> literal `««...` that isn't meant to be a block.
+
+> [!NOTE]
+>
+> `»»` must not share a line with preceding text — only a newline or end
+> of template may follow it to count as a close. Anything else on that
+> line makes it ordinary text, and the search for a real close continues.
+
+> [!NOTE]
+>
+> Adjacent or nested blocks share one blank line at their boundary, not
+> two; the start/end of a template (or enclosing block) needs none.
+>
+> ```markdown
+> ««individual
+>
+> Dear «full name»,
+>
+> »»
+>
+> ««company
+>
+> «company name»
+>
+> »»
+> ```
+>
+> One blank line separates the two blocks — it satisfies both the first
+> block's after-close and the second's before-open at once, not two in a
+> row.
+>
+> A footer line needs a blank line before it too, same as `»»` — only its
+> own gluing to `»»` is exempt. An empty body needs one blank line, not
+> two.
 
 The closing depth MUST match the opening depth exactly. Deeper depths
 (`«««`/`»»»`, and so on) behave identically; they only exist to make nested
@@ -129,17 +194,23 @@ No keyword is required. The same syntax covers all cases.
 
 ```markdown
 ««individual
+
 Dear «full name»,
+
 »»
 
 ««quote items
+
 **«description»**
 
 «quantity» «unit» × «unit price» = «total»
+
 »»
 
 ««company
+
 Tax No: «tax no»
+
 »»
 ```
 
@@ -150,8 +221,10 @@ enclosing scopes.
 Quote No: «quote no»
 
 ««company
+
 «company name» has been given this quote number «quote no», valid for 1
 month.
+
 »»
 ```
 
@@ -162,7 +235,9 @@ variable (see Nested Property Access, above) — including projection over lists
 
 ```markdown
 ««quote: company
+
 Tax No: «tax no»
+
 »»
 ```
 
@@ -180,13 +255,20 @@ the data at all — the block is treated as falsy, the same as an explicit
 ### Else
 
 `~` on its own line inside a block separates the truthy and falsy branches. It's
-used with boolean blocks and variable definitions.
+used with boolean blocks and variable definitions. Like `««name` and `»»` (see
+Blocks, above), a blank line MUST surround `~` on both sides, swallowed the
+same way — for the same reason: a markdown formatter would otherwise merge it
+into an adjacent paragraph.
 
 ```markdown
 ««individual
+
 Dear «full name»,
+
 ~
+
 Dear representatives of «company name»,
+
 »»
 ```
 
@@ -194,9 +276,13 @@ Else also works when an object is null.
 
 ```markdown
 ««company info
+
 Company name: «name»
+
 ~
+
 No company information available
+
 »»
 ```
 
@@ -206,9 +292,13 @@ Lists" (below) filtered every item out:
 
 ```markdown
 ««items
+
 - «description»
+
 ~
+
 No items.
+
 »»
 ```
 
@@ -223,7 +313,9 @@ The following variables are injected automatically inside every loop block:
 
 ```markdown
 ««items
+
 «first»: «name»
+
 »»
 ```
 
@@ -252,7 +344,9 @@ header:
 
 ```markdown
 ««items: active
+
 Dear «full name»,
+
 »»
 ```
 
@@ -324,8 +418,10 @@ where the magic `«first»`/`«last»` would otherwise shadow it:
 
 ```markdown
 ««items
+
 «first»    → the magic variable
 «.: first» → the item's own "first" property, ignoring the magic variable
+
 »»
 ```
 
@@ -341,12 +437,17 @@ found at that level either. Repeating the marker climbs one further level per
 repetition, so `..: ..: name` climbs two levels before resolving `name`.
 
 ```markdown
-««quotes
+«««quotes
+
 Quote: «name»
-««items
+
+««««items
+
 Item: «name», quote: «..: name»
-»»
-»»
+
+»»»»
+
+»»»
 ```
 
 Given each item has its own `name` as well as the enclosing quote, `«name»`
@@ -415,9 +516,13 @@ boolean → if/else, list → loop, object → scope.
 
 ```markdown
 ««contact person = individual
+
 «full name»
+
 ~
+
 representatives of «company name»
+
 »»
 ```
 
@@ -448,13 +553,21 @@ survive past the loop or object block closing:
 
 ```markdown
 ««items
-««current = active
+
+«««current = active
+
 Yes
+
 ~
+
 No
-»»
+
+»»»
+
 «name»: «current»
+
 »»
+
 After loop: «current»
 ```
 
@@ -469,13 +582,21 @@ scope was already active:
 
 ```markdown
 ««enabled
-««greeting = enabled
+
+«««greeting = enabled
+
 Hi
+
 ~
+
 Bye
-»»
+
+»»»
+
 Message: «greeting»
+
 »»
+
 After flag: «greeting»
 ```
 
@@ -490,12 +611,14 @@ render once as a footer.
 
 ```markdown
 ««items
+
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
 | «description» | «quantity» «unit» | «unit price»          | «total»       |
 |               |                   | **Subtotal**          | «subtotal»    |
 |               |                   | **Tax (%«tax rate»)** | «tax»         |
 |               |                   | **Grand Total**       | «grand total» |
+
 »»
 ```
 
@@ -675,7 +798,9 @@ chain:
 
 ```markdown
 ««tags = quote: tags
+
 «name»
+
 join: , »»
 ```
 
@@ -692,7 +817,9 @@ all; it's ordinary literal body content instead.
 >
 > ```markdown
 > ««notes
+>
 > Summary text.
+>
 > highlight»»
 > ```
 >
@@ -734,9 +861,13 @@ it in the template.
 # Quote #«Quote No»
 
 ««Contact Person = individual
+
 «Full Name»
+
 ~
+
 representatives of «Company Name»
+
 »»
 
 **Customer:** «Contact Person»
@@ -754,12 +885,14 @@ satisfaction at every step.
 ## Items
 
 ««items
+
 | Description   | Quantity          | Unit Price            | Total         |
 | ------------- | ----------------- | --------------------- | ------------- |
 | «Description» | «Quantity» «Unit» | «Unit Price»          | «Total»       |
 |               |                   | **Subtotal**          | «Subtotal»    |
 |               |                   | **Tax (%«Tax Rate»)** | «Tax»         |
 |               |                   | **Grand Total**       | «Grand Total» |
+
 »»
 
 ---

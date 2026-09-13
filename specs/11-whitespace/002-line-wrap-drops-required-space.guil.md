@@ -5,10 +5,15 @@ Shout: «name /
 upper»
 
 ««quotes
+
 Quote: «name»
-««items
+
+«««items
+
 «first» / «.:
 first», quote «..:
 name»
-»»
+
+»»»
+
 »»

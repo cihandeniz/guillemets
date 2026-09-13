@@ -1,9 +1,17 @@
 ««company
+
 Company: «name»
-««quotes
+
+«««quotes
+
 Quote: «name»
-««items
+
+««««items
+
 Item: «name», quote: «..: name», company: «..: ..: name»
-»»
-»»
+
+»»»»
+
+»»»
+
 »»

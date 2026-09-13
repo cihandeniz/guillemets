@@ -1,29 +1,53 @@
 ««items
-««current = active
+
+«««current = active
+
 Yes
+
 ~
+
 No
-»»
+
+»»»
+
 «name»: «current»
+
 »»
+
 After loop: «current»
 
 ««company
-««tagline = has slogan
+
+«««tagline = has slogan
+
 Yes
+
 ~
+
 No
-»»
+
+»»»
+
 Company tagline: «tagline»
+
 »»
+
 After company: «tagline»
 
 ««enabled
-««greeting = enabled
+
+«««greeting = enabled
+
 Hi
+
 ~
+
 Bye
-»»
+
+»»»
+
 Message: «greeting»
+
 »»
+
 After flag: «greeting»
