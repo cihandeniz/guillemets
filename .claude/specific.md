@@ -46,20 +46,16 @@ exist anywhere, already resolves to nothing — see Nested Property Access
 and Resolving the Block Name in `docs/specs.md`) before reaching for a
 `TemplateParseException`.
 
-**Cold start?** Read `PLAN.md` first for implementation status and remaining
-milestones, then `docs/architecture.md` for how the engine is actually built.
-`IDEAS.md` holds speculative, non-committed notes — things worth
-remembering, not things anyone's decided to build; unlike `PLAN.md` it
-only grows, and only loses an entry once it's promoted into `PLAN.md`
-as a real milestone or deliberately rejected.
+**Cold start?** Find the GitHub PR matching the current branch (see
+`.claude/generic.md`) for implementation status and remaining tasks, then
+read `docs/architecture.md` for how the engine is actually built.
 
-This file, `.claude/generic.md`, `PLAN.md`, and `IDEAS.md` are
-agent/contributor working files, not published documentation — none
-should be linked from `README.md` or anything under `/docs`. The
-published docs are `README.md` (basic) and `/docs` (`specs.md`,
-`architecture.md`, `implementations/dotnet.md` and any future
-per-runtime sibling — lowercase, no reference back to these working
-files).
+This file and `.claude/generic.md` are agent/contributor working files,
+not published documentation — neither should be linked from `README.md`
+or anything under `/docs`. The published docs are `README.md` (basic)
+and `/docs` (`specs.md`, `architecture.md`, `implementations/dotnet.md`
+and any future per-runtime sibling — lowercase, no reference back to
+these working files).
 
 ## Stack
 
@@ -225,7 +221,7 @@ how they apply here.
 ## Parking (ending a session)
 
 Follow the general checklist in `.claude/generic.md`. Here, that means:
-`dotnet test` for step 1; `PLAN.md`'s "Remaining milestones" for step 2;
+`dotnet test` for step 1; `__PR_DESC_UPDATE__.md` for step 2;
 `docs/architecture.md` for step 3; `.claude/specific.md` (this file) for
 step 4, unless the learning isn't guillemets-specific, in which case
 `.claude/generic.md` instead.

@@ -7,19 +7,33 @@ instead; nothing project-specific belongs here.
 
 ## Project scaffolding
 
-A repo following this convention has three durable-vs-living docs, each
-with one job: `CLAUDE.md` (plus `.claude/generic.md`/`.claude/specific.md`)
-is the durable *how to work here*; a `PLAN.md` is the living *what's left*
-— it shrinks as milestones complete, and only ever tracks actionable
-remaining work, never a changelog; an architecture doc is the durable
-*how it's built*, written for humans (short sentences, a diagram for any
-structure that's easier to see than to read), rewritten section-by-section
-as it changes rather than accumulating dense appended paragraphs. These
-are agent/contributor working files, not published documentation — don't
-link them from published docs (a README, a docs site).
+A repo following this convention has two durable docs, plus a living one
+that isn't a committed file at all: `CLAUDE.md` (plus
+`.claude/generic.md`/`.claude/specific.md`) is the durable *how to work
+here*; an architecture doc is the durable *how it's built*, written for
+humans (short sentences, a diagram for any structure that's easier to see
+than to read), rewritten section-by-section as it changes rather than
+accumulating dense appended paragraphs. The living *what's left* is the
+current branch's GitHub pull request — its description's task list, which
+shrinks (checked off or edited down) as work completes, and only ever
+tracks actionable remaining work, never a changelog. On a cold start, find
+the PR matching the current branch (`gh pr view`, or the repo's `pulls`
+page) and read its description; follow any issue links a task carries —
+those hold the actual detail behind a one-line task.
 
-**Every `.md` file meant as an internal working doc (this file, a `PLAN.md`,
-an architecture doc) is hard-wrapped at 80 columns**, prose filled greedily
+Nothing here has write access to that description directly. Anything
+that emerges during a session and belongs there — a task to check off, a
+new one discovered mid-work, a note worth keeping — goes into
+`__PR_DESC_UPDATE__.md` at the repo root instead: create it if it's
+missing, append if it's there. The user reviews it, folds it into the
+actual PR description, and clears it — so also check for it on a cold
+start, alongside the PR description itself, since its presence means
+there's queued content not yet merged in. These are agent/contributor
+working files, not published documentation — don't link them from
+published docs (a README, a docs site).
+
+**Every `.md` file meant as an internal working doc (this file, an
+architecture doc) is hard-wrapped at 80 columns**, prose filled greedily
 (a short line only when the next word genuinely wouldn't fit, or the line
 is inside a fenced code block/table/heading, which stay untouched). When
 editing a paragraph or list item, reflow the whole thing rather than
@@ -43,8 +57,9 @@ inside internal working docs themselves.
   proactively audit for leftovers before reporting it done** — grep the
   whole affected tree for the old pattern/name being replaced, and
   cross-check that everything the change touches is reflected in whatever
-  tracking mechanism exists (an ignore/skip list, `PLAN.md`), rather than
-  waiting to be asked "did you get all of them?" and only auditing then.
+  tracking mechanism exists (an ignore/skip list, the PR description),
+  rather than waiting to be asked "did you get all of them?" and only
+  auditing then.
 - **When the user says "reviewed" (with no further detail), grep the
   touched files for `TODO` before doing anything else.** Their review
   workflow is to read the diff and leave inline `// TODO ...` comments
@@ -66,15 +81,16 @@ inside internal working docs themselves.
   first, confirm it's red against the still-old code, then move every
   touched case into whatever ignore/skip mechanism the test framework
   offers so the suite is green again — and stop there for review. Track
-  the milestone and its remaining cases in `PLAN.md` rather than a
-  comment in the test source. Only after that's confirmed does
-  implementation start, back to the normal one-case-at-a-time loop above.
+  the milestone and its remaining cases in `__PR_DESC_UPDATE__.md` (to be
+  folded into the branch's PR description) rather than a comment in the
+  test source. Only after that's confirmed does implementation start,
+  back to the normal one-case-at-a-time loop above.
 - **No failing tests at commit time.** Unimplemented cases are marked
   Ignored/Skipped, never Failed — remove a case's ignore entry once it
   goes green. When a case is deliberately left unimplemented because
   something about it is genuinely undecided, note what's undecided in
-  `PLAN.md` (under the relevant milestone) rather than a comment above
-  its entry in the test source.
+  `__PR_DESC_UPDATE__.md` (under the relevant task) rather than a comment
+  above its entry in the test source.
 - **When a new feature raises a "what if X doesn't exist / isn't there"
   question, default to consistent absence-propagation over introducing a
   new hard restriction.** Check first whether the system already has a
@@ -241,8 +257,8 @@ inside internal working docs themselves.
   type or property — not to narrate it in prose. Applies to WHY-comments
   too, not just WHAT-comments. A fact worth keeping doesn't become a
   source comment just because it lives in a test file; it goes in
-  `PLAN.md`, `.claude/specific.md`, or the architecture doc instead,
-  whichever already owns that kind of fact.
+  `__PR_DESC_UPDATE__.md`, `.claude/specific.md`, or the architecture doc
+  instead, whichever already owns that kind of fact.
 - Fix a bug in the component that actually owns the relevant knowledge, not by
   compensating with a heuristic wherever the symptom happened to surface — if a
   fix requires guessing at another layer's shape or invariants, the guess
@@ -280,22 +296,25 @@ When the user says they're "parking" (wrapping up for the day):
 
 1. Run the test suite, confirm all-green — flag clearly if not; don't
    park on red.
-2. Update `PLAN.md`: refresh status/counts, remove completed work from
-   "Remaining milestones" (don't just annotate it done — delete it, this
-   file shrinks to empty once nothing's left). `PLAN.md` only ever
-   tracks actionable remaining work — an accepted tradeoff or known
-   limitation with no follow-up action isn't a todo, so it doesn't
-   belong here; fold it into the relevant behavior/architecture doc
-   instead, as a plain fact about current behavior, the same as anything
-   else there.
+2. Write the session's task-list changes to `__PR_DESC_UPDATE__.md` at
+   the repo root (create it if it's missing, append if it's there):
+   which tasks are done, any new one discovered mid-session, anything
+   worth noting for the branch's PR description. It only ever tracks
+   actionable remaining work, never a changelog of what's done — an
+   accepted tradeoff or known limitation with no follow-up action isn't
+   a todo either, so it doesn't belong there; fold it into the relevant
+   behavior/architecture doc instead, as a plain fact about current
+   behavior, the same as anything else there. The user reviews the file
+   and folds it into the actual PR description themselves.
 3. Update the architecture doc with any structural change from this
    session (new types, moved namespaces, a resolved design decision) —
    keep it describing current shape only, not a changelog.
 4. Update `.claude/specific.md` (or `.claude/generic.md`, if the
    learning isn't actually project-specific) with any durable
-   convention/rule/decision from this session — these files plus
-   `PLAN.md` are what survive to a cold start elsewhere; nothing
-   load-bearing should live only in chat history.
+   convention/rule/decision from this session — these files plus the
+   branch's PR description (and any not-yet-merged
+   `__PR_DESC_UPDATE__.md`) are what survive to a cold start elsewhere;
+   nothing load-bearing should live only in chat history.
 5. Give a short summary: what's done, what's next, anything to
    double-check.
 
@@ -305,4 +324,9 @@ Read-only `git` commands (`log`, `diff`, `show`, `status`, `blame`, etc.) are
 fine to run directly. Never run a `git` command that writes (`add`, `commit`,
 `push`, `checkout`, `reset`, etc.) — this process has no write permission on
 `.git` anyway, so it would fail. The user handles all of git themselves; don't
-prepare commands for them or remind them about pending git tasks.
+prepare commands for them or remind them about pending git tasks. Read-only
+`gh` commands (`gh pr view`, `gh issue view`, etc.) are likewise fine to run
+directly; a `gh` command that writes (`gh pr edit`, `gh pr create`, `gh issue
+comment`, etc.) is visible to others the moment it runs, so draft the change
+and let the user apply it unless they've explicitly asked you to run it
+yourself.
