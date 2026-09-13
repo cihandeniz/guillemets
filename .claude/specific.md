@@ -1,256 +1,159 @@
 # guillemets
 
-Project-specific conventions. General .NET/C# style and working habits
-are in `.claude/generic.md` — read both.
+Project-specific conventions. General .NET/C# style and working habits are in
+`.claude/generic.md` — read both.
 
 ## Project
 
 Guillemets — a markdown-aware template engine for non-technical authors. `«»`
-(U+00AB/U+00BB) are the sole delimiters, chosen for readability — they never
-collide with markdown — over writability; see `README.md` for the tradeoff
-and how to type them.
+(U+00AB/U+00BB) are the sole delimiters, chosen for readability over
+writability; they never collide with markdown. See `README.md`.
 
-**`docs/specs.md` is the source of truth for behavior**, authoritative over this
-file — resolve spec ambiguities there alongside the code change, don't just
-patch around them. It's runtime-agnostic: it defines the template language
-itself, including the filter *mechanism* and the `join`/`join last` filters
-it guarantees, but deliberately not other filters (what exists, how each
-formats output), since those wrap whatever the host runtime provides.
-`docs/implementations/dotnet.md` is the source of truth for this .NET
-implementation's own behavior on top of that (its own filters, such as
-`date`/`currency`/`truncate`, plus any .NET-specific notes on `join`/
-`join last`) — same rule applies, resolve ambiguities there. A port to
-another runtime gets its own file under `docs/implementations/`, not edits
-to `specs.md` or this one.
+Doc ownership, in precedence order:
 
-**`docs/specs.md`/`docs/implementations/dotnet.md` prose style**: every
-paragraph that introduces a new concept gets a worked `markdown` example
-(template → output) right there, not just a description — added
-throughout during this project's readability pass, so keep doing it for
-new sections. A MUST-rule or a gotcha that's easy to get wrong (a fixed
-token needing exact spacing, a navigator ordering constraint, a filter's
-value not being trimmed) gets a GFM alert blockquote (`> [!NOTE]`/
-`[!TIP]`/`[!WARNING]`/`[!IMPORTANT]`) instead of being buried inline in
-a paragraph. In `README.md` specifically, an *actual rendered output*
-example is shown as live markdown (bold text, a real table) rather than
-inside a fenced snippet, with the exact raw text preserved separately in
-a `<details><summary>Raw output</summary>` block for anyone who wants
-the literal characters.
+- `docs/specs.md` — the source of truth for behaviour, authoritative over this
+  file. Runtime-agnostic: it defines the language itself, including the filter
+  *mechanism* and the `join`/`join last` filters it guarantees, but not what
+  other filters exist or how they format.
+- `docs/implementations/dotnet.md` — this .NET implementation's own behaviour
+  on top of that (`date`/`currency`/`truncate`, plus .NET-specific notes). A
+  port to another runtime gets its own file here, never edits to `specs.md`.
+- `docs/architecture.md` — how the engine is built. See `.claude/generic.md`
+  for what belongs there.
 
-When adding a symbol to the language, check it against markdown rendering
-of the *template* itself, not just the output — a `.guil.md` gets read on
-GitHub, so a marker that pairs into emphasis/strikethrough (or opens a
-fence) would defeat the point of picking `«»`. `pandoc -f gfm -t html` on
-the fixtures, with a known-positive control, settles it. The blank lines
-#7 requires around block markers are what keep the `~` in `««~`/`~»»`
-alone in its own paragraph, and so unpaired.
+Resolve a spec ambiguity in the owning doc alongside the code change; don't
+patch around it. Section order in `docs/specs.md` follows the `/specs` folder
+groups, so a fixture group and a spec section map one to one — note that its
+full example contains `##` headings inside a fence, so anything walking that
+file's structure has to track fences rather than grep for `^## `.
 
-When a new template-language feature raises a "what if X doesn't exist /
-goes too far" question (see the general rule in `.claude/generic.md`),
-check first whether resolving to nothing at render time (falsy, like
-C#'s `?.`) already matches how the rest of the language treats missing
-data (drilling into a null object, or a chain whose property doesn't
-exist anywhere, already resolves to nothing — see Nested Property Access
-and Resolving the Block Name in `docs/specs.md`) before reaching for a
-`TemplateParseException`.
+Published-doc prose style: every paragraph introducing a concept gets a worked
+`markdown` example (template → output) right there. A MUST-rule or an
+easy-to-get-wrong gotcha gets a GFM alert (`> [!NOTE]`/`[!TIP]`/`[!WARNING]`/
+`[!IMPORTANT]`) rather than being buried inline. `README.md` additionally shows
+rendered output as live markdown, with the literal characters preserved in a
+`<details><summary>Raw output</summary>` block.
 
-**Cold start?** Find the GitHub PR matching the current branch (see
-`.claude/generic.md`) for implementation status and remaining tasks, then
-read `docs/architecture.md` for how the engine is actually built. The
-project's canonical repo is `mouseless/guillemets` — PRs and issues live
-there regardless of what a local checkout's `origin` happens to point to
-(a contributor's own fork). Check `mouseless/guillemets` for the PR
-matching the current branch, not whatever `origin`/`git remote -v` shows.
-A PR task phrased as "Fixes #N" is a GitHub issue on that same repo; read
-the issue itself for the real detail behind the one-line task.
+When a new language feature raises a "what if X doesn't exist" question, check
+whether resolving to nothing at render time already matches how the rest of the
+language treats missing data before reaching for a `TemplateParseException`.
 
-This file and `.claude/generic.md` are agent/contributor working files,
-not published documentation — neither should be linked from `README.md`
-or anything under `/docs`. The published docs are `README.md` (basic)
-and `/docs` (`specs.md`, `architecture.md`, `implementations/dotnet.md`
-and any future per-runtime sibling — lowercase, no reference back to
-these working files).
+Adding a symbol? Check it against markdown rendering of the *template* itself,
+not just the output — a `.guil.md` gets read on GitHub, so a marker that pairs
+into emphasis/strikethrough or opens a fence would defeat the point of `«»`.
+`pandoc -f gfm -t html` over the fixtures, with a known-positive control,
+settles it.
+
+**Cold start**: find the PR for the current branch, then read
+`docs/architecture.md`. The canonical repo is `mouseless/guillemets` — PRs and
+issues live there regardless of what a local `origin` points to.
 
 ## Stack
 
-C#/.NET, targeting `net10.0`. Layout:
-- `/src/Guillemets` — the class library. `/test/Guillemets.Tests` — NUnit test
-  project.
-- `/specs` — the fixture corpus, the acceptance contract. Don't edit fixtures to
-  make a test pass; if one looks wrong, fix it deliberately and say why. If
-  satisfying a fixture demands disproportionate parser/engine complexity, check
-  whether the fixture's *template* (not just its data/expected output) is shaped
-  awkwardly before adding permanent special-casing — the same capability can
-  often be exercised with a more natural template, and that's usually the better
-  fix. Each case is a flat file pair or triple sharing a basename in a numbered
-  group folder: `.guil.md`/`.md` (template/expected output) for success, or
-  `.guil.md`/`.error` (expected exception message) for cases that must throw
-  `TemplateParseException`, plus an optional `.json` data file — omit it and the
-  case renders against `{}`, which is the common case for anything that doesn't
-  touch data (parse-error cases, plain literal text). `glossary-localization`
-  cases take a further optional `.<culture>.json` sidecar per language (e.g.
-  `.en.json`, `.tr.json` — a JSON object of `"PropertyName": "Term"` entries,
-  the same key/value direction `IStringLocalizer.GetAllStrings()` returns)
-  alongside the `.json` data file, following the same per-exact-case (not
-  shared-by-leading-digit) convention as `.json` — omit every culture and the
-  case renders with no glossary at all. Several cases can share
-  one template by giving the template just the group number and suffixing each
-  case's `.md`/`.error` (and `.json`, if present) with a letter
-  (`005-nested-blocks.guil.md` + `005a-...`/`005b-...`); `SpecTests.cs`
-  matches a case to its template by leading digits. Group folders are numbered
-  on disk for sort order only — refer to fixtures by name in prose, not number.
-  Feature groups run from `00-` upwards and `99-errors` sits deliberately at
-  the end, so a new feature group appends at the next free number without
-  anything being renumbered. Keep `99-errors` last; don't close the gap.
-  `08-filters` only holds cases for the mechanism `docs/specs.md` actually
-  guarantees (`join`/`join last`/`upper`/`lower`/`default`); a case whose
-  expected output depends on `date`/`currency`/`truncate`'s exact .NET
-  formatting belongs in a `test/Guillemets.Tests/*.cs` unit test instead
-  (see `FilterFormattingTests.cs`/`FilterCultureTests.cs`), same as any
-  other .NET-implementation-specific behavior — not the runtime-agnostic
-  `/specs` corpus. `09-integration` is excluded from `SpecTests.cs`'s own
-  discovery sweep entirely — it's exercised directly by each data source's
-  own `*IntegrationTests.cs` instead.
-- `Guillemets.slnx` at repo root (.NET 10's default `dotnet new sln` format).
-- Central package management: `Directory.Packages.props` (versions) +
-  `Directory.Build.props` (shared `TargetFramework`/`LangVersion`/
-  `Nullable`/etc.), both at repo root.
-- Assertions use **Shouldly**, not NUnit's `Assert.That`.
-  PascalCase-of-space-words resolution uses **Humanizer.Core**'s
-  `.Dehumanize()`, not hand-rolled splitting.
+C#/.NET, `net10.0`. `/src/Guillemets` is the library, `/test/Guillemets.Tests`
+the NUnit project, `Guillemets.slnx` the solution. Central package management
+via `Directory.Packages.props` + `Directory.Build.props`. Assertions use
+Shouldly; PascalCase-of-space-words uses Humanizer's `.Dehumanize()`.
 
-Exploit C# namespace lookup (see `.claude/generic.md`) for `Template`'s
-`Render`/`RenderObject` extensions: `JsonElementExtensions.cs`/
-`PocoExtensions.cs`/`JTokenExtensions.cs` live in the bare root `Guillemets`
-namespace, not their adapter's own (`Guillemets.Data.Json`/`.Poco`/
-`.Newtonsoft`, where the adapter types themselves stay) — so `using
-Guillemets;` alone pulls the extensions in too. `Render(JsonElement)`/
-`Render(JToken)` are unambiguous overloads (concrete, unrelated parameter
-types); `RenderObject` keeps its own name since `object` is too broad to
-safely fold into that overload set. A future adapter follows the same
-split. All adapters ship in one `Guillemets` package rather than
-per-adapter sibling projects — simpler while there's only a handful, and
-`Newtonsoft.Json` isn't heavy to carry.
+`/src` exploits C# namespace lookup for `Template`'s extensions:
+`JsonElementExtensions.cs`/`PocoExtensions.cs`/`JTokenExtensions.cs` live in the
+bare `Guillemets` namespace, not their adapter's own, so `using Guillemets;`
+pulls them in. `RenderObject` keeps its own name since `object` is too broad to
+overload on. All adapters ship in one package.
+
+### The `/specs` corpus
+
+The acceptance contract. Don't edit a fixture to make a test pass; if one looks
+wrong, fix it deliberately and say why. If satisfying a fixture demands
+disproportionate engine complexity, check whether its *template* is shaped
+awkwardly before adding permanent special-casing.
+
+Each case is a flat file group sharing a basename inside a numbered folder:
+
+- `.guil.md` + `.md` — template and expected output.
+- `.guil.md` + `.error` — expected `TemplateParseException` message.
+- `.json` — optional data; omit it and the case renders against `{}`.
+- `.<culture>.json` — optional glossary sidecar, per exact case.
+
+Several cases share one template by giving it just the group number and
+suffixing each case with a letter (`005-nested-blocks.guil.md` +
+`005a-...`/`005b-...`); `SpecTests.cs` matches by leading digits.
+
+Folders are numbered for sort order only — refer to fixtures by name in prose.
+Feature groups run from `00-` up and `99-errors` stays last; a new group
+appends at the next free number, nothing is renumbered, and the gap before 99
+stays. `08-filters` holds only what `docs/specs.md` guarantees; a case whose
+output depends on .NET formatting belongs in a unit test instead.
+`09-integration` is excluded from `SpecTests.cs` and driven by each data
+source's own `*IntegrationTests.cs`.
 
 ## Core concepts
 
-(Full detail in `docs/specs.md` — this is a map, not a replacement.)
+A map only — `docs/specs.md` is the contract, and its rules are easy to
+re-derive wrongly from the code alone. Go there before changing behaviour.
 
-- **Delimiters**: `«»`. A single `«»` is an inline variable/token; a run of two
-  or more (`««`, `«««`, ...) opens a block, closed by the exact same run length
-  or `TemplateParseException` is thrown — depth beyond 2 is cosmetic (fixtures
-  go one guillemet deeper per nesting level, for readability, not because the
-  parser requires it), validated via `Token.Depth` in
-  `TokenExtensions.ValidateDepthMatches`.
-- **Property access**: `:` drills into objects and projects over lists
-  (`.Select()`); chained across lists it flattens (`.SelectMany()`).
-- **Scope navigation**: `.: name` pins resolution to the current scope only,
-  skipping magic-var shadowing; `..: name` climbs to the enclosing scope,
-  chainable (`..: ..: name`) and composable with `.: ` (`..: .: name`).
-- **Blocks**: `««name` ... `»»`. Behavior is inferred from the resolved type of
-  `name` — boolean → if, list → loop, object → scope. No keywords, same syntax
-  for all three. Variable lookup falls back to enclosing scopes.
-- **Blank lines**: a blank line MUST surround every `««name`, `~` and `»»`, and
-  the marker line plus the blank just inside it is swallowed; everything else
-  the author wrote survives. A loop separates its items with a blank line only
-  when one of them spans paragraphs. `««~` and `~»»` trim the blank line on a
-  marker's outer side at render time only — the template MUST still be written
-  with it. See "Blank Lines in the Output" and "Trimming Blank Lines Around a
-  Block" in `docs/specs.md` — together they are the whole contract, and the
-  rendering rules are easy to re-derive wrongly from the code alone.
-- **Else**: `~` on its own line splits truthy/falsy (or non-null/null) branches
-  inside a block.
+- **Delimiters**: `«»`. One is an inline variable; a run of two or more opens a
+  block, closed by the same run length. Depth beyond 2 is cosmetic.
+- **Property access**: `:` drills into objects and projects over lists;
+  chained across lists it flattens.
+- **Scope navigation**: `.: name` pins to the current scope, `..: name` climbs;
+  both chainable and composable.
+- **Blocks**: `««name` ... `»»`, behaviour inferred from the resolved type —
+  boolean → if, list → loop, object → scope. No keywords. Lookup falls back to
+  enclosing scopes.
+- **Else**: `~` alone on a line splits the branches.
+- **Whitespace**: blank lines around markers are required and partly swallowed;
+  `««~`/`~»»` trim at render time only; a hard-wrapped `«...»` treats one
+  newline as the space a symbol needs, two as a paragraph break.
 - **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
-- **Variable definitions**: `««name = expr` ... `»»` captures a block's rendered
-  output (or resolved value) into `name` for reuse below, under the same
-  type-inferred if/loop/scope rules.
-- **Tables**: a block may open/close with a leading/trailing `|` so it stays
-  valid inside a markdown table row.
-- **Inline lists**: scalar lists auto-join with `, `; override via the
-  `join`/`join last` filters, usable inline or as the last line of a loop
-  block.
-- **Filters**: `name: value` chained with ` / ` after a property chain or
-  another filter, no parens — `«expr / filter: value»`. `: ` (colon+space)
-  is a fixed token, same as property access; nothing after it is trimmed.
-  A value is text to the next ` / ` or closing guillemet, so `~`/`!`/`=`/
-  `: ` need no escape there; only `«`, `»` and ` / ` do. A filter *name*
-  still stops at any symbol.
-  `\` escapes a reserved character. Built-ins: `date`, `currency`, `truncate`,
-  `join`, `join last`, `upper`, `lower`, `default`. New built-in filter
-  names should read as verbs (an action performed on a value) rather than
-  nouns —
-  `truncate`, not `length` — but this is a default, not absolute: a short,
-  conventional name matching what other templating engines call the same
-  operation can win, as `upper`/`lower` did over `uppercase`/`lowercase`.
-  Don't relitigate `date`/`currency`, already-accepted names that read as
-  nouns.
+- **Variable definitions**: `««name = expr` ... `»»` captures rendered output
+  for reuse below.
+- **Tables**: a block may open/close with a leading/trailing `|` to stay valid
+  in a markdown table row.
+- **Inline lists**: scalar lists auto-join with `, `; override with
+  `join`/`join last`.
+- **Filters**: `name: value` chained with ` / `, no parens. Built-ins: `date`,
+  `currency`, `truncate`, `join`, `join last`, `upper`, `lower`, `default`.
+
+New built-in filter names should read as verbs (`truncate`, not `length`), but
+a short conventional name other engines share can win, as `upper`/`lower` did.
+`date`/`currency` are settled; don't relitigate them.
 
 ## Localization / naming
 
-Templates are authored with natural, space-separated words — the author's
-business vocabulary. Models are defined by developers in PascalCase/camelCase —
-the developer's code vocabulary. Direct resolution (PascalCase-of-space-words
-via Humanizer's `.Dehumanize()`) already bridges the two whenever they agree
-case-insensitively. Where they don't (e.g. "quote no" vs. `OfferNo`), a
-glossary bridges the rest: `Term = PropertyName` rows, matched
-case-insensitively, additive over direct resolution rather than replacing it —
-a term with no entry still falls back to direct resolution. See "Glossary &
-Localization" in `docs/specs.md`.
+Authors write natural space-separated words; models are PascalCase. Direct
+resolution via `.Dehumanize()` bridges them whenever they agree
+case-insensitively. Where they don't ("quote no" vs `OfferNo`), a glossary of
+`Term = PropertyName` rows is matched case-insensitively and is *additive* — a
+term with no entry still falls back to direct resolution.
 
-`SpecTests.cs` builds its `IStringLocalizer` from a case's `.<culture>.json`
-sidecar via `FakeStringLocalizer`, a minimal in-memory implementation.
-`GlossaryResourceIntegrationTests.cs` separately exercises a real
-`.restext`-backed `IStringLocalizer` — `Resources/Glossary.restext` plus a
-same-named empty marker type in `Resources/Glossary.cs` (needed so
-`ResourceManagerStringLocalizerFactory.Create(Type)` can locate the
-compiled resource by namespace/name convention) — confirming the feature
-also works against the real ASP.NET Core localization stack, not just the
-fake.
+`SpecTests.cs` builds its `IStringLocalizer` from a case's `.<culture>.json` via
+`FakeStringLocalizer`. `GlossaryResourceIntegrationTests.cs` separately
+exercises a real `.restext`-backed localizer — `Resources/Glossary.restext`
+plus a same-named empty marker type, needed so
+`ResourceManagerStringLocalizerFactory.Create(Type)` can locate the resource by
+convention.
 
 ## Working on this repo
 
-General working habits (TDD ordering, migration audits, the "reviewed"
-workflow, redesign checkpoints, no-failing-tests-at-commit-time, build
-style enforcement) are in `.claude/generic.md` — this section is just
-how they apply here.
-
-- `make init` (alias `make fix-owners` — same recipe, reach for whichever
-  name fits: initial sandbox setup or a later ownership fix) downloads
-  `setup-claudedev-sandbox.sh` from `cihandeniz/config-files`, pinned to a
-  specific commit (`SETUP_SCRIPT_COMMIT`) and verified against a SHA256
-  checksum (`SETUP_SCRIPT_SHA256`) before it's ever executed, into the
-  gitignored `.tmp/scripts/` on first use (cached after that — delete
-  `.tmp/` to force a re-download) and runs it with `sudo`. The script
-  itself lives outside this repo now; don't recreate `scripts/` here.
-  Bumping the pin means updating both Makefile variables together — the
-  checksum exists specifically to catch a pin bumped without review.
-- CI (`.github/workflows/*`, PR templates, `make coverage`,
-  `.config/dotnet-tools.json`) is modeled on `github.com/mouseless/baked`,
-  adapted for this repo's single-package shape (no `core`/`ui` split, no
-  docs site, no npm). Repo is moving to `github.com/mouseless/guillemets`
-  — `RepositoryUrl`/`PackageProjectUrl`/publish-check URLs already assume
-  that. Gotcha when copying more from baked: its coverage uses the newer
-  `dotnet test --coverage` (Microsoft.Testing.Platform) flags, but this
-  repo's classic VSTest + `NUnit3TestAdapter` host doesn't support those
-  — coverage here goes through `coverlet.collector` instead, with its own
-  `test/runsettings.xml` schema (`Format`/`Exclude`/`ExcludeByAttribute`,
-  not baked's `ModulePaths`/`Attributes`). Don't copy baked's coverage
-  command verbatim without checking the test host first.
-- Run `dotnet test` from the repo root for the full fixture suite — each fixture
-  becomes one NUnit test case, named by its relative path under `/specs`.
-- Engine work proceeds fixture-group by fixture-group, simplest → most complex —
-  implement one group's mechanic, confirm `dotnet test` flips exactly that group
-  green with no regressions, then move on. The generic "one test case at a
-  time" TDD loop applies per fixture within that group.
-- The redesign-checkpoint and no-failing-tests-at-commit-time rules use
-  `SpecTests.cs`'s `IGNORED_FIXTURES` set (`Ignored`, never `Failed`) as
-  their concrete mechanism — remove a fixture's name once its case goes
+- Run `dotnet test` from the repo root; each fixture becomes one NUnit case
+  named by its path under `/specs`.
+- `SpecTests.cs`'s `IGNORED_FIXTURES` is the concrete mechanism for the
+  redesign-checkpoint and no-failing-tests rules. Remove a name once it's
   green.
+- Work fixture-group by fixture-group, simplest first: implement one group's
+  mechanic, confirm `dotnet test` flips exactly that group green, move on.
+- `make init` (alias `make fix-owners`) downloads a setup script from
+  `cihandeniz/config-files`, pinned by commit and verified against a SHA256,
+  and runs it with `sudo`. Bumping the pin means updating both Makefile
+  variables — the checksum exists to catch a pin bumped without review.
+- CI is modeled on `mouseless/baked`, adapted for this repo's single-package
+  shape. Coverage goes through `coverlet.collector` with `test/runsettings.xml`
+  — baked's `dotnet test --coverage` flags need Microsoft.Testing.Platform,
+  which this classic VSTest + `NUnit3TestAdapter` host doesn't support. Check
+  the test host before copying more from baked.
 
-## Parking (ending a session)
+## Parking
 
-Follow the general checklist in `.claude/generic.md`. Here, that means:
-`dotnet test` for step 1; `__PR_DESC_UPDATE__.md` for step 2;
-`docs/architecture.md` for step 3; `.claude/specific.md` (this file) for
-step 4, unless the learning isn't guillemets-specific, in which case
-`.claude/generic.md` instead.
+The general checklist is in `.claude/generic.md`. Here: `dotnet test`,
+`__PR_DESC_UPDATE__.md`, `docs/architecture.md`, and this file.

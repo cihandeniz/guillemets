@@ -1,353 +1,194 @@
 # Generic (.NET)
 
-Reusable across any .NET repo as-is — this file is meant to stay
-identical everywhere it's used, kept in sync via `cihandeniz/config-files`.
-Anything specific to *this* project lives in `.claude/specific.md`
-instead; nothing project-specific belongs here.
+Reusable across any .NET repo as-is — kept identical everywhere via
+`cihandeniz/config-files`. Project-specific rules live in
+`.claude/specific.md`; nothing project-specific belongs here.
 
-## Project scaffolding
+## Docs and tracking
 
-A repo following this convention has two durable docs, plus a living one
-that isn't a committed file at all: `CLAUDE.md` (plus
-`.claude/generic.md`/`.claude/specific.md`) is the durable *how to work
-here*; an architecture doc is the durable *how it's built*, written for
-humans (short sentences, a diagram for any structure that's easier to see
-than to read), rewritten section-by-section as it changes rather than
-accumulating dense appended paragraphs. The living *what's left* is the
-current branch's GitHub pull request — its description's task list, which
-shrinks (checked off or edited down) as work completes, and only ever
-tracks actionable remaining work, never a changelog. On a cold start, find
-the PR matching the current branch (`gh pr view`, or the repo's `pulls`
-page) and read its description; follow any issue links a task carries —
-those hold the actual detail behind a one-line task.
+Three places hold durable knowledge, and each owns a different kind of fact:
 
-Nothing here has write access to that description directly. Anything
-that emerges during a session and belongs there — a task to check off, a
-new one discovered mid-work, a note worth keeping — goes into
-`__PR_DESC_UPDATE__.md` at the repo root instead: create it if it's
-missing, append if it's there. The user reviews it, folds it into the
-actual PR description, and clears it — so also check for it on a cold
-start, alongside the PR description itself, since its presence means
-there's queued content not yet merged in. These are agent/contributor
-working files, not published documentation — don't link them from
-published docs (a README, a docs site).
+- `CLAUDE.md` + `.claude/*.md` — how to work here.
+- The architecture doc — how it's built. High-level shape and decisions
+  only; a diagram wherever structure is easier seen than read. It must not
+  restate the behaviour spec, so it doesn't churn on every feature change.
+  Rewrite sections in place rather than appending.
+- The current branch's PR description — the living *what's left*. Actionable
+  work only, never a changelog. On a cold start read it (`gh pr view`, or the
+  repo's `pulls` page) and follow any issue links, which carry the real
+  detail behind a one-line task.
 
-**Every `.md` file meant as an internal working doc (this file, an
-architecture doc) is hard-wrapped at 80 columns**, prose filled greedily
-(a short line only when the next word genuinely wouldn't fit, or the line
-is inside a fenced code block/table/heading, which stay untouched). When
-editing a paragraph or list item, reflow the whole thing rather than
-patching in place — don't leave a ragged line just because only its own
-text changed. Real markdown links (`[text](path)`) for cross-references
-between *published* docs; plain backtick-quoted filenames (no link syntax)
-inside internal working docs themselves.
+Nothing here can write that PR description. Queue anything bound for it in
+`__PR_DESC_UPDATE__.md` at the repo root (create or append); the user folds it
+in and clears it. Check for that file on a cold start too — its presence means
+unmerged content. These are working files, not published docs; never link them
+from a README or docs site.
+
+Internal working `.md` files are hard-wrapped at 80 columns, filled greedily,
+with fenced code, tables and headings untouched. Reflow a whole paragraph when
+editing it rather than leaving a ragged line. Use real markdown links between
+*published* docs, plain backticked filenames inside working docs.
 
 ## Working habits
 
-- **TDD, one test case at a time.** Pick the smallest next case, write
-  only the minimal code to pass it, run the full suite to confirm no
-  regressions — then actually refactor (correct layering, remove
-  duplication, apply the style rules below) rather than leaving cleanup
-  for later. Report and let the case's author/reviewer weigh in before
-  moving to the next one. This ordering holds even when a task feels
-  time-boxed or urgent — perceived pressure (including urgency carried
-  over from an earlier, unrelated request) is never license to write the
-  code fix before a failing test exists to prove it's needed.
-- **After a broad rewrite/rename/migration touching many files,
-  proactively audit for leftovers before reporting it done** — grep the
-  whole affected tree for the old pattern/name being replaced, and
-  cross-check that everything the change touches is reflected in whatever
-  tracking mechanism exists (an ignore/skip list, the PR description),
-  rather than waiting to be asked "did you get all of them?" and only
-  auditing then.
-- **When the user says "reviewed" (with no further detail), grep the
-  touched files for `TODO` before doing anything else.** Their review
-  workflow is to read the diff and leave inline `// TODO ...` comments
-  marking what they want changed, rather than typing it all out in chat.
-  If any are found, address each one (the TODO comment itself gets
-  removed once resolved — it's a review note, not documentation) and
-  rerun the test suite; if none are found, say so and move straight to
-  wrapping up/parking or continuing, per what the user asks next.
-  Exception: before implementing a TODO (or any terse instruction), check
-  whether it would silently undo something deliberate and already
-  decided/documented earlier in the *same* conversation — TODOs are terse
-  and don't carry that context back. If it would, lay out the specific
-  tension plainly (what breaks, why) and ask how to resolve it rather
-  than silently complying or silently ignoring it.
-- **A redesign spanning multiple test cases gets its own checkpoint
-  before any code changes.** When a change is bigger than one case (a
-  grammar redesign, a rename, dropping a restriction — anything touching
-  several cases/docs at once), do the *entire* spec/test/doc rewrite
-  first, confirm it's red against the still-old code, then move every
-  touched case into whatever ignore/skip mechanism the test framework
-  offers so the suite is green again — and stop there for review. Track
-  the milestone and its remaining cases in `__PR_DESC_UPDATE__.md` (to be
-  folded into the branch's PR description) rather than a comment in the
-  test source. Only after that's confirmed does implementation start,
-  back to the normal one-case-at-a-time loop above.
-- **No failing tests at commit time.** Unimplemented cases are marked
-  Ignored/Skipped, never Failed — remove a case's ignore entry once it
-  goes green. When a case is deliberately left unimplemented because
-  something about it is genuinely undecided, note what's undecided in
-  `__PR_DESC_UPDATE__.md` (under the relevant task) rather than a comment
-  above its entry in the test source.
-- **When a new feature raises a "what if X doesn't exist / isn't there"
-  question, default to consistent absence-propagation over introducing a
-  new hard restriction.** Check first whether the system already has a
-  graceful, consistent answer for missing/absent state (e.g. it already
-  degrades gracefully somewhere similar) before adding a new failure
-  mode. Reserve a real hard failure for a genuine *structural/syntax*
-  problem, not for *data* that might simply be absent.
-- If the project enables build-time style enforcement (e.g. .NET's
-  `EnforceCodeStyleInBuild`/`TreatWarningsAsErrors`), expect `dotnet
-  build`/`dotnet test` to fail on any `.editorconfig` violation or
-  compiler warning — including `IDE0060` (unused parameter) when
-  escalated to `error`. That's a non-issue for a parameter required by an
-  interface signature (Roslyn exempts interface-implementation methods
-  from `IDE0060` automatically, implicit or explicit) — it only bites a
-  parameter that's unused and has no such contractual reason to exist.
-- Known flaky MSBuild issue in this sandbox: `MSB3374` (can't set
-  last-write-time on an `obj/**/*.Up2Date` file) — not a real problem,
-  just retry the build once.
-- Sandbox gotcha: the repo directory is owned by the human user, but
-  Claude runs as a different OS user, so plain `git` fails with "detected
-  dubious ownership" until `make init`/`make fix-owners` (see
-  `.claude/specific.md`) chowns it — that needs an interactive `sudo`
-  password, so ask the user to run it rather than attempting it. Until
-  then (or for a one-off read before asking), `git -c safe.directory='*'
-  <command>` works around it without touching any config file — prefer
-  this over `git config --global --add safe.directory`, which would be a
-  persisted config write and is off-limits per the Git Safety Protocol.
-  `gh` is unauthenticated in this sandbox too; fall back to the public
-  GitHub REST API via `curl` for read-only lookups (PRs, issues) on a
-  public repo.
+- **TDD, one case at a time.** Smallest next case, minimal code to pass it,
+  full suite to confirm no regressions, then actually refactor before moving
+  on. Report and let the case's author weigh in first. Urgency is never
+  licence to write the fix before a failing test proves it's needed.
+- **A redesign spanning multiple cases gets a checkpoint before any code
+  changes.** Do the entire spec/test/doc rewrite first, confirm it's red
+  against the old code, then ignore/skip every touched case so the suite is
+  green — and stop there for review. Track the milestone in
+  `__PR_DESC_UPDATE__.md`, not a comment in the test source. Implementation
+  starts only after that's confirmed.
+- **No failing tests at commit time.** Unimplemented cases are Ignored or
+  Skipped, never Failed; drop the ignore entry once a case goes green. If a
+  case is left unimplemented because something is genuinely undecided, say
+  what's undecided in `__PR_DESC_UPDATE__.md`.
+- **"reviewed" with no further detail means: grep the touched files for
+  `TODO` first.** The user reviews by leaving inline `// TODO ...` notes
+  rather than typing them out. Address each, delete the comment (it's a
+  review note, not documentation), rerun the suite. Say so if there are
+  none. Before implementing any terse instruction, check whether it would
+  silently undo something already decided earlier in the same conversation —
+  if so, state the tension and ask rather than complying or ignoring.
+- **After a broad rewrite/rename/migration, audit for leftovers before
+  reporting done** — grep the whole tree for the old pattern and cross-check
+  the tracking mechanism, rather than waiting to be asked.
+- **For "what if X isn't there", prefer consistent absence-propagation over a
+  new hard restriction.** Reserve a hard failure for a structural/syntax
+  problem, not for data that may simply be absent.
+- With `EnforceCodeStyleInBuild`/`TreatWarningsAsErrors`, any `.editorconfig`
+  violation or compiler warning fails the build. `IDE0060` (unused parameter)
+  escalated to error doesn't bite interface implementations — Roslyn exempts
+  those automatically.
+- Known sandbox flake: `MSB3374` on an `obj/**/*.Up2Date` file. Just retry.
+- Sandbox ownership: the repo belongs to the human user, so plain `git` fails
+  with "dubious ownership". Use `git -c safe.directory='*' <command>` rather
+  than a persisted `git config` write. The permanent fix needs interactive
+  `sudo`, so ask the user to run it. `gh` is unauthenticated — use the public
+  GitHub REST API via `curl` for read-only lookups.
 
 ## C# code style
 
-- `using` directives sorted alphabetically (no special-casing `System.*`);
-  `using static` directives form their own group below, separated by a blank
-  line.
-- A boolean expression that doesn't fit on one line breaks with `&&`/`||` at
-  the *end* of each line, not the start; a closing `)` that ends up alone gets
-  its own line, the same way a closing `}` would.
-- Never write `private` explicitly — it's the default.
-- Keep whitespace between statements minimal — no blank-line padding between
-  unrelated statements.
-- One type per file (a tightly-coupled nested helper type, like a builder
-  or a method object, can share its owner's file).
-- C# namespace lookup already sees a type's *ancestor* namespaces without
-  an explicit `using`. A public extension method meant to be broadly
-  discoverable can exploit this deliberately by living in a shared root
-  namespace rather than nested under its own feature namespace, so any
-  consumer who already has a `using` for the root type gets the
-  extension for free — see `.claude/specific.md` for how this project
-  applies it to its own adapter types.
-- Prefer polymorphic dispatch (base type + virtual/abstract method, or a
-  strategy class per type) over a `switch`/pattern-match implementing per-type
-  behavior inline — the behavior must live in its own class, not in the switch
-  arms. A `switch` that only *selects* between already-implemented strategies is
-  fine. Doesn't apply to a genuinely stateful, sequential parser walking a token
-  stream — that's normal parser-writing.
-- Don't call `new SomeType(...)` inside a constructor body unless `SomeType` is
-  a DTO or `record`. Real dependencies are constructor-injected and wired up at
-  the composition root. When two collaborators need each other, don't resolve
-  the cycle with a mutable/settable field assigned after construction — use a
-  `Lazy<T>`-backed field through a shared registry, applied uniformly to
-  *every* registry-sourced collaborator (not just the circular ones), so
-  registration order never becomes a hazard. (Cursor-`Rewind`-based
-  speculative parsing is a legitimate alternative for this same class of
-  problem; its absence from current code isn't a decision against it.)
-- A type that should be built at most once per some key (not per call site)
-  gets a plain (no-modifier, so implicitly private per the rule above)
-  constructor plus a `public static GetOrCreate(...)` factory backed by a
-  `static readonly` cache field — global and thread-safe, not
-  per-instance of whatever owns the call site, so unrelated callers
-  sharing the same key reuse the same built value. C# has no `private`
-  primary-constructor modifier (`class Foo private(...)` doesn't parse)
-  — dropping down to a regular constructor is the only way to get this
-  shape, and it's the right call whenever a primary constructor's
-  brevity would otherwise let external code bypass the cache with `new
-  Foo(...)` directly.
-- A type whose only externally-relevant contract is a single interface (nothing
-  about the concrete type should be called directly from outside it) implements
-  that interface explicitly rather than with a `public` method of the same name
-  (`string ISomeInterface.Method(...)`, not `public string Method(...)`). If
-  the type's own internals still need to call that logic directly (without
-  going through an interface-typed reference), keep a plain private method next
-  to the explicit implementation and have the explicit member forward to it.
-  Don't keep an interface around once nothing actually needs it
-  polymorphically — a single-implementation interface that exists only to
-  hand a not-yet-fully-constructed `this` to a collaborator is unnecessary,
-  since `this` is already a valid, fully-typed reference at that point.
-- Inheritance clause (`: Base`/`: IInterface`) on a type with a primary
-  constructor: put it on its own indented line when the constructor's
-  parameter list fits on one line; let it trail the closing `)` on the
-  same line when the parameter list already spans multiple lines — the
-  parameter list dictates whether the type name and the base type can
-  already be told apart at a glance without the extra line. This applies
-  no matter how short the parameter list is — even a single parameter
-  still forces the inheritance clause onto its own line, and `record`
-  types follow it exactly like `class` types. A type with *no* primary
-  constructor keeps `: Base` on the declaration line regardless of length
-  — this rule only ever triggers once there's a parameter list to
-  compete with the base type for attention.
-- A constructor or record-creation call with more than 2 optional/named
-  parameters is never written on one line, even when it would fit — break to
-  one parameter per line, the same shape a primary constructor's own parameter
-  list uses once it goes multi-line.
-- Expression-bodied **methods** (including constructors) put the `=>` at the end
-  of the signature line and the expression on its own indented line below, even
-  when it would fit on one line (`public bool AsBoolean() =>\n    Value;`, not
-  `public bool AsBoolean() => Value;`) — consistent regardless of expression
-  length. Expression-bodied **properties** are the opposite: keep `=>` and the
-  expression inline on the same line as the property, including when the
-  expression itself spans multiple lines via `switch` (the `switch` keyword
-  stays on the property's own line). The distinguishing signal is the
-  parameter list: has `()` → method formatting; no `()` → property formatting.
-- Never write `sealed` — explicit house style; types stay open for inheritance
-  even with no current subtypes.
-- When `GenerateDocumentationFile`/`TreatWarningsAsErrors` require XML doc
-  comments on the public surface: ground each `<summary>` in whatever
-  existing prose docs already describe that member, rather than inventing
-  a fresh description that risks drifting from it. An interface-implementing
-  member uses `<inheritdoc/>` instead of repeating the interface's own doc
-  per implementer. `///` lines wrap at 80 columns like this file. A test
-  project gets `<NoWarn>$(NoWarn);CS1591</NoWarn>` in its own `.csproj`
-  rather than disabling `GenerateDocumentationFile` outright — that flag
-  also gates `IDE0005` (unnecessary usings), so turning it off silently
-  drops that check too.
-- Every `static` member — constant, field, or method alike — goes at the top
-  of its class, above all instance members, rather than next to whichever
-  instance code happens to use it.
-- Extension methods use C# 14's `extension(Receiver name) { ... }` block
-  rather than a `this`-prefixed first parameter. Members inside the block
-  drop both `static` and `this`. Use a second block when a different
-  receiver name reads better for some of the members (`extension(Token
-  close)` alongside `extension(Token token)`) rather than settling for one
-  vague name across all of them.
-- Naming: private instance fields are `_camelCase`; any `static` field,
-  regardless of accessibility, is `SCREAMING_CASE` (a custom rule, since
-  standard "static fields start uppercase" conventions would otherwise
-  conflict with the private-field rule).
-- `[Test]`-attributed method names are `Snake_case` — a plain sentence
-  describing the case, only its first letter capitalized, with an
-  underscore anywhere the sentence would have a space, comma, or semicolon
-  (`Date_filter_formats_with_given_pattern`, not
-  `DateFilter_FormatsWithGivenPattern` or
-  `date_filter_formats_with_given_pattern`).
-- A character/string literal that carries meaning beyond its own face value —
-  a delimiter, a sentinel, a syntax marker — gets a named `SCREAMING_CASE`
-  constant instead of being inlined at each use site. A literal used only
-  for its own sake (an error message, arbitrary test data) doesn't need this.
-- Write small, single-purpose methods from the start, not as a later cleanup
-  pass — factor out a repeated multi-line sequence immediately. Prefer a plain
-  private method over a local function closing over another method's locals.
-- Give a stateful, sequential scanner (a cursor, a parser) private instance
-  fields only for state that must persist *across* separate method calls.
-  When one method owns an entire scan start to finish, plain locals are
-  the better fit.
-- Avoid tuples/small one-off DTOs used purely to shuttle two or three values
-  between methods. A success/failure method returns `bool` (mutating instance
-  state as a side effect); a method with one meaningful value returns it
-  directly, typed explicitly; one primary value plus an optional secondary
-  one uses an `out` parameter for the secondary rather than wrapping both in
-  a record. Once there are genuinely three or more values, consolidate into
-  a nested result record — but keep the method in the same `bool
-  TryXxx(..., out result)` shape, returning the record via that single
-  `out` rather than switching to returning the record directly.
-- When a code-review comment names a specific refactoring technique by its
-  actual term (e.g. "Method Object," "Inappropriate Intimacy" — both from
-  Fowler's *Refactoring*), apply that exact technique, not a smaller
-  substitute that happens to touch the same lines. Before implementing the
-  fix, restate in one sentence what the *named* technique actually does and
-  check the planned fix genuinely matches it — not just "touches the same
-  symptom." If the comment offers a bracketed/hedged suggestion for a
-  detail ("[name can be better]", "or something"), treat that as one
-  possible detail, not a substitute for the named technique itself.
-- Use target-typed `new(...)` (dropping the repeated type name) wherever
-  the compiler can actually infer it — an assignment/return/`out` whose
-  declared type exactly matches what's being constructed. Don't use it
-  where the declared type is a base/interface and the constructed type is
-  a concrete implementer (`new(...)` there would mean "construct the base
-  type," which isn't valid), where the target is `var` (no declared type
-  to infer from), or where the `new(...)` is the receiver of a chained
-  call rather than the value actually being assigned.
-- No comments in source, including test code. If code needs one to be
-  understood, that's a signal to restructure — extract a well-named
-  method, turn an encoded string/boolean convention into a properly-named
-  type or property — not to narrate it in prose. Applies to WHY-comments
-  too, not just WHAT-comments. A fact worth keeping doesn't become a
-  source comment just because it lives in a test file; it goes in
-  `__PR_DESC_UPDATE__.md`, `.claude/specific.md`, or the architecture doc
-  instead, whichever already owns that kind of fact.
-- Fix a bug in the component that actually owns the relevant knowledge, not by
-  compensating with a heuristic wherever the symptom happened to surface — if a
-  fix requires guessing at another layer's shape or invariants, the guess
-  belongs in that layer instead. Relatedly, a method shouldn't reach into a
-  caller's shared/mutable state to get what it needs — take it as an
-  explicit parameter, even if the caller has to compute it first. Same
-  principle in reverse: don't get an object back from a call and then poke
-  its fields/methods yourself to finish the job — pass along what the
-  callee needs so it mutates its own state itself.
-- Never use the `!` null-forgiving operator — it silences the compiler instead
-  of resolving the issue, defeating the point of `Nullable`. Follow the house
-  nullable guide:
+Structure and design:
+
+- One type per file; a tightly-coupled nested helper may share its owner's.
+- Prefer polymorphic dispatch over a `switch` implementing per-type behaviour
+  — the behaviour belongs in its own class. A `switch` that only *selects*
+  between existing strategies is fine, as is a sequential parser walking a
+  token stream.
+- No `new SomeType(...)` in a constructor body unless it's a DTO or `record`;
+  inject dependencies and wire them at the composition root. Resolve a cycle
+  with a `Lazy<T>`-backed field through a shared registry — applied uniformly
+  to every registry-sourced collaborator, so registration order is never a
+  hazard.
+- A type built at most once per key gets a plain constructor plus
+  `public static GetOrCreate(...)` over a `static readonly` cache. C# has no
+  private primary constructor, so dropping to a regular one is the only way
+  to stop external code bypassing the cache.
+- A type whose only external contract is one interface implements it
+  explicitly (`string ISomething.Method(...)`), forwarding to a private
+  method if its own internals need the logic. Drop an interface once nothing
+  needs it polymorphically.
+- Write small, single-purpose methods from the start. Prefer a private method
+  over a local function closing over another method's locals.
+- Give a sequential scanner instance fields only for state that must persist
+  across separate calls; otherwise use locals.
+- Avoid tuples and one-off DTOs for shuttling values: success/failure returns
+  `bool` and mutates state; one meaningful value is returned directly; a
+  secondary value uses `out`. At three or more, consolidate into a nested
+  result record still returned via `out` from a `bool TryXxx(...)`.
+- Fix a bug in the component that owns the knowledge, not with a heuristic
+  where the symptom surfaced. Don't reach into a caller's shared state — take
+  a parameter. Don't poke a returned object's fields to finish a job — pass
+  the callee what it needs.
+- A public extension method meant to be broadly discoverable can live in a
+  shared root namespace, since C# namespace lookup already sees ancestor
+  namespaces (see `.claude/specific.md`).
+- When a review names a refactoring by its actual term (e.g. "Method Object",
+  "Inappropriate Intimacy"), apply that exact technique. Restate in one
+  sentence what it does and check the planned fix matches it, rather than a
+  smaller substitute touching the same lines. A bracketed aside
+  ("[name can be better]") is a detail, not a replacement for the technique.
+
+Syntax and layout:
+
+- `using` directives sorted alphabetically, no special-casing `System.*`;
+  `using static` forms its own group below, after a blank line.
+- Never write `private` — it's the default. Never write `sealed`.
+- Break a long boolean with `&&`/`||` at the *end* of the line; a lone
+  closing `)` gets its own line, like a closing `}`.
+- Keep blank lines between statements minimal.
+- Inheritance clause on a primary-constructor type: its own indented line
+  when the parameter list is single-line, trailing the `)` when it already
+  spans lines — even for a single parameter, and for `record` as for `class`.
+  A type with no primary constructor keeps `: Base` on the declaration line.
+- More than 2 optional/named arguments never go on one line.
+- Expression-bodied **methods** (constructors included) put `=>` at the end
+  of the signature and the expression on its own line below, however short.
+  Expression-bodied **properties** keep `=>` and the expression inline. The
+  signal is the parameter list: `()` → method, none → property.
+- Every `static` member goes at the top of its class, above instance members.
+- Extension methods use C# 14 `extension(Receiver name) { ... }` blocks, with
+  no `static`/`this` on the members. Use a second block when a different
+  receiver name reads better for some members.
+- Target-typed `new(...)` wherever the compiler can infer it. Not where the
+  declared type is a base/interface, the target is `var`, or the `new(...)`
+  is the receiver of a chained call.
+- A literal carrying meaning beyond its face value — a delimiter, sentinel or
+  syntax marker — gets a named constant. An error message or arbitrary test
+  datum doesn't.
+- Never use `!`. Use `?? throw new InvalidOperationException(...)` where an
+  invariant guarantees non-null, so it fails loudly at the point of use. See
   <https://github.com/mouseless/learn-dotnet/blob/main/nullable-usage/README.md>.
-  When a value is nullable by type but a real invariant guarantees it isn't null
-  at some point, use `?? throw new InvalidOperationException(...)` instead — it
-  fails loudly at the point of use if the invariant is ever broken, rather than
-  risking a `NullReferenceException` downstream.
-- Shouldly: asserting a thrown exception binds the delegate to a `var
-  actual` first, then chains the fluent `.ShouldThrow<TException>()`
-  extension directly off it — `.Message`/other assertions chain onto that
-  same call rather than capturing the exception into its own variable
-  (`actual.ShouldThrow<T>().Message.ShouldBe(...);`, not `var exception =
-  actual.ShouldThrow<T>(); exception.Message.ShouldBe(...);`) — rather
-  than the static `Should.Throw<TException>(() => ...)` form.
-- Tests follow Arrange-Act-Assert as three visually distinct groups
-  separated by a blank line — never blank lines *within* a group. Act is
-  a single line assigned to `var actual` (a value, or a delegate when
-  the act is expected to throw); Assert is whatever chain of
-  `actual.Should...` calls follows, kept together as one group even when
-  it spans a couple of chained/related assertions.
+- No comments in source, tests included — WHY-comments too. If code needs
+  one, restructure instead. A fact worth keeping goes to
+  `__PR_DESC_UPDATE__.md`, `.claude/specific.md` or the architecture doc.
+
+Naming (`.editorconfig` only marks these as suggestions, so they aren't
+build-enforced):
+
+- Private instance fields `_camelCase`; any `static` field, whatever its
+  accessibility, `SCREAMING_CASE`.
+- `[Test]` method names are `Snake_case` — a plain sentence, first letter
+  capitalised, underscores where spaces or punctuation would go
+  (`Date_filter_formats_with_given_pattern`).
+
+Tests and docs:
+
+- Arrange-Act-Assert as three groups separated by blank lines, never a blank
+  line *within* a group. Act is one line assigned to `var actual` (a value,
+  or a delegate when it should throw).
+- Shouldly, not NUnit's `Assert.That`. Assert a throw by chaining off the
+  delegate: `actual.ShouldThrow<T>().Message.ShouldBe(...)`, not the static
+  `Should.Throw<T>(() => ...)`.
+- When XML docs are required, ground each `<summary>` in the existing prose
+  docs rather than inventing a description that can drift; use
+  `<inheritdoc/>` for interface implementations; wrap `///` at 80 columns. A
+  test project sets `<NoWarn>$(NoWarn);CS1591</NoWarn>` rather than turning
+  off `GenerateDocumentationFile`, which would also silently drop `IDE0005`.
 
 ## Parking (ending a session)
 
-When the user says they're "parking" (wrapping up for the day):
-
-1. Run the test suite, confirm all-green — flag clearly if not; don't
-   park on red.
-2. Write the session's task-list changes to `__PR_DESC_UPDATE__.md` at
-   the repo root (create it if it's missing, append if it's there):
-   which tasks are done, any new one discovered mid-session, anything
-   worth noting for the branch's PR description. It only ever tracks
-   actionable remaining work, never a changelog of what's done — an
-   accepted tradeoff or known limitation with no follow-up action isn't
-   a todo either, so it doesn't belong there; fold it into the relevant
-   behavior/architecture doc instead, as a plain fact about current
-   behavior, the same as anything else there. The user reviews the file
-   and folds it into the actual PR description themselves.
-3. Update the architecture doc with any structural change from this
-   session (new types, moved namespaces, a resolved design decision) —
-   keep it describing current shape only, not a changelog.
-4. Update `.claude/specific.md` (or `.claude/generic.md`, if the
-   learning isn't actually project-specific) with any durable
-   convention/rule/decision from this session — these files plus the
-   branch's PR description (and any not-yet-merged
-   `__PR_DESC_UPDATE__.md`) are what survive to a cold start elsewhere;
-   nothing load-bearing should live only in chat history.
-5. Give a short summary: what's done, what's next, anything to
-   double-check.
+1. Run the suite; confirm green. Never park on red — flag it clearly.
+2. Write the session's task-list changes to `__PR_DESC_UPDATE__.md`: tasks
+   done, any discovered mid-session, anything worth noting for the PR
+   description. Actionable work only — an accepted tradeoff or known
+   limitation with no follow-up belongs in the behaviour or architecture doc
+   as a plain fact instead.
+3. Update the architecture doc with any structural change — current shape
+   only, never a changelog.
+4. Record any durable convention or decision in `.claude/specific.md`, or
+   `.claude/generic.md` if it isn't project-specific. These files plus the PR
+   description are what survive to a cold start; nothing load-bearing should
+   live only in chat history.
+5. Give a short summary: what's done, what's next, what to double-check.
 
 ## Git
 
-Read-only `git` commands (`log`, `diff`, `show`, `status`, `blame`, etc.) are
-fine to run directly. Never run a `git` command that writes (`add`, `commit`,
-`push`, `checkout`, `reset`, etc.) — this process has no write permission on
-`.git` anyway, so it would fail. The user handles all of git themselves; don't
-prepare commands for them or remind them about pending git tasks. Read-only
-`gh` commands (`gh pr view`, `gh issue view`, etc.) are likewise fine to run
-directly; a `gh` command that writes (`gh pr edit`, `gh pr create`, `gh issue
-comment`, etc.) is visible to others the moment it runs, so draft the change
-and let the user apply it unless they've explicitly asked you to run it
-yourself.
+Read-only `git` and `gh` commands are fine to run directly. Never run a `git`
+command that writes — the user handles all of git themselves, so don't prepare
+commands for them or remind them about pending git work. A `gh` command that
+writes is visible to others the moment it runs: draft it and let the user
+apply it unless they've explicitly asked otherwise.

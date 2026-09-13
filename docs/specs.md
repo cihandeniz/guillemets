@@ -200,171 +200,6 @@ month.
 »»
 ```
 
-### Sharing a Blank Line
-
-Adjacent or nested blocks share one blank line at their boundary, not two; the
-start or end of a template (or of an enclosing block) needs none.
-
-```markdown
-««individual
-
-Dear «full name»,
-
-»»
-
-««company
-
-«company name»
-
-»»
-```
-
-One blank line separates the two blocks — it satisfies both the first block's
-after-close and the second's before-open at once, not two in a row.
-
-A footer line needs a blank line before it too, same as `»»` — only its own
-gluing to `»»` is exempt. An empty body needs one blank line, not two.
-
-### Blank Lines in the Output
-
-Blank lines beyond the ones the syntax requires are the author's, and render as
-written — however many there are, before a block, after it, or anywhere in its
-body. A block that renders nothing leaves a single blank line where it stood,
-so the text around it reads as two paragraphs.
-
-```markdown
-Done.
-
-««show note
-
-»»
-
-Bye.
-```
-
-renders, given `{ "ShowNote": false }`, as
-
-```markdown
-Done.
-
-Bye.
-```
-
-The one exception is the very end of the output, where a blank line has nothing
-left to separate. A trailing run of them is trimmed back to a single newline.
-
-A loop renders its items one after another. When every item is a single
-paragraph they follow each other directly, so a body of `- «name»` gives a tight
-markdown list. When any item spans two or more paragraphs, a blank line goes
-between all of them instead, so the repeated chunks stay separate paragraphs
-rather than running together. Trimming a nested block's blank lines (see
-below) can change which of the two cases an item falls into.
-
-```markdown
-««items
-
-- «name»
-
-»»
-```
-
-renders, given two items, as
-
-```markdown
-- alpha
-- beta
-```
-
-### Trimming Blank Lines Around a Block
-
-A `~` written inside a block marker removes the blank line on that marker's
-outer side. `««~` drops the blank line before the block's opening, `~»»` drops
-the one after its closing. Each marker acts on its own side, so write both to
-close the gap above and below, or one to close a single side.
-
-```markdown
-Tags:
-
-««~tags
-
-- «name»
-
-~»»
-
-Done.
-```
-
-renders, given two tags, as
-
-```markdown
-Tags:
-- alpha
-- beta
-Done.
-```
-
-The blank lines stay REQUIRED in the template. `~` changes what is rendered,
-never what may be written — a block carrying one is laid out exactly like any
-other block.
-
-Because the marker sits inside the guillemets, it never competes with the
-negation, scope-navigation or footer slots: `««~!active`, `««~.: items` and
-`join: , ~»»` all parse. A footer value that itself ends in `~` needs the `\~`
-escape (see Escaping, below) so it isn't read as the marker — `join: \~~»»`
-joins with a literal `~` and still trims. This is the same escaping a value
-ending in `»` or containing `/` already needs.
-
-> [!NOTE]
->
-> `~` is also the else marker (see Else, below), but the two never collide. An
-> else `~` stands alone on its line; a trim `~` is written flush against a
-> guillemet run. Longest match decides, so `~»»` is always a trimmed close and
-> a lone `~` is always an else.
-
-`~` binds to the guillemet run, so depth costs nothing extra — `«««~` opens a
-depth-3 block and `~»»»` closes one. The marker plays no part in depth
-matching: a block opened with `«««~` closes with either `»»»` or `~»»»`.
-
-Trimming composes with the rules above rather than overriding them. A trimmed
-nested block no longer leaves a blank line inside the item that encloses it, so
-that item may stop spanning paragraphs — which in turn decides whether the loop
-separates its items:
-
-```markdown
-««tags
-
-«name»
-
-«««~featured
-
-(featured)
-
-~»»»
-
-»»
-```
-
-renders, given a featured `alpha` and a plain `beta`, as
-
-```markdown
-alpha
-(featured)
-beta
-```
-
-Without the inner `~` markers the `alpha` item would span two paragraphs, and a
-blank line would then separate every item.
-
-Three rules settle the edges:
-
-- A blank line that two trimmed markers share is removed once, not twice.
-  Trimming never joins two lines into one.
-- `~` removes only the single blank line the syntax requires. Blank lines
-  beyond it are the author's and still render, as everywhere else.
-- A marker with no blank line to remove — at the start or end of the template,
-  or flush against an enclosing block's boundary — does nothing, and is not an
-  error.
-
 ### Resolving the Block Name
 
 `««name` in a block is a property chain, resolved the same way as an inline
@@ -393,7 +228,7 @@ the data at all — the block is treated as falsy, the same as an explicit
 
 `~` on its own line inside a block separates the truthy and falsy branches. It's
 used with boolean blocks and variable definitions. Like `««name` and `»»` (see
-Blocks, above), a blank line MUST surround `~` on both sides, swallowed the
+Whitespace, below), a blank line MUST surround `~` on both sides, swallowed the
 same way — for the same reason: a markdown formatter would otherwise merge it
 into an adjacent paragraph.
 
@@ -493,7 +328,7 @@ match — `full name` resolves against that matched item, not the outer scope.
 
 Used inline (`«items: active»`), the same filtering happens, but there's no body
 to scope into — each matched item's own display representation is used directly,
-auto-joined like any other list (see Inline Lists, above). This is rarely useful
+auto-joined like any other list (see Inline Lists, below). This is rarely useful
 on its own, since a plain boolean field carries no display text of its own.
 
 > [!NOTE]
@@ -528,121 +363,6 @@ Blocks, above, for what counts as truthy per resolved type):
 >
 > Negating an earlier segment (for example, `company: !active: something`) is
 > invalid.
-
-## Scope Navigation
-
-Resolving a property chain (see Nested Property Access, above) normally searches
-the current scope first, then falls back through each enclosing scope in turn
-(see Blocks, above) — but only when the name isn't found locally. A property
-that already exists in the current scope shadows same-named properties further
-out. Inside a loop, the magic `«first»`/ `«last»` variables always win over an
-item property of the same name too (see Magic Loop Variables, above).
-
-`.: ` and `..: ` are two markers, written at the very start of a property chain,
-that override this default and pin resolution to an exact scope instead.
-
-`.: ` and `..: ` (dot(s), colon, exactly one space) follow the same fixed-token
-rule as `: ` (see Nested Property Access, above) — written without the trailing
-space, neither is recognized as a navigator at all.
-
-### This Scope Only
-
-`.: name` resolves `name` against the current scope's own data only — no falling
-back to an enclosing scope, no magic-var shadowing, and no shadowing by a
-defined variable (see Variable Definitions, below) of the same name either, so
-`.: first`/`.: last` reach the current scope's own `first`/`last` property even
-where the magic `«first»`/`«last»` would otherwise shadow it:
-
-```markdown
-««items
-
-«first»    → the magic variable
-«.: first» → the item's own "first" property, ignoring the magic variable
-
-»»
-```
-
-If the current scope has no such property at all, the chain resolves to nothing
-— the same as any other unresolved chain (see Resolving the Block Name, above).
-
-### Climbing to a Parent Scope
-
-`..: name` starts resolution one scope higher than usual — at the enclosing
-scope rather than the current one — then applies the normal fallback/shadowing
-rules again from there, including a further fallback beyond it if `name` isn't
-found at that level either. Repeating the marker climbs one further level per
-repetition, so `..: ..: name` climbs two levels before resolving `name`.
-
-```markdown
-«««quotes
-
-Quote: «name»
-
-««««items
-
-Item: «name», quote: «..: name»
-
-»»»»
-
-»»»
-```
-
-Given each item has its own `name` as well as the enclosing quote, `«name»`
-inside the items loop resolves to the item's own name (it shadows the quote's),
-while `«..: name»` climbs past that shadow to reach the quote's.
-
-Climbing past the outermost scope isn't a parse error — there's simply nothing
-there, so the chain resolves to nothing, the same as any other chain that can't
-find its property (see Resolving the Block Name, above). Drilling into a `null`
-object already works the same way (see Nested Property Access, above); climbing
-past the outermost scope is that same rule applied to scopes instead of
-properties, the same short-circuiting a null-conditional operator (`?.` in C#)
-gives a chain of member accesses once one link is null. A chain can carry as
-many `..: ` markers as the author writes, regardless of how many scopes actually
-enclose it in the template — there's no engine-enforced cap.
-
-### Combining Both
-
-`..: ` and `.: ` compose: zero or more `..: ` climbs, followed by at most one
-`.: `, then the property chain itself. The `.: ` applies at whichever scope the
-climbs land on, pinning resolution to exactly that scope — including skipping
-*that* scope's own magic-var shadowing:
-
-```markdown
-«..: .: first»
-```
-
-climbs one level, then reads that parent scope's own `first` property, ignoring
-the parent's own magic `«first»` too.
-
-> [!WARNING]
->
-> A `.: ` marker MUST be the last one before the property chain:
->
-> ```markdown
-> «.: ..: name»
-> «.: .: name»
-> ```
->
-> Both are invalid — a `..: ` climb or another `.: ` appearing after `.: ` has
-> already pinned the scope isn't allowed.
-
-Negation and filters both apply to the chain as a whole, after scope navigation
-has resolved it, exactly as they do without any navigator:
-
-```markdown
-«..: !active»
-«..: name / upper»
-```
-
-The same holds for filtering out items in a list (see Filtering Out Items in
-Lists, above) — a navigator only changes which scope the chain starts
-resolving from, not whether list-filtering applies to it:
-
-```markdown
-«.: items: active»
-«..: quotes: active»
-```
 
 ## Variable Definitions
 
@@ -976,7 +696,7 @@ value, even mid-value with no space before it — `join: , »»` isn't ambiguous
 the value is exactly `, `. This is the same closing-token rule that ends any
 other block body (see Blocks, above), not something specific to filter values.
 
-A table's own trailing footer rows (see Tables, below) are a different,
+A table's own trailing footer rows (see Tables, above) are a different,
 non-conflicting concept from this pipeline. The "glued to the close" rule above
 keeps them from colliding in practice: a table row written on its own line, even
 one that happens to look like a filter name, is just another literal row — the
@@ -990,61 +710,213 @@ if written out of habit. Any other filter (`truncate`, `date`, ...) would
 reformat the entire rendered table text, which is never useful — don't attach a
 filter pipeline to a table body.
 
-## Full Example — Customer Quote
+## Whitespace
 
-Field names below mix casing (`Quote No`, `description`) to show that resolution
-is case-insensitive — the same property resolves however the author capitalizes
-it in the template.
+How a template's blank lines, hard wraps and line endings reach the output.
+The block rules above are written against these.
+
+### Sharing a Blank Line
+
+Adjacent or nested blocks share one blank line at their boundary, not two; the
+start or end of a template (or of an enclosing block) needs none.
 
 ```markdown
-# Quote #«Quote No»
+««individual
 
-««Contact Person = individual
-
-«Full Name»
-
-~
-
-representatives of «Company Name»
+Dear «full name»,
 
 »»
 
-**Customer:** «Contact Person»
-**Date:** «Date»
-**Valid Until:** «Valid Until»
+««company
 
----
-
-Dear «Contact Person»,
-
-We are pleased to present this quote for the requested services. Our team will
-deliver high-quality work within the agreed timeline and aim to ensure your
-satisfaction at every step.
-
-## Items
-
-««items
-
-| Description   | Quantity          | Unit Price            | Total         |
-| ------------- | ----------------- | --------------------- | ------------- |
-| «Description» | «Quantity» «Unit» | «Unit Price»          | «Total»       |
-|               |                   | **Subtotal**          | «Subtotal»    |
-|               |                   | **Tax (%«Tax Rate»)** | «Tax»         |
-|               |                   | **Grand Total**       | «Grand Total» |
+«company name»
 
 »»
-
----
-
-We look forward to working with you. This quote is valid until «valid until».
-Please don't hesitate to contact us with any questions.
-
-*«Company» — «Date»*
 ```
 
----
+One blank line separates the two blocks — it satisfies both the first block's
+after-close and the second's before-open at once, not two in a row.
 
-## Line Endings
+A footer line needs a blank line before it too, same as `»»` — only its own
+gluing to `»»` is exempt. An empty body needs one blank line, not two.
+
+### Blank Lines in the Output
+
+Blank lines beyond the ones the syntax requires are the author's, and render as
+written — however many there are, before a block, after it, or anywhere in its
+body. A block that renders nothing leaves a single blank line where it stood,
+so the text around it reads as two paragraphs.
+
+```markdown
+Done.
+
+««show note
+
+»»
+
+Bye.
+```
+
+renders, given `{ "ShowNote": false }`, as
+
+```markdown
+Done.
+
+Bye.
+```
+
+The one exception is the very end of the output, where a blank line has nothing
+left to separate. A trailing run of them is trimmed back to a single newline.
+
+A loop renders its items one after another. When every item is a single
+paragraph they follow each other directly, so a body of `- «name»` gives a tight
+markdown list. When any item spans two or more paragraphs, a blank line goes
+between all of them instead, so the repeated chunks stay separate paragraphs
+rather than running together. Trimming a nested block's blank lines (see
+below) can change which of the two cases an item falls into.
+
+```markdown
+««items
+
+- «name»
+
+»»
+```
+
+renders, given two items, as
+
+```markdown
+- alpha
+- beta
+```
+
+### Trimming Blank Lines Around a Block
+
+A `~` written inside a block marker removes the blank line on that marker's
+outer side. `««~` drops the blank line before the block's opening, `~»»` drops
+the one after its closing. Each marker acts on its own side, so write both to
+close the gap above and below, or one to close a single side.
+
+```markdown
+Tags:
+
+««~tags
+
+- «name»
+
+~»»
+
+Done.
+```
+
+renders, given two tags, as
+
+```markdown
+Tags:
+- alpha
+- beta
+Done.
+```
+
+The blank lines stay REQUIRED in the template. `~` changes what is rendered,
+never what may be written — a block carrying one is laid out exactly like any
+other block.
+
+Because the marker sits inside the guillemets, it never competes with the
+negation, scope-navigation or footer slots: `««~!active`, `««~.: items` and
+`join: , ~»»` all parse. A footer value that itself ends in `~` needs the `\~`
+escape (see Escaping, below) so it isn't read as the marker — `join: \~~»»`
+joins with a literal `~` and still trims. This is the same escaping a value
+ending in `»` or containing `/` already needs.
+
+> [!NOTE]
+>
+> `~` is also the else marker (see Else, above), but the two never collide. An
+> else `~` stands alone on its line; a trim `~` is written flush against a
+> guillemet run. Longest match decides, so `~»»` is always a trimmed close and
+> a lone `~` is always an else.
+
+`~` binds to the guillemet run, so depth costs nothing extra — `«««~` opens a
+depth-3 block and `~»»»` closes one. The marker plays no part in depth
+matching: a block opened with `«««~` closes with either `»»»` or `~»»»`.
+
+Trimming composes with the rules above rather than overriding them. A trimmed
+nested block no longer leaves a blank line inside the item that encloses it, so
+that item may stop spanning paragraphs — which in turn decides whether the loop
+separates its items:
+
+```markdown
+««tags
+
+«name»
+
+«««~featured
+
+(featured)
+
+~»»»
+
+»»
+```
+
+renders, given a featured `alpha` and a plain `beta`, as
+
+```markdown
+alpha
+(featured)
+beta
+```
+
+Without the inner `~` markers the `alpha` item would span two paragraphs, and a
+blank line would then separate every item.
+
+Three rules settle the edges:
+
+- A blank line that two trimmed markers share is removed once, not twice.
+  Trimming never joins two lines into one.
+- `~` removes only the single blank line the syntax requires. Blank lines
+  beyond it are the author's and still render, as everywhere else.
+- A marker with no blank line to remove — at the start or end of the template,
+  or flush against an enclosing block's boundary — does nothing, and is not an
+  error.
+
+### Line Wrapping
+
+A `«...»` may be hard-wrapped across lines — by an editor's fill command, a
+formatter enforcing a column limit, or by hand. A single newline inside one
+stands in for the space that `: `, `.: `, `..: ` and ` / ` require, and
+separates words inside a property name, so a token means the same thing
+wrapped as it does on one line.
+
+```markdown
+Shipping to «shipping address:
+city». Shout «name /
+upper». Total «order total
+/ currency».
+```
+
+renders exactly as the same text unwrapped would.
+
+> [!NOTE]
+>
+> Only a *single* newline does this. A blank line is a paragraph break, so a
+> paragraph that happens to begin with `/ ` is ordinary text and never a
+> filter stage. This is what keeps wrapping from reaching across the blank
+> lines the block rules depend on.
+
+```markdown
+one
+
+/ two
+```
+
+renders as written.
+
+A block's opening is the one exception: it MUST stay on one line. `««quotes:`
+with its `items` on the next line is an error, because that marker's own line
+is what the blank-line rules above are written against.
+
+### Line Endings
 
 A template's own line-ending style (LF or CRLF, detected once from the source)
 is authoritative for the whole rendered output — any line breaks embedded in
@@ -1092,32 +964,6 @@ value — `\n` there is just the two characters `\` and `n`.
 > There's no `\:` — a filter clause only ever looks for the *first* `: `, so
 > nothing after it is re-scanned for another one. Writing `truncate: 80: extra`
 > doesn't need escaping to keep `: extra` as part of the value; it already is.
-
-## Comments
-
-No dedicated comment syntax — a template is markdown, and markdown already
-has one. An HTML comment isn't `«»` syntax, so the engine treats it as
-ordinary literal text and passes it through unchanged; it renders into the
-output exactly as written and disappears only once that markdown is itself
-turned into HTML, the same as any HTML comment authored by hand.
-
-```markdown
-<!-- reminder: confirm pricing before this goes out -->
-Hello, «name»!
-```
-
-renders as
-
-```markdown
-<!-- reminder: confirm pricing before this goes out -->
-Hello, Ada!
-```
-
-> [!TIP]
->
-> The comment is still present in the rendered markdown — Guillemets never
-> strips it. Only a markdown-to-HTML renderer downstream makes it invisible,
-> the same way it would for a comment authored directly in markdown.
 
 ## Glossary & Localization
 
@@ -1179,3 +1025,198 @@ localized terms in the glossary.
 Each segment of a property chain (`company: name`) is resolved independently,
 against direct resolution or the glossary in turn, so one glossary entry can
 bridge a single segment of a chain without needing to cover the others.
+
+## Scope Navigation
+
+Resolving a property chain (see Nested Property Access, above) normally searches
+the current scope first, then falls back through each enclosing scope in turn
+(see Blocks, above) — but only when the name isn't found locally. A property
+that already exists in the current scope shadows same-named properties further
+out. Inside a loop, the magic `«first»`/ `«last»` variables always win over an
+item property of the same name too (see Magic Loop Variables, above).
+
+`.: ` and `..: ` are two markers, written at the very start of a property chain,
+that override this default and pin resolution to an exact scope instead.
+
+`.: ` and `..: ` (dot(s), colon, exactly one space) follow the same fixed-token
+rule as `: ` (see Nested Property Access, above) — written without the trailing
+space, neither is recognized as a navigator at all.
+
+### This Scope Only
+
+`.: name` resolves `name` against the current scope's own data only — no falling
+back to an enclosing scope, no magic-var shadowing, and no shadowing by a
+defined variable (see Variable Definitions, above) of the same name either, so
+`.: first`/`.: last` reach the current scope's own `first`/`last` property even
+where the magic `«first»`/`«last»` would otherwise shadow it:
+
+```markdown
+««items
+
+«first»    → the magic variable
+«.: first» → the item's own "first" property, ignoring the magic variable
+
+»»
+```
+
+If the current scope has no such property at all, the chain resolves to nothing
+— the same as any other unresolved chain (see Resolving the Block Name, above).
+
+### Climbing to a Parent Scope
+
+`..: name` starts resolution one scope higher than usual — at the enclosing
+scope rather than the current one — then applies the normal fallback/shadowing
+rules again from there, including a further fallback beyond it if `name` isn't
+found at that level either. Repeating the marker climbs one further level per
+repetition, so `..: ..: name` climbs two levels before resolving `name`.
+
+```markdown
+«««quotes
+
+Quote: «name»
+
+««««items
+
+Item: «name», quote: «..: name»
+
+»»»»
+
+»»»
+```
+
+Given each item has its own `name` as well as the enclosing quote, `«name»`
+inside the items loop resolves to the item's own name (it shadows the quote's),
+while `«..: name»` climbs past that shadow to reach the quote's.
+
+Climbing past the outermost scope isn't a parse error — there's simply nothing
+there, so the chain resolves to nothing, the same as any other chain that can't
+find its property (see Resolving the Block Name, above). Drilling into a `null`
+object already works the same way (see Nested Property Access, above); climbing
+past the outermost scope is that same rule applied to scopes instead of
+properties, the same short-circuiting a null-conditional operator (`?.` in C#)
+gives a chain of member accesses once one link is null. A chain can carry as
+many `..: ` markers as the author writes, regardless of how many scopes actually
+enclose it in the template — there's no engine-enforced cap.
+
+### Combining Both
+
+`..: ` and `.: ` compose: zero or more `..: ` climbs, followed by at most one
+`.: `, then the property chain itself. The `.: ` applies at whichever scope the
+climbs land on, pinning resolution to exactly that scope — including skipping
+*that* scope's own magic-var shadowing:
+
+```markdown
+«..: .: first»
+```
+
+climbs one level, then reads that parent scope's own `first` property, ignoring
+the parent's own magic `«first»` too.
+
+> [!WARNING]
+>
+> A `.: ` marker MUST be the last one before the property chain:
+>
+> ```markdown
+> «.: ..: name»
+> «.: .: name»
+> ```
+>
+> Both are invalid — a `..: ` climb or another `.: ` appearing after `.: ` has
+> already pinned the scope isn't allowed.
+
+Negation and filters both apply to the chain as a whole, after scope navigation
+has resolved it, exactly as they do without any navigator:
+
+```markdown
+«..: !active»
+«..: name / upper»
+```
+
+The same holds for filtering out items in a list (see Filtering Out Items in
+Lists, above) — a navigator only changes which scope the chain starts
+resolving from, not whether list-filtering applies to it:
+
+```markdown
+«.: items: active»
+«..: quotes: active»
+```
+
+## Comments
+
+No dedicated comment syntax — a template is markdown, and markdown already
+has one. An HTML comment isn't `«»` syntax, so the engine treats it as
+ordinary literal text and passes it through unchanged; it renders into the
+output exactly as written and disappears only once that markdown is itself
+turned into HTML, the same as any HTML comment authored by hand.
+
+```markdown
+<!-- reminder: confirm pricing before this goes out -->
+Hello, «name»!
+```
+
+renders as
+
+```markdown
+<!-- reminder: confirm pricing before this goes out -->
+Hello, Ada!
+```
+
+> [!TIP]
+>
+> The comment is still present in the rendered markdown — Guillemets never
+> strips it. Only a markdown-to-HTML renderer downstream makes it invisible,
+> the same way it would for a comment authored directly in markdown.
+
+---
+
+## Full Example — Customer Quote
+
+Field names below mix casing (`Quote No`, `description`) to show that resolution
+is case-insensitive — the same property resolves however the author capitalizes
+it in the template.
+
+```markdown
+# Quote #«Quote No»
+
+««Contact Person = individual
+
+«Full Name»
+
+~
+
+representatives of «Company Name»
+
+»»
+
+**Customer:** «Contact Person»
+**Date:** «Date»
+**Valid Until:** «Valid Until»
+
+---
+
+Dear «Contact Person»,
+
+We are pleased to present this quote for the requested services. Our team will
+deliver high-quality work within the agreed timeline and aim to ensure your
+satisfaction at every step.
+
+## Items
+
+««items
+
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| «Description» | «Quantity» «Unit» | «Unit Price»          | «Total»       |
+|               |                   | **Subtotal**          | «Subtotal»    |
+|               |                   | **Tax (%«Tax Rate»)** | «Tax»         |
+|               |                   | **Grand Total**       | «Grand Total» |
+
+»»
+
+---
+
+We look forward to working with you. This quote is valid until «valid until».
+Please don't hesitate to contact us with any questions.
+
+*«Company» — «Date»*
+```

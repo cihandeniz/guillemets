@@ -31,12 +31,19 @@ internal static class Symbols
             .Add([BACKSLASH, BACKSLASH], Escaped)
             .Add([BACKSLASH, TILDE], Escaped)
             .Add([COLON, SPACE], Colon)
+            .Add([COLON, NEWLINE], Colon)
             .Add([COLON], BareColon)
             .Add([DOT, COLON, SPACE], LocalScope)
+            .Add([DOT, COLON, NEWLINE], LocalScope)
             .Add([DOT, DOT, COLON, SPACE], ParentScope)
+            .Add([DOT, DOT, COLON, NEWLINE], ParentScope)
             .Add([SPACE, SLASH, SPACE], FilterDelimiter)
+            .Add([SPACE, SLASH, NEWLINE], FilterDelimiter)
+            .Add([NEWLINE, SLASH, SPACE], FilterDelimiter)
+            .Add([NEWLINE, SLASH, NEWLINE], FilterDelimiter)
             .Add([TILDE], Else)
             .Add([BANG], Negation)
             .Add([EQUALS], Assign)
-            .Add([NEWLINE], Newline, repeat: true, limitRepeat: false);
+            .Add([NEWLINE], Newline)
+            .Add([NEWLINE, NEWLINE], Newline, repeat: true, limitRepeat: false);
 }

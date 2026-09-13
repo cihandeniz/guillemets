@@ -21,6 +21,7 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
         _tokens.Advance();
 
         var properties = PropertyChainParser.Parse(open.Position, stopAtNewline: true, out var variableName);
+        ValidateOpenStaysOnOneLine(open);
         ConsumeBlankLineAfterOpen();
         var truthy = ParseBody(stopAtElse: true, out var footer);
 
@@ -47,6 +48,13 @@ internal class BlockParser(TokenCursor _tokens, ParserRegistry _registry)
             Footer: footer,
             BlankLineAfterClose: swallowedBlankLine && !close.TrimsBlankLineAfter
         );
+    }
+
+    void ValidateOpenStaysOnOneLine(Token open)
+    {
+        if (_tokens.AtEnd || _tokens.Current.Position.Line == open.Position.Line) { return; }
+
+        throw new TemplateParseException("A block's opening must stay on one line", open.Position);
     }
 
     void ConsumeBlankLineAfterOpen()
