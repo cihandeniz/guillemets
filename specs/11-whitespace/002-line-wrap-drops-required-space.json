@@ -1,0 +1,13 @@
+{
+  "Name": "ada",
+  "Company": { "Name": "Acme" },
+  "Quotes": [
+    {
+      "Name": "Q-1",
+      "Items": [
+        { "First": "uno" },
+        { "First": "dos" }
+      ]
+    }
+  ]
+}
