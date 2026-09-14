@@ -6,16 +6,16 @@ internal static class TokenExtensions
 
     extension(Token token)
     {
-        public void ValidateAsBlockOpen()
+        public void ValidateAsBlockOpen(TokenCursor tokens)
         {
-            if (token.PrecededByBlankLine) { return; }
+            if (tokens.CurrentPrecededByBlankLine) { return; }
 
             throw new TemplateParseException("Expected a blank line right before the block's opening", token.Position);
         }
 
-        public void ValidateAsBlockClose()
+        public void ValidateAsBlockClose(TokenCursor tokens)
         {
-            if (!token.Position.AtLineStart)
+            if (!tokens.CurrentStartsLine)
             {
                 throw new TemplateParseException(
                     $"A literal may not share a line with the block's closing {CLOSE_BLOCK}",
@@ -23,7 +23,7 @@ internal static class TokenExtensions
                 );
             }
 
-            if (token.PrecededByBlankLine) { return; }
+            if (tokens.CurrentPrecededByBlankLine) { return; }
 
             throw new TemplateParseException(
                 $"Expected a blank line right before the block's closing {CLOSE_BLOCK}",
@@ -31,9 +31,9 @@ internal static class TokenExtensions
             );
         }
 
-        public void ValidateBlankLineAfterBlockClose()
+        public void ValidateBlankLineAfterBlockClose(TokenCursor tokens)
         {
-            if (token.FollowedByBlankLine) { return; }
+            if (tokens.CurrentFollowedByBlankLine) { return; }
 
             throw new TemplateParseException(
                 $"Expected a blank line right after the block's closing {CLOSE_BLOCK}",
@@ -41,9 +41,9 @@ internal static class TokenExtensions
             );
         }
 
-        public void ValidateAsBlockElse()
+        public void ValidateAsBlockElse(TokenCursor tokens)
         {
-            if (!token.PrecededByBlankLine)
+            if (!tokens.CurrentPrecededByBlankLine)
             {
                 throw new TemplateParseException(
                     $"Expected a blank line right before the block's else {Symbols.TILDE}",
@@ -51,7 +51,7 @@ internal static class TokenExtensions
                 );
             }
 
-            if (token.FollowedByBlankLine) { return; }
+            if (tokens.CurrentFollowedByBlankLine) { return; }
 
             throw new TemplateParseException(
                 $"Expected a blank line right after the block's else {Symbols.TILDE}",
@@ -59,9 +59,9 @@ internal static class TokenExtensions
             );
         }
 
-        public void ValidateAsBlockFooter()
+        public void ValidateAsBlockFooter(bool precededByBlankLine)
         {
-            if (token.PrecededByBlankLine) { return; }
+            if (precededByBlankLine) { return; }
 
             throw new TemplateParseException("Expected a blank line right before the block's footer", token.Position);
         }
@@ -69,6 +69,16 @@ internal static class TokenExtensions
 
     extension(Token close)
     {
+        public void ValidateQuoteDepthMatches(int openDepth, int closeDepth)
+        {
+            if (closeDepth == openDepth) { return; }
+
+            throw new TemplateParseException(
+                "A block's closing must sit at the same blockquote depth as its opening",
+                close.Position
+            );
+        }
+
         public void ValidateDepthMatches(Token open)
         {
             if (close.Depth == open.Depth) { return; }

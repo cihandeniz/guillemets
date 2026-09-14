@@ -19,7 +19,10 @@ Doc ownership, in precedence order:
   on top of that (`date`/`currency`/`truncate`, plus .NET-specific notes). A
   port to another runtime gets its own file here, never edits to `specs.md`.
 - `docs/architecture.md` — how the engine is built. See `.claude/generic.md`
-  for what belongs there.
+  for what belongs there. High-level only: meta entities and the parse/render
+  flow, never a feature's details.
+- `docs/symbols.md` — the concrete symbol table and its trie diagram. Lives
+  apart from `architecture.md` so adding a symbol doesn't churn that doc.
 
 Resolve a spec ambiguity in the owning doc alongside the code change; don't
 patch around it. Section order in `docs/specs.md` follows the `/specs` folder
@@ -110,6 +113,9 @@ re-derive wrongly from the code alone. Go there before changing behaviour.
   for reuse below.
 - **Tables**: a block may open/close with a leading/trailing `|` to stay valid
   in a markdown table row.
+- **Blockquotes**: any block works inside `>`-prefixed lines, at any nesting
+  depth. Depth is counted in `Quote` tokens, so `>>` and `> >` are the same;
+  blank lines render a canonical marker, one `>` per level.
 - **Inline lists**: scalar lists auto-join with `, `; override with
   `join`/`join last`.
 - **Filters**: `name: value` chained with ` / `, no parens. Built-ins: `date`,

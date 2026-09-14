@@ -24,9 +24,11 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
     {
         footer = [];
         var nodes = new List<IRenderable>();
-        while (!_tokens.AtEnd && !ReachedClose(insideBlock) && !ReachedElse(stopAtElse))
+        while (!_tokens.AtEnd)
         {
-            if (insideBlock && _tokens.Current.Position.AtLineStart && TryParseFooter(_tokens.Current, out footer)) { break; }
+            if (_tokens.AtQuotedBlockLine) { _tokens.SkipQuotes(); }
+            if (ReachedClose(insideBlock) || ReachedElse(stopAtElse)) { break; }
+            if (insideBlock && TryParseFooterLine(out footer)) { break; }
 
             nodes.Add(ParseNode());
         }
@@ -43,11 +45,26 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
         throw new TemplateParseException($"Unexpected token '{_tokens.Current.Kind}'", _tokens.Current.Position);
     }
 
+    bool TryParseFooterLine(out IReadOnlyList<FilterNode> footer)
+    {
+        footer = [];
+        if (!_tokens.CurrentAtLineStart) { return false; }
+
+        var checkpoint = _tokens.Position;
+        _tokens.SkipQuotes();
+        if (!_tokens.AtEnd && TryParseFooter(_tokens.Current, out footer)) { return true; }
+
+        _tokens.Rewind(checkpoint);
+
+        return false;
+    }
+
     bool TryParseFooter(Token start, out IReadOnlyList<FilterNode> footer)
     {
         footer = [];
         if (!_tokens.LineReaches(CloseBlock)) { return false; }
 
+        var precededByBlankLine = _tokens.CurrentPrecededByBlankLine;
         var checkpoint = _tokens.Position;
         if (!FilterParser.TryParse(expectLeadingDelimiter: false, out var pipeline) ||
             _tokens.AtEnd ||
@@ -59,21 +76,21 @@ internal class BodyParser(TokenCursor _tokens, ParserRegistry _registry)
             return false;
         }
 
-        start.ValidateAsBlockFooter();
+        start.ValidateAsBlockFooter(precededByBlankLine);
         footer = pipeline;
 
         return true;
     }
 
     bool ReachedClose(bool insideBlock) =>
-        insideBlock && _tokens.Current.Kind is CloseBlock && _tokens.Current.EndsLine;
+        insideBlock && _tokens.Current.Kind is CloseBlock && _tokens.CurrentEndsLine;
 
     bool ReachedElse(bool stopAtElse)
     {
         if (!stopAtElse || _tokens.Current.Kind is not Else) { return false; }
-        if (!_tokens.Current.Position.AtLineStart || !_tokens.Current.EndsLine) { return false; }
+        if (!_tokens.CurrentStartsLine || !_tokens.CurrentEndsLine) { return false; }
 
-        _tokens.Current.ValidateAsBlockElse();
+        _tokens.Current.ValidateAsBlockElse(_tokens);
 
         return true;
     }

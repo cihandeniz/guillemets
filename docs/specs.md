@@ -1185,6 +1185,84 @@ resolving from, not whether list-filtering applies to it:
 «..: quotes: active»
 ```
 
+## Blockquotes
+
+A block works inside a markdown blockquote — every line prefixed with `>`. The
+rule is an equivalence: a quoted block renders exactly as the same block
+unquoted would, with the quote marker kept on every line.
+
+```markdown
+> ««items
+>
+> - «name»
+>
+> »»
+```
+
+renders, given two items, as
+
+```markdown
+> - A
+> - B
+```
+
+The block's opening, closing, `~` else and footer lines, and the blank lines
+the syntax requires *inside* the block, all carry the marker. What counts is
+the **depth** — how many `>` markers deep the line sits — not the exact
+spelling, so `>` and `> ` are the same depth and mix freely within one block.
+That matters because a blank line inside a quote is usually written `>` with no
+trailing space, editors and formatters being prone to stripping one.
+
+Everything after the marker is content, preserved as written, so `>- «name»`
+renders as `>- A`.
+
+A *blank* line has no content, so its marker is written canonically in the
+output — one `>` per level, no spacing — however the template spelled it. A
+`> >` blank line inside a depth-2 quote renders as `>>`. This is what keeps a
+blank line the engine produces itself indistinguishable from one the author
+wrote, so neither depends on the other's spacing.
+
+The blank line *before* the opening and *after* the closing sit outside the
+block and may be at any depth, or be an ordinary empty line — which is what
+makes a block the first thing in a blockquote work:
+
+```markdown
+Note:
+
+> ««shown
+>
+> It is shown.
+>
+> »»
+```
+
+Blank lines the engine produces itself carry the block's marker too, so the
+output stays a single blockquote. A multi-paragraph loop item is separated from
+the next item by a `>` line rather than an empty one (see Blank Lines in the
+Output, above), and a block that renders nothing leaves one `>` line where it
+stood. An empty line there would end the blockquote and split it in two, which
+is why the depth has to match rather than merely being tolerated.
+
+A block whose own lines are unquoted may still have quoted *content* in its
+body — the markers are then just literal text, and nothing above applies:
+
+```markdown
+««items
+
+> - «name»
+
+»»
+```
+
+A loop body whose lines form a markdown table (see Tables, above) works inside a
+blockquote too. Every row line carries the marker, the repeating row included,
+so the heading renders once and each item becomes one more quoted row.
+
+> [!NOTE]
+>
+> A block's closing must sit at the same depth as its opening; a mismatch is an
+> error.
+
 ## Comments
 
 No dedicated comment syntax — a template is markdown, and markdown already

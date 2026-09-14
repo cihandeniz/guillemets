@@ -11,19 +11,21 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     IReadOnlyList<IRenderable>? ElseBody = null,
     string? VariableName = null,
     IReadOnlyList<FilterNode>? Footer = null,
+    string QuoteMarker = "",
+    int QuoteDepth = 0,
     bool BlankLineAfterClose = false
 ) : IRenderable
 {
-    static readonly string BLANK_LINE = new(NEWLINE, 2);
-    static readonly string BLANK_LINE_SEPARATOR = NEWLINE.ToString();
+    readonly TableBody? _table = TableBody.From(Body, QuoteDepth);
 
-    static string WithoutBodyPadding(string item) =>
-        item.EndsWith(BLANK_LINE, StringComparison.Ordinal) ? item[..^1] : item;
+    string BlankLine => NEWLINE + QuoteMarker + NEWLINE;
+    string BlankLineSeparator => QuoteMarker + NEWLINE;
 
-    static bool SpansParagraphs(string body) =>
-        body.Contains(BLANK_LINE, StringComparison.Ordinal);
+    string WithoutTrailingBlankLine(string item) =>
+        item.EndsWith(BlankLine, StringComparison.Ordinal) ? item[..^BlankLineSeparator.Length] : item;
 
-    readonly TableBody? _table = TableBody.From(Body);
+    bool SpansParagraphs(string body) =>
+        body.Contains(BlankLine, StringComparison.Ordinal);
 
     public string Render(RenderContext context, Scope scope)
     {
@@ -37,15 +39,15 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     }
 
     string RestoreBlankLineAfterClose(string rendered) =>
-        BlankLineAfterClose && rendered.Length > 0 ? rendered + NEWLINE : rendered;
+        BlankLineAfterClose && rendered.Length > 0 ? rendered + BlankLineSeparator : rendered;
 
     string JoinItems(IEnumerable<string> items)
     {
         if (Footer is { Count: > 0 }) { return string.Concat(ApplyFooter(items)); }
 
-        var bodies = items.Select(WithoutBodyPadding).ToList();
+        var bodies = items.Select(WithoutTrailingBlankLine).ToList();
 
-        return string.Join(bodies.Exists(SpansParagraphs) ? BLANK_LINE_SEPARATOR : string.Empty, bodies);
+        return string.Join(bodies.Exists(SpansParagraphs) ? BlankLineSeparator : string.Empty, bodies);
     }
 
     IEnumerable<string> ApplyFooter(IEnumerable<string> items)

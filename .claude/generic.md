@@ -136,6 +136,9 @@ Syntax and layout:
 - Target-typed `new(...)` wherever the compiler can infer it. Not where the
   declared type is a base/interface, the target is `var`, or the `new(...)`
   is the receiver of a chained call.
+- Don't pack a pattern match, a capture, a negation and a comparison into one
+  condition. Split into straight-line guards, one fact each, and name a
+  computed count rather than inlining its arithmetic.
 - A literal carrying meaning beyond its face value — a delimiter, sentinel or
   syntax marker — gets a named constant. An error message or arbitrary test
   datum doesn't.

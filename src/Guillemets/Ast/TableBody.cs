@@ -10,11 +10,11 @@ internal record TableBody(IReadOnlyList<IRenderable> Heading,
     const char ROW_DELIMITER = '|';
     const int MINIMUM_ROWS = 3;
 
-    public static TableBody? From(IReadOnlyList<IRenderable> body)
+    public static TableBody? From(IReadOnlyList<IRenderable> body, int quoteDepth)
     {
-        if (body is not [LiteralNode { Text: var first }, ..] || !first.StartsWith(ROW_DELIMITER)) { return null; }
+        if (!OpensRow(body, quoteDepth)) { return null; }
 
-        var rows = SplitRows(WithoutBodyPadding(body));
+        var rows = SplitRows(body);
         if (rows.Count < MINIMUM_ROWS) { return null; }
 
         return new([.. rows[0], .. rows[1]],
@@ -23,12 +23,10 @@ internal record TableBody(IReadOnlyList<IRenderable> Heading,
         );
     }
 
-    static IReadOnlyList<IRenderable> WithoutBodyPadding(IReadOnlyList<IRenderable> body)
-    {
-        if (body is not [.., LiteralNode { Text: var last }] || !last.EndsWith(NEWLINE)) { return body; }
-
-        return [.. body.Take(body.Count - 1), new LiteralNode(last[..^1])];
-    }
+    static bool OpensRow(IReadOnlyList<IRenderable> body, int quoteDepth) =>
+        body.Count > quoteDepth &&
+        body[quoteDepth] is LiteralNode { Text: var first } &&
+        first.StartsWith(ROW_DELIMITER);
 
     static List<List<IRenderable>> SplitRows(IReadOnlyList<IRenderable> body)
     {

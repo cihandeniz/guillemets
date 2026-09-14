@@ -11,7 +11,8 @@ internal static class Symbols
     internal const char TILDE = '~';
     const char BANG = '!';
     const char EQUALS = '=';
-    const char SPACE = ' ';
+    internal const char SPACE = ' ';
+    internal const char QUOTE = '>';
     const char DOT = '.';
     internal const char BACKSLASH = '\\';
     internal const char SLASH = '/';
@@ -44,6 +45,8 @@ internal static class Symbols
             .Add([TILDE], Else)
             .Add([BANG], Negation)
             .Add([EQUALS], Assign)
+            .Add([QUOTE], Quote)
+            .Add([QUOTE, SPACE], Quote)
             .Add([NEWLINE], Newline)
             .Add([NEWLINE, NEWLINE], Newline, repeat: true, limitRepeat: false);
 }

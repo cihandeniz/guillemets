@@ -22,7 +22,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     static string SegmentText(Token token, bool unescape) => token.Kind switch
     {
         Newline => " ",
-        Escaped => token.Text,
+        Escaped or Quote => token.Text,
         Literal => unescape ? Unescape(token.Text) : token.Text,
         Colon or BareColon or LocalScope or ParentScope or Else or Negation or Assign =>
             token.Text,
@@ -136,7 +136,7 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
     bool ContinuesText(bool stopAtNewline, bool inValue) => _tokens.Current.Kind switch
     {
         Newline => !stopAtNewline,
-        Literal or Escaped => true,
+        Literal or Escaped or Quote => true,
         Open or OpenBlock or Close or CloseBlock or FilterDelimiter => false,
         Colon or BareColon or LocalScope or ParentScope or Else or Negation or Assign => inValue,
         _ => throw new ArgumentOutOfRangeException(nameof(inValue), _tokens.Current.Kind, "Unrecognized token kind."),
