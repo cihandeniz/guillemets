@@ -1,1 +1,0 @@
-Amounts: «quotes: prices: amount»

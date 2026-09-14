@@ -1,0 +1,29 @@
+{
+  "Tags": ["philosophy", "wisdom", "ancient-greek"],
+  "EmptyTags": [],
+  "PriceQuotes": [
+    { "Amount": 100 },
+    { "Amount": 200 },
+    { "Amount": 300 }
+  ],
+  "Quotes": [
+    {
+      "Prices": [
+        { "Amount": 100 },
+        { "Amount": 200 }
+      ]
+    },
+    {
+      "Prices": [
+        { "Amount": 300 }
+      ]
+    }
+  ],
+  "Items": [
+    { "Name": "Alice", "Active": true },
+    { "Name": "Bob", "Active": false }
+  ],
+  "Quote": {
+    "Tags": ["philosophy", "wisdom", "ancient-greek"]
+  }
+}

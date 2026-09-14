@@ -10,6 +10,7 @@ internal record VariableNode(PropertyChainNode Properties, IReadOnlyList<FilterN
     : IRenderable
 {
     const string DEFAULT_JOIN = ", ";
+    const string TABLE_CELL_JOIN = " | ";
 
     static IEnumerable<string> AsDisplayStrings(IDataSource value) =>
         value.Kind == DataKind.Array
@@ -26,11 +27,12 @@ internal record VariableNode(PropertyChainNode Properties, IReadOnlyList<FilterN
     public string Render(RenderContext context, Scope scope)
     {
         var values = context.PropertyResolver.Resolve(scope, Properties).SelectMany(AsDisplayStrings);
+        var filterContext = context.InTableCell ? FilterContext.TableCell : FilterContext.Inline;
         foreach (var filter in Filters)
         {
-            values = filter.Apply(values, FilterContext.Inline);
+            values = filter.Apply(values, filterContext);
         }
 
-        return string.Join(DEFAULT_JOIN, values);
+        return string.Join(context.InTableCell ? TABLE_CELL_JOIN : DEFAULT_JOIN, values);
     }
 }

@@ -1,0 +1,19 @@
+{
+  "Individual": true,
+  "Corporate": false,
+  "FullName": "Alice Smith",
+  "CompanyName": "Acme Inc.",
+  "Tagline": "",
+  "Quantity": 0,
+  "CompanyInfo": null,
+  "OtherCompanyInfo": {
+    "Name": "Acme Software"
+  },
+  "Present": "yes",
+  "Items": [],
+  "Outer": true,
+  "Inner": true,
+  "InnerTwo": false,
+  "OuterThree": false,
+  "Name": "Alice Smith"
+}

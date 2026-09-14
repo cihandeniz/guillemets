@@ -14,6 +14,8 @@ internal enum TokenKind
     ParentScope,
     FilterDelimiter,
     Newline,
+    Quote,
+    Pipe,
     Else,
     Negation,
     Assign,

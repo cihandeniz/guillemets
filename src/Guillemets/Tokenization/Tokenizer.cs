@@ -23,14 +23,14 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
 
             FlushPending(pendingStart, index, pendingPosition);
 
-            _tokens.Add(new(kind.Value, _template, index, length, position));
+            AddToken(kind.Value, index, length, position);
             pendingPosition = position = position.Next(_template.AsSpan(index, length));
             pendingStart = index += length;
         }
 
         FlushPending(pendingStart, index, pendingPosition);
 
-        return new(_tokens);
+        return new(_tokens, new(_tokens));
     }
 
     int SkipToNextLeadingChar(int index)
@@ -45,5 +45,21 @@ internal class Tokenizer(string _template, SymbolTree _symbolTree)
         if (end <= start) { return; }
 
         _tokens.Add(new(_symbolTree.Kind, _template, start, end - start, position));
+    }
+
+    void AddToken(TokenKind kind, int start, int length, Position position)
+    {
+        if (kind is not TokenKind.Newline)
+        {
+            _tokens.Add(new(kind, _template, start, length, position));
+
+            return;
+        }
+
+        for (var offset = 0; offset < length; offset++)
+        {
+            _tokens.Add(new(kind, _template, start + offset, 1, position));
+            position = position.NextLine();
+        }
     }
 }

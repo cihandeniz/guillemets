@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 
+using static Guillemets.Rendering.Scope;
+
 namespace Guillemets.Ast;
 
 internal class PropertyChainNode(IList<string> properties,
@@ -23,6 +25,14 @@ internal class PropertyChainNode(IList<string> properties,
 
     public class Builder
     {
+        static bool LeadsWithMagicThis(PropertyChainNode chain) =>
+            chain.Count > 1 &&
+            !chain.ThisScopeOnly &&
+            chain[0].Equals(THIS, StringComparison.OrdinalIgnoreCase);
+
+        static string NormalizeWhitespace(string text) =>
+            string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
         readonly List<string> _properties = [];
         bool _negateNext;
         bool _lastSegmentNegated;
@@ -68,6 +78,14 @@ internal class PropertyChainNode(IList<string> properties,
                 throw new TemplateParseException("Property chain must not be empty", openPosition);
             }
 
+            if (LeadsWithMagicThis(result))
+            {
+                throw new TemplateParseException(
+                    $"'{THIS}' must be the whole property chain - use '.: name' to reach the current scope's own property",
+                    openPosition
+                );
+            }
+
             return result;
         }
 
@@ -79,8 +97,5 @@ internal class PropertyChainNode(IList<string> properties,
 
             return name;
         }
-
-        static string NormalizeWhitespace(string text) =>
-            string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
     }
 }

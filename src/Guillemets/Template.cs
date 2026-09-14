@@ -73,8 +73,15 @@ public class Template
         var propertyResolver = new PropertyResolver(glossary);
         var renderer = new Renderer(propertyResolver);
 
-        var rendered = renderer.Render(_nodes, new(data, Glossary: glossary));
+        var rendered = TrimTrailingBlankLines(renderer.Render(_nodes, new(data, Glossary: glossary)));
 
         return _lineEnding == CRLF ? rendered.Replace(Position.NEWLINE.ToString(), CRLF) : rendered;
+    }
+
+    static string TrimTrailingBlankLines(string rendered)
+    {
+        var trimmed = rendered.TrimEnd(Position.NEWLINE);
+
+        return trimmed.Length == rendered.Length ? rendered : trimmed + Position.NEWLINE;
     }
 }

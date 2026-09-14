@@ -140,25 +140,20 @@ different decimal separator (`tr-TR`'s `,`, say), that separator instead.
 
 ## Truncate
 
-`truncate` counts UTF-16 characters (not words, not grapheme clusters) and
-appends `…` once the value exceeds the length given as its argument.
-
-```markdown
-«description / truncate: 10»
-→ A wireless…
-```
+`truncate` itself is part of the language — see [`../specs.md`](../specs.md).
+What's .NET-specific is the unit it counts in: UTF-16 characters, not words and
+not grapheme clusters.
 
 > [!NOTE]
 >
-> Counting UTF-16 characters, not grapheme clusters, can still land the cut
-> point mid-surrogate-pair (a multi-char emoji, say). `truncate` backs the cut
-> point off by one character rather than splitting the pair — it doesn't attempt
-> full grapheme-cluster awareness (combining marks, ZWJ sequences) beyond that.
+> Counting UTF-16 characters can still land the cut point mid-surrogate-pair (a
+> multi-char emoji, say). `truncate` backs the cut point off by one character
+> rather than splitting the pair — it doesn't attempt full grapheme-cluster
+> awareness (combining marks, ZWJ sequences) beyond that.
 
-A missing, non-numeric, or negative argument (`truncate` with no value,
-`truncate: abc`, or `truncate: -10`) throws a `TemplateParseException` at the
-filter's own position, not a raw .NET exception — every filter gets this for
-free via the same choke point (`FilterNode.Apply`), not just `truncate`.
+A missing, non-numeric, or negative argument throws a `TemplateParseException`
+at the filter's own position, not a raw .NET exception — every filter gets this
+for free via the same choke point (`FilterNode.Apply`), not just `truncate`.
 
 ## Join
 
@@ -206,9 +201,11 @@ as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
 
 > [!NOTE]
 >
-> Because both depend on `CurrentCulture`, their `/specs/08-filters` fixtures
-> (and `05-variable-definitions/006`) only pass under whatever ambient culture
-> the test process runs with. That's true today since CI defaults to
+> Because both depend on `CurrentCulture`, the `/specs` fixtures that use them
+> (`02-filters/002-value-filters` and
+> `06-variable-definitions/001-variable-definition`) only pass under whatever
+> ambient culture the test process runs with. That's true today since CI
+> defaults to
 > invariant/en-US and the fixture text has no culture-sensitive casing under
 > that, but it would break under a different default (e.g. `tr-TR`, per the
 > Turkish mapping above). `FilterCultureTests.cs`'s

@@ -1,0 +1,62 @@
+{
+  "FullItems": [
+    { "Description": "Consulting", "Quantity": 2, "Unit": "day", "UnitPrice": 1500, "Total": 3000 },
+    { "Description": "Setup", "Quantity": 1, "Unit": "unit", "UnitPrice": 500, "Total": 500 }
+  ],
+  "Subtotal": 3500,
+  "TotalsItems": [
+    { "Description": "A", "Total": 10 },
+    { "Description": "B", "Total": 20 }
+  ],
+  "RunningSubtotal": 30,
+  "Tax": 5,
+  "GrandTotal": 35,
+  "Items": [
+    { "Description": "A", "Total": 10 },
+    { "Description": "B", "Total": 20 }
+  ],
+  "MinimalItems": [
+    { "Description": "A" },
+    { "Description": "B" }
+  ],
+  "Company": { "Name": "Acme" },
+  "FallbackSubtotal": 30,
+  "SingleItem": [
+    { "Description": "Consulting", "Total": 3000 }
+  ],
+  "JoinItems": [
+    { "Description": "Consulting", "Total": 3000 },
+    { "Description": "Setup", "Total": 500 }
+  ],
+  "Tags": ["philosophy", "wisdom"],
+  "Quarters": ["Q1", "Q2", "Q3"],
+  "Regions": ["EU", "US", "APAC"],
+  "QuarterlyItems": [
+    { "Name": "A", "Amounts": [1, 2, 3] },
+    { "Name": "B", "Amounts": [4, 5, 6] }
+  ],
+  "Period": "2026",
+  "ReportRows": [
+    {
+      "Label": "A", "Amounts": [1, 2, 3], "Note": "ok", "Span": "H1", "Shares": [10, 20, 30]
+    }
+  ],
+  "UnevenRows": [
+    { "Name": "A", "Amounts": [1, 2] },
+    { "Name": "B", "Amounts": [3, 4, 5, 6] }
+  ],
+  "TagRows": [
+    { "Name": "A", "Labels": ["x", "y"] },
+    { "Name": "B", "Labels": ["z"] }
+  ],
+  "JoinColumnRows": [
+    { "Name": "A", "Amounts": [1, 2, 3] }
+  ],
+  "OpenRows": [
+    { "Name": "A", "Amounts": [1, 2, 3] }
+  ],
+  "EmptyQuarters": [],
+  "EmptyColumnRows": [
+    { "Name": "A", "Amounts": [] }
+  ]
+}

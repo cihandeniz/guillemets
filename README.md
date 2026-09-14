@@ -9,6 +9,12 @@ a standard keyboard, so typing either takes a shortcut (see below), not a
 keystroke. Templates get read far more often than typed by hand, so that
 trade favors the reader.
 
+> **Templates your customers could read over your shoulder**
+>
+> - [**Cheatsheet**](docs/cheatsheet.md): Every feature, one example each
+> - [**Try it in .NET Fiddle**](https://dotnetfiddle.net/S6JocQ): Nothing to
+>   install
+
 <details>
 <summary>How to type «»</summary>
 
@@ -39,18 +45,24 @@ Replacements… → `+` → add `<<` → `«`, then `>>` → `»`.
 Hi «first name»,
 
 ««is member
+
 Welcome back — thanks for being a member!
+
 ~
+
 Thanks for placing your first order with us!
+
 »»
 
 **Order #«order id»** — placed «order date / date: MMMM d, yyyy»
 
 ««items
+
 | Item   | Qty        | Price              | Total                    |
 | ------ | ---------- | ------------------ | ------------------------ |
 | «name» | «quantity» | «price / currency» | «total / currency»       |
 |        |            | **Order total**    | «order total / currency» |
+
 »»
 
 You ordered «items: name / join last:  and  / join: , ».
@@ -188,6 +200,7 @@ property names when they don't already match — see
 
 ## Documentation
 
+- [`docs/cheatsheet.md`](docs/cheatsheet.md) — every feature, one example each.
 - [`docs/specs.md`](docs/specs.md) — full syntax reference and behavior spec.
 - [`docs/implementations/dotnet.md`](docs/implementations/dotnet.md) — this
   .NET implementation's own behavior, including its runtime-specific filters.

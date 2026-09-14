@@ -1,3 +1,0 @@
-«««individual
-Dear «full name»,
-»»»

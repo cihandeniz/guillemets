@@ -1,1 +1,0 @@
-No company information available

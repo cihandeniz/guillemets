@@ -25,61 +25,26 @@ flowchart TB
     end
 ```
 
-`Template.Create` tokenizes and parses once, giving back a parsed tree with
-nothing render-specific in it. `template.Render(data)` walks that tree against
-some data and produces a string — call it as many times as you like, with
-different data each time; the `Template` itself never changes.
+`Template.Create` tokenizes and parses once. What comes back is a parsed tree
+with nothing render-specific in it. `template.Render(data)` walks that tree
+against some data and produces a string. Call it as often as you like, with
+different data each time. The `Template` itself never changes.
 
-The rest of this document follows that same pipeline, one namespace at a time:
-`Tokenization` → `Parsing` → `Ast` → `Rendering`, plus `Data` and `Filters`, the
-two pluggable extension points `Rendering` calls out to.
+The rest of this document follows that pipeline, one namespace at a time:
+`Tokenization` → `Parsing` → `Ast` → `Rendering`. `Data` and `Filters` come
+last; they are the two extension points `Rendering` calls out to.
 
 ## Tokenization
 
-Turns raw text into a flat list of tokens. It has no idea what any of it means —
-that's every later stage's job, not this one's.
+Turns raw text into a flat list of tokens. It has no idea what any of it means.
+That is every later stage's job.
 
-`SymbolTree` is a trie: each character read from the template walks one level
-deeper, and reaching a node that has a `TokenKind` attached is a match.
-Longest match wins, so depth (`«`, `««`, `«««`, ...) and the two
-scope-navigation markers (`.: `, `..: `) fall out for free from shared prefixes,
-instead of needing separate cases per case.
+Symbols are declared once and matched by a trie, longest match wins; the
+concrete table lives in [symbols.md](symbols.md). `Tokenizer` only asks the tree
+how far a match extends and moves past it. Anything the tree doesn't recognize
+piles up as plain text.
 
-```mermaid
-flowchart TB
-    Root(("(root)"))
-    Root --> Open["«"] --> OpenKind["Open"]
-    Open --> OpenOpen["« (loops on «)"] --> OpenBlockKind["OpenBlock\n(depth = run length)"]
-    Root --> Close["»"] --> CloseKind["Close\n(literal text if nothing's open)"]
-    Close --> CloseClose["» (loops on »)"] --> CloseBlockKind["CloseBlock\n(depth) + trailing newline"]
-    Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedKind["Escaped literal"]
-    Root --> Colon[":"] --> BareColonKind["BareColon\n(malformed-filter signal)"]
-    Colon --> ColonSpace[" "] --> ColonKind["Colon"]
-    Root --> Dot["."] --> DotColon[":"] --> DotColonSpace[" "] --> LocalScopeKind["LocalScope\n(.: )"]
-    Dot --> DotDot["."] --> DotDotColon[":"] --> DotDotColonSpace[" "] --> ParentScopeKind["ParentScope\n(..: )"]
-    Root --> SpaceSlashSpace[" / "] --> FilterDelimiterKind["FilterDelimiter"]
-    Root -.no match anywhere.-> LiteralKind["Literal (fallback)"]
-```
-
-Symbols are declared once, in `Symbols.cs`. Adding a new fixed symbol or
-multi-character run is one line there; nothing else in the tokenizer changes.
-`Tokenizer` itself just asks the tree how far a match extends and moves its
-cursor past it — anything the tree doesn't recognize accumulates as plain text.
-
-There's one `Token` shape for every kind (a `readonly record struct` carrying
-a `TokenKind`, an offset/length pair into the template string, and a
-`Position`), not a type hierarchy — `Text` slices the source lazily off that
-offset, so a kind nothing ever reads `.Text` from (`Open`, for instance) never
-allocates a string for it.
-
-> [!NOTE]
->
-> Several kinds — `Colon`, `BareColon`, `Close`, `LocalScope`, `ParentScope` —
-> report `IsText: true`. That's what lets each one fall back to rendering as
-> ordinary literal text whenever it shows up somewhere its special meaning
-> doesn't apply (a stray `»`, a bare `:` with no space, `.: ` in prose outside
-> a property chain), without the tokenizer itself needing to understand
-> context.
+Every kind shares one `Token` shape, with no type hierarchy.
 
 ## Parsing
 
@@ -104,146 +69,82 @@ flowchart TB
     BlockParser -->|recurses via| BodyParser
 ```
 
-`ParserRegistry` has no opinion on what a "parser" is — each class exposes
-whatever shape actually fits it, rather than all being forced through one common
-interface. Collaborators that need each other are wired lazily, so registration
-order never becomes a hazard. `PropertyChainParser` owns scope-navigation syntax
-(`.: `/`..: `), parsed once up front before the rest of a chain, and
-`FilterParser` is a small grammar layered on top of a chain or a block's footer.
+`ParserRegistry` has no opinion on what a "parser" is. Each class exposes
+whatever shape fits it, instead of being forced through one common interface.
+Collaborators that need each other are wired lazily, so registration order is
+never a hazard.
 
-> [!NOTE]
->
-> There's no lead token marking a block-footer line — `join: , »»` looks like it
-> could just be body text up to its last two characters. `BodyParser` resolves
-> this by speculatively asking `FilterParser` to parse a filter pipeline at the
-> start of every line inside a block, then rewinding (`TokenCursor.Rewind`) if
-> it doesn't parse *and* land glued to the closing `»»` with nothing between —
-> matching the spec's "MUST be the only thing on that line" rule. Anything else
-> is treated as ordinary body text.
+Parsing walks the token list in sequence; nothing reaches back into the template
+string.
 
 ## Ast
 
-The parsed tree: plain data, no behavior beyond rendering dispatch. Most node
-types implement `IRenderable`, the single interface `Renderer` walks —
-`LiteralNode` (plain text), `VariableNode` (an inline `«...»`), `BlockNode` (a
-`««...»»`) — each holding whatever it needs to render itself: a property chain,
-a nested body of child `IRenderable`s, an optional filter pipeline.
+The parsed tree. Plain data, with no behavior beyond rendering dispatch.
 
-A couple of node types exist purely as data and never render themselves:
-`PropertyChainNode` (a resolved property chain, plus its navigation and negation
-flags) and `FilterNode` (one pipeline stage). These get handed to `Rendering` to
-be resolved or applied, rather than answering `IRenderable.Render` on their own.
+`IRenderable` is the one interface `Renderer` walks. A few node types are data
+only and never render themselves; `Rendering` resolves or applies those instead.
+`TableBody` is a third shape — a view over a block's body that regroups it into
+`TableRow`s and `TableCell`s, rendered directly by the behavior that owns them
+rather than by walking.
 
 ## Rendering
 
-Walks the `Ast` against a `Scope` — the current data plus a link to its parent,
-for property fallback and loop-relative magic variables — and produces the
-output string.
+Walks the `Ast` against a `Scope` and produces the output string. A `Scope` is
+the current data plus a link to its parent, which is what makes property
+fallback and loop-relative magic variables work.
 
 `BlockNode` resolves its header to one of three behaviors, all implementing
 `IBlockBehavior`:
 
-| Resolved type  | Behavior              |
-| ---            | ---                   |
-| list           | `LoopBehavior`        |
-| object         | `ScopeBehavior`       |
-| anything else  | `ConditionalBehavior` |
+| Resolved type | Behavior              |
+|---------------|-----------------------|
+| list          | `LoopBehavior`        |
+| object        | `ScopeBehavior`       |
+| anything else | `ConditionalBehavior` |
 
-Same syntax every time; only the resolved type decides. A loop body that starts
-and ends each line with `|` renders as a markdown table instead of a plain
-repeat, with a heading/divider/footer split out from the one row that actually
-repeats.
-
-`BlockNode` applies the block's own footer filter pipeline, if any, uniformly
-across all three behaviors, which is why `join`/`join last` are natural no-ops
-on a `Conditional`/`Scope` block — there's only ever one item for them to act
-on.
-
-### Property resolution
-
-`PropertyResolver` is a thin per-render façade over `PropertyChainResolution`,
-which does the actual work of walking a `Scope` chain for one property chain at
-a time. Two behaviors apply everywhere a chain resolves, not just in a block
-header:
-
-- A chain whose last segment is a boolean property projected through a
-  list (`items: active`) filters the list down to the matching item(s), instead
-  of collapsing to a list of booleans.
-- A chain that flattens through two list levels (`quotes: prices`)
-  merges into one combined list, rather than one list *per* quote.
-
-Magic `first`/`last` resolve before anything else for a single-segment chain,
-which is what lets them shadow an item's own same-named property. Scope
-navigation (`.: `/`..: `) layers on top: `.: ` skips that shadowing and
-enclosing-scope fallback in favor of the current scope's own data only, and `..:
-` climbs the `Scope` parent chain first.
-
-> [!NOTE]
->
-> Climbing past the outermost scope isn't an error — it's treated the same as
-> any other chain that can't find its property, resolving to nothing rather than
-> throwing. Scope navigation never needs to know the template's actual nesting
-> depth at parse time because of this.
+Same syntax every time, no keywords: only the resolved type decides. A property
+chain resolves against the `Scope` chain, one chain at a time.
 
 ### Name resolution
 
-`Rendering.Glossary` turns one property-chain segment (`quote no`) into the
-model's actual property name (`OfferNo`), wrapping whatever `IStringLocalizer`
-the caller set on `ParseOptions.Localizer`. Both that lookup and its fallback
-route through one function, `ParseOptions.PropertyNameConversion` — it
-converts a matched glossary entry's `Name` into a property name, and, for any
-segment the glossary doesn't cover (or when there's no glossary at all), the
-segment itself. It defaults to `TextCasing.Dehumanize()`; a caller can replace
-it outright (not compose with it) to target a model whose properties aren't
-PascalCase/camelCase.
+`Glossary` turns a property-chain segment, written as natural words, into the
+model's real property name. It wraps whatever `IStringLocalizer` the caller set
+on `ParseOptions.Localizer`, and routes both the lookup and its fallback through
+one replaceable conversion function, so a model that isn't PascalCase or
+camelCase needs no other change.
 
-`Glossary.GetOrCreate` caches built glossaries in a `ConditionalWeakTable`
-keyed by the `IStringLocalizer` instance itself (each entry a small
-`ConcurrentDictionary` keyed by `(culture, propertyNameConversion,
-collisionResolver)`), so two templates sharing the same `IStringLocalizer`,
-culture, and conversion function reuse the same built `Glossary` — while a
-scoped/transient localizer (the common ASP.NET Core lifetime) can still be
-garbage-collected once nothing else references it, instead of pinning
-every glossary ever built for the process's lifetime. A `null` localizer
-skips the cache entirely and builds a fresh (trivially cheap) `Glossary`
-each time.
-
-> [!IMPORTANT]
->
-> The cache key uses `CultureInfo.CurrentUICulture`, not `CurrentCulture` —
-> that's the culture `IStringLocalizer`'s own resource resolution actually
-> varies by. Keying on the wrong one would let a cache hit silently serve a
-> `Glossary` built for a stale UI culture.
+Built glossaries are cached weakly, keyed by the localizer instance, so a scoped
+or transient localizer can still be collected rather than pinning every glossary
+ever built.
 
 ## Data
 
 Adapts external data formats behind one small interface, so the rest of the
 engine never touches a concrete format.
 
-`IDataSource` is the one interface `Rendering` talks to for external data —
-object/array/scalar shape, property lookup, boolean coercion, display string.
-JSON, POCO, and Newtonsoft `JToken` are the three built-in adapters, all shipped
-in the one core package rather than as separate per-format packages; anyone can
-add another by implementing the same interface.
+`IDataSource` is the one interface `Rendering` talks to for external data. It
+covers object/array/scalar shape, property lookup, boolean coercion and the
+display string.
+
+JSON, POCO and Newtonsoft `JToken` are the three built-in adapters. All three
+ship in the one core package rather than as separate per-format packages. Anyone
+can add another by implementing the same interface.
 
 ## Filters
 
 The pluggable value-transform pipeline stages behind `«expr / filter: arg»` and
 the block-footer join.
 
-`IFilter` is the one interface behind a pipeline stage — a sequence-in,
+`IFilter` is the one interface behind a pipeline stage: a sequence-in,
 sequence-out transform. `Template.Create`'s optional `Action<ParseOptions>`
-callback exposes both `ParseOptions.Filters` (register your own alongside the
-built-ins) and `ParseOptions.Localizer`, so both concerns configure through one
-place.
+callback exposes `ParseOptions.Filters`, for registering your own alongside the
+built-ins, and `ParseOptions.Localizer`. Both configure in one place.
 
-A bare filter stage (no `: value` at all) can mean something different depending
-on where it's written — `join`'s default is `, ` inline but a newline in a block
-footer. `IFilter.GetDefaultArg(FilterContext)` is a default interface method for
-this; most filters don't override it and stay context-free, `JoinFilter` does.
+A stage's default argument may depend on where it is written — inline, or in a
+block footer — so a `FilterContext` travels with the pipeline.
 
 ## Tests
 
-The `/specs` fixture corpus is the main acceptance suite, run once through
-`SpecTests` against JSON data. Each other data-source adapter gets a smaller,
-targeted test suite instead of re-running the whole corpus.
+The `/specs` fixture corpus is the main acceptance suite. `SpecTests` runs it
+once, against JSON data. Every other data-source adapter gets a smaller,
+targeted suite instead of re-running the whole corpus.

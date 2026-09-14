@@ -15,4 +15,10 @@ public enum FilterContext
     /// Written as a block's footer, the last line before its close.
     /// </summary>
     Footer,
+
+    /// <summary>
+    /// Written inside a cell of a loop block's table body, e.g.
+    /// <c>| «tags / join» |</c>.
+    /// </summary>
+    TableCell,
 }

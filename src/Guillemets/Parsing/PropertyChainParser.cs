@@ -77,7 +77,6 @@ internal class PropertyChainParser(TokenCursor _tokens)
             if (stopAtNewline && _tokens.Current.Kind is Newline)
             {
                 Flush(buffer, chain);
-                _tokens.Advance();
 
                 break;
             }
@@ -91,7 +90,9 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
-            if (_tokens.Current.Kind is Literal or Escaped)
+            if (_tokens.TrySkipQuoteMarker()) { continue; }
+
+            if (_tokens.Current.Kind is Literal or Escaped or Quote or Pipe)
             {
                 buffer.Append(_tokens.Current.Text);
                 _tokens.Advance();

@@ -10,21 +10,49 @@ namespace Guillemets.Ast;
 internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderable> Body,
     IReadOnlyList<IRenderable>? ElseBody = null,
     string? VariableName = null,
-    IReadOnlyList<FilterNode>? Footer = null
+    IReadOnlyList<FilterNode>? Footer = null,
+    string QuoteMarker = "",
+    int QuoteDepth = 0,
+    string? BlankLineAfterClose = null
 ) : IRenderable
 {
-    public bool EndsAtLineEnd =>
-        true;
+    readonly TableBody? _table = TableBody.From(Body, QuoteDepth);
+
+    string BlankLine => NEWLINE + QuoteMarker + NEWLINE;
+    string BlankLineSeparator => QuoteMarker + NEWLINE;
+
+    string WithoutTrailingBlankLine(string item) =>
+        item.EndsWith(BlankLine, StringComparison.Ordinal) ? item[..^BlankLineSeparator.Length] : item;
+
+    bool SpansParagraphs(string body) =>
+        body.Contains(BlankLine, StringComparison.Ordinal);
 
     public string Render(RenderContext context, Scope scope)
     {
         var items = ResolveBehavior(context, scope).Render(context, Body, ElseBody);
-        var rendered = string.Concat(ApplyFooter(items));
-        if (VariableName is null) { return rendered; }
+        var rendered = JoinItems(items);
+        if (VariableName is null) { return RestoreBlankLineAfterClose(rendered); }
 
         scope.DefineVariable(VariableName, rendered.TrimEnd(NEWLINE));
 
         return string.Empty;
+    }
+
+    string RestoreBlankLineAfterClose(string rendered)
+    {
+        if (BlankLineAfterClose is null) { return rendered; }
+        if (rendered.Length == 0) { return rendered; }
+
+        return rendered + BlankLineAfterClose + NEWLINE;
+    }
+
+    string JoinItems(IEnumerable<string> items)
+    {
+        if (Footer is { Count: > 0 }) { return string.Concat(ApplyFooter(items)); }
+
+        var bodies = items.Select(WithoutTrailingBlankLine).ToList();
+
+        return string.Join(bodies.Exists(SpansParagraphs) ? BlankLineSeparator : string.Empty, bodies);
     }
 
     IEnumerable<string> ApplyFooter(IEnumerable<string> items)
@@ -44,7 +72,7 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     {
         if (context.PropertyResolver.TryResolveLoopItems(scope, Properties, out var items, out var resolved))
         {
-            return new LoopBehavior(scope, items);
+            return new LoopBehavior(scope, items, _table);
         }
 
         var value = resolved.SingleOrDefault() ?? UndefinedDataSource.INSTANCE;

@@ -1,6 +1,0 @@
-««items
-«««!first
----
-»»»
-«description»
-»»

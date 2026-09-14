@@ -10,12 +10,13 @@ internal class Renderer
     public Renderer(PropertyResolver propertyResolver) =>
         _context = new(propertyResolver, this);
 
-    public string Render(IReadOnlyList<IRenderable> nodes, Scope scope)
+    public string Render(IReadOnlyList<IRenderable> nodes, Scope scope, bool inTableCell = false)
     {
+        var context = inTableCell ? _context with { InTableCell = true } : _context;
         var result = new StringBuilder();
         foreach (var node in nodes)
         {
-            result.Append(node.Render(_context, scope));
+            result.Append(node.Render(context, scope));
         }
 
         return result.ToString();

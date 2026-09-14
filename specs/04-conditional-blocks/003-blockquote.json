@@ -1,0 +1,16 @@
+{
+  "Shown": true,
+  "Hidden": false,
+  "Items": [],
+  "OtherItems": [
+    {
+      "Name": "A"
+    },
+    {
+      "Name": "B"
+    }
+  ],
+  "InnerShown": true,
+  "InnerHidden": false,
+  "ShowNote": false
+}

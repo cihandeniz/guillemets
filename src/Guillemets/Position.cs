@@ -19,14 +19,8 @@ public record Position(int Line, int Column)
     /// </summary>
     public const char TAB = '\t';
 
-    /// <summary>
-    /// Whether this position is the first column of its line.
-    /// </summary>
-    public bool AtLineStart =>
-        Column == 1;
-
-    internal Position NextLine(int count = 1) =>
-        new(Line + count, 1);
+    internal Position NextLine() =>
+        new(Line + 1, 1);
 
     internal Position NextColumn(int count = 1) =>
         new(Line, Column + count);

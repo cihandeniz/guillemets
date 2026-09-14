@@ -18,9 +18,9 @@ public class JTokenIntegrationTests
     [Test]
     public void Render_produces_customer_offer_integration_output()
     {
-        var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.guil.md");
-        var jsonPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.json");
-        var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "001-customer-offer.md");
+        var guilPath = Path.Combine(SpecsRoot.PATH, "90-integration", "001-customer-offer.guil.md");
+        var jsonPath = Path.Combine(SpecsRoot.PATH, "90-integration", "001-customer-offer.json");
+        var expectedPath = Path.Combine(SpecsRoot.PATH, "90-integration", "001-customer-offer.md");
 
         var template = Template.Create(File.ReadAllText(guilPath));
         var data = JToken.Parse(File.ReadAllText(jsonPath));
@@ -31,9 +31,9 @@ public class JTokenIntegrationTests
     [Test]
     public void Render_produces_almost_errors_integration_output()
     {
-        var guilPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.guil.md");
-        var jsonPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.json");
-        var expectedPath = Path.Combine(SpecsRoot.PATH, "09-integration", "002-almost-errors.md");
+        var guilPath = Path.Combine(SpecsRoot.PATH, "90-integration", "002-almost-errors.guil.md");
+        var jsonPath = Path.Combine(SpecsRoot.PATH, "90-integration", "002-almost-errors.json");
+        var expectedPath = Path.Combine(SpecsRoot.PATH, "90-integration", "002-almost-errors.md");
 
         var template = Template.Create(File.ReadAllText(guilPath));
         var data = JToken.Parse(File.ReadAllText(jsonPath));

@@ -1,0 +1,17 @@
+{
+  "Items": [{ "Name": "A" }, { "Name": "B" }],
+  "Companies": [
+    { "CompanyName": "Acme", "Address": { "City": "Springfield" } },
+    { "CompanyName": "Globex", "Address": { "City": "Shelbyville" } }
+  ],
+  "TableItems": [
+    { "Description": "A", "Total": 10 },
+    { "Description": "B", "Total": 20 }
+  ],
+  "Subtotal": 30,
+  "Tags": [{ "Name": "philosophy" }, { "Name": "wisdom" }],
+  "Quarters": ["Q1", "Q2", "Q3"],
+  "QuarterlyItems": [
+    { "Name": "A", "Amounts": [1, 2, 3] }
+  ]
+}

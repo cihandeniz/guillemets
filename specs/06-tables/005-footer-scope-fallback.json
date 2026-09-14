@@ -1,8 +1,0 @@
-{
-  "Company": { "Name": "Acme" },
-  "Items": [
-    { "Description": "A", "Total": 10 },
-    { "Description": "B", "Total": 20 }
-  ],
-  "Subtotal": 30
-}

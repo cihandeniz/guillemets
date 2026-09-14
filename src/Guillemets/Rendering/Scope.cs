@@ -11,10 +11,11 @@ internal record Scope(IDataSource Data,
     Glossary? Glossary = null
 )
 {
+    internal const string THIS = "this";
     const string FIRST = "first";
     const string LAST = "last";
 
-    static readonly HashSet<string> MAGIC_NAMES = [FIRST, LAST];
+    static readonly HashSet<string> LOOP_FLAG_NAMES = [FIRST, LAST];
 
     readonly VariableStore _variables = new();
 
@@ -24,24 +25,39 @@ internal record Scope(IDataSource Data,
 
     public bool TryGetMagic(string property, bool negated, out IDataSource value)
     {
-        value = UndefinedDataSource.INSTANCE;
-
         var name = property.ToLowerInvariant();
-        var magic = name switch
+
+        return TryGetCurrentValue(name, negated, out value) || TryGetLoopFlag(name, negated, out value);
+    }
+
+    bool TryGetCurrentValue(string name, bool negated, out IDataSource value)
+    {
+        value = UndefinedDataSource.INSTANCE;
+        if (name != THIS) { return false; }
+
+        value = negated ? Data.Negate() : Data;
+
+        return true;
+    }
+
+    bool TryGetLoopFlag(string name, bool negated, out IDataSource value)
+    {
+        value = UndefinedDataSource.INSTANCE;
+        var flag = name switch
         {
             FIRST => IsFirst,
             LAST => IsLast,
             _ => null,
         };
 
-        if (magic is not null)
+        if (flag is not null)
         {
-            value = (negated ? !magic.Value : magic.Value) ? BooleanDataSource.TRUE : BooleanDataSource.FALSE;
+            value = (negated ? !flag.Value : flag.Value) ? BooleanDataSource.TRUE : BooleanDataSource.FALSE;
 
             return true;
         }
 
-        return MAGIC_NAMES.Contains(name) && Parent is not null && Parent.TryGetMagic(property, negated, out value);
+        return LOOP_FLAG_NAMES.Contains(name) && Parent is not null && Parent.TryGetMagic(name, negated, out value);
     }
 
     public Scope FindOwner(PropertyChainNode properties)
