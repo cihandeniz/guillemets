@@ -23,6 +23,8 @@ Doc ownership, in precedence order:
   flow, never a feature's details.
 - `docs/symbols.md` — the concrete symbol table and its trie diagram. Lives
   apart from `architecture.md` so adding a symbol doesn't churn that doc.
+- `docs/cheatsheet.md` — one example per feature, no prose. Generated examples
+  were verified against the engine; keep it that way when adding a feature.
 
 Resolve a spec ambiguity in the owning doc alongside the code change; don't
 patch around it. Section order in `docs/specs.md` follows the `/specs` folder
