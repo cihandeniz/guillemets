@@ -1,7 +1,7 @@
 # guillemets
 
 Project-specific conventions. General .NET/C# style and working habits are in
-`.claude/generic.md` — read both.
+`.agents/generic.md` — read both.
 
 ## Project
 
@@ -18,7 +18,7 @@ Doc ownership, in precedence order:
 - `docs/implementations/dotnet.md` — this .NET implementation's own behaviour
   on top of that (`date`/`currency`/`truncate`, plus .NET-specific notes). A
   port to another runtime gets its own file here, never edits to `specs.md`.
-- `docs/architecture.md` — how the engine is built. See `.claude/generic.md`
+- `docs/architecture.md` — how the engine is built. See `.agents/generic.md`
   for what belongs there. High-level only: meta entities and the parse/render
   flow, never a feature's details.
 - `docs/symbols.md` — the concrete symbol table and its trie diagram. Lives
@@ -163,5 +163,5 @@ convention.
 
 ## Parking
 
-The general checklist is in `.claude/generic.md`. Here: `dotnet test`,
+The general checklist is in `.agents/generic.md`. Here: `dotnet test`,
 `__PR_DESC_UPDATE__.md`, `docs/architecture.md`, and this file.

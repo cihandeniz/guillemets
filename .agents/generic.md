@@ -2,13 +2,13 @@
 
 Reusable across any .NET repo as-is — kept identical everywhere via
 `cihandeniz/config-files`. Project-specific rules live in
-`.claude/specific.md`; nothing project-specific belongs here.
+`.agents/specific.md`; nothing project-specific belongs here.
 
 ## Docs and tracking
 
 Three places hold durable knowledge, and each owns a different kind of fact:
 
-- `CLAUDE.md` + `.claude/*.md` — how to work here.
+- `AGENTS.md` + `.agents/*.md` — how to work here.
 - The architecture doc — how it's built. High-level shape and decisions
   only; a diagram wherever structure is easier seen than read. It must not
   restate the behaviour spec, so it doesn't churn on every feature change.
@@ -105,7 +105,7 @@ Structure and design:
   the callee what it needs.
 - A public extension method meant to be broadly discoverable can live in a
   shared root namespace, since C# namespace lookup already sees ancestor
-  namespaces (see `.claude/specific.md`).
+  namespaces (see `.agents/specific.md`).
 - When a review names a refactoring by its actual term (e.g. "Method Object",
   "Inappropriate Intimacy"), apply that exact technique. Restate in one
   sentence what it does and check the planned fix matches it, rather than a
@@ -147,7 +147,7 @@ Syntax and layout:
   <https://github.com/mouseless/learn-dotnet/blob/main/nullable-usage/README.md>.
 - No comments in source, tests included — WHY-comments too. If code needs
   one, restructure instead. A fact worth keeping goes to
-  `__PR_DESC_UPDATE__.md`, `.claude/specific.md` or the architecture doc.
+  `__PR_DESC_UPDATE__.md`, `.agents/specific.md` or the architecture doc.
 
 Naming (`.editorconfig` only marks these as suggestions, so they aren't
 build-enforced):
@@ -182,8 +182,8 @@ Tests and docs:
    as a plain fact instead.
 3. Update the architecture doc with any structural change — current shape
    only, never a changelog.
-4. Record any durable convention or decision in `.claude/specific.md`, or
-   `.claude/generic.md` if it isn't project-specific. These files plus the PR
+4. Record any durable convention or decision in `.agents/specific.md`, or
+   `.agents/generic.md` if it isn't project-specific. These files plus the PR
    description are what survive to a cold start; nothing load-bearing should
    live only in chat history.
 5. Give a short summary: what's done, what's next, what to double-check.
