@@ -147,9 +147,11 @@ value. Zero or one items is a no-op.
 → philosophy / wisdom / ancient-greek
 ```
 
-Its bare default is `, ` inline, and a newline as a block footer (see Block
-Footer, below) — a fit for loop output that already looks like separate lines, a
-list of `- «name»` rows say.
+Its bare default follows where it's written: `, ` inline, ` | ` inside a table
+cell (see As a Table, below), and a newline as a block footer (see Block Footer,
+below) — a fit for loop output that already looks like separate lines, a list of
+`- «name»` rows say. Each matches the separator that context would have used
+with no filter at all.
 
 ### Join Last
 
@@ -736,9 +738,53 @@ render once as a footer.
 > «total» |`, no heading or divider) repeats that single row for every item,
 > exactly like a non-table loop body would.
 
-Column alignment across rows is the author's responsibility — the engine only
-decides which row repeats, never parsing or validating table structure. A row
-with a different cell count than its header still renders exactly as written.
+> [!IMPORTANT]
+>
+> Every row MUST open and close with a `|`. Markdown lets an author drop either
+> one, but Guillemets reads a row as pipe-delimited cells: a row with no leading
+> `|` isn't a table row at all, and whatever follows the last `|` is trailing
+> text rather than a final cell — so its column goes uncounted by the separator
+> rule below.
+
+A cell whose value is a list becomes one column per item, joined with ` | `. No
+filter is needed — this is the one place the default `, ` auto-join (see Inline
+Lists, above) doesn't apply, and a bare `join` here defaults to ` | ` to match
+(see Join, above). Give `join` a value to collapse the list into a single
+column instead: `«tags / join: , »`.
+
+The separator row can't hold a `«...»` of its own; a guillemet there would stop
+the template itself from rendering as a table in markdown. Each separator cell
+follows the heading cell directly above it instead, repeating verbatim as many
+times as that cell produced columns.
+
+```markdown
+««report rows
+
+| Name    | «quarters» | Note   | «period» | «regions» |
+| ------- | :--------: | ------ | -------- | --------: |
+| «label» | «amounts»  | «note» | «span»   | «shares»  |
+
+»»
+```
+
+renders, given three `quarters` and three `regions`, as
+
+```markdown
+| Name    | Q1 | Q2 | Q3 | Note   | 2026 | EU | US | APAC |
+| ------- | :--------: | :--------: | :--------: | ------ | -------- | --------: | --------: | --------: |
+| A | 1 | 2 | 3  | ok | H1   | 10 | 20 | 30  |
+```
+
+Alignment markers repeat with their own cell, so `:--------:` lands under every
+quarter and `--------:` under every region. A literal cell and a cell holding a
+single value each produce one column, so their separator cell renders once — it
+is the resolved type, not the presence of a `«...»`, that makes a column
+dynamic.
+
+Column alignment across rows is the author's responsibility. The engine reads a
+row as `|`-delimited cells, but never checks how many each row has: a list of a
+different length than its heading's, or an empty one, just pipes what it has and
+the row comes out ragged rather than raising an error.
 
 ## Variable Definitions
 

@@ -13,6 +13,7 @@ internal static class Symbols
     const char EQUALS = '=';
     internal const char SPACE = ' ';
     internal const char QUOTE = '>';
+    internal const char PIPE = '|';
     const char DOT = '.';
     internal const char BACKSLASH = '\\';
     internal const char SLASH = '/';
@@ -47,6 +48,8 @@ internal static class Symbols
             .Add([EQUALS], Assign)
             .Add([QUOTE], Quote)
             .Add([QUOTE, SPACE], Quote)
+            .Add([PIPE], Pipe)
+            .Add([PIPE, SPACE], Pipe)
             .Add([NEWLINE], Newline)
             .Add([NEWLINE, NEWLINE], Newline, repeat: true, limitRepeat: false);
 }

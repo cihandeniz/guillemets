@@ -28,5 +28,35 @@
     { "Description": "Consulting", "Total": 3000 },
     { "Description": "Setup", "Total": 500 }
   ],
-  "Tags": ["philosophy", "wisdom"]
+  "Tags": ["philosophy", "wisdom"],
+  "Quarters": ["Q1", "Q2", "Q3"],
+  "Regions": ["EU", "US", "APAC"],
+  "QuarterlyItems": [
+    { "Name": "A", "Amounts": [1, 2, 3] },
+    { "Name": "B", "Amounts": [4, 5, 6] }
+  ],
+  "Period": "2026",
+  "ReportRows": [
+    {
+      "Label": "A", "Amounts": [1, 2, 3], "Note": "ok", "Span": "H1", "Shares": [10, 20, 30]
+    }
+  ],
+  "UnevenRows": [
+    { "Name": "A", "Amounts": [1, 2] },
+    { "Name": "B", "Amounts": [3, 4, 5, 6] }
+  ],
+  "TagRows": [
+    { "Name": "A", "Labels": ["x", "y"] },
+    { "Name": "B", "Labels": ["z"] }
+  ],
+  "JoinColumnRows": [
+    { "Name": "A", "Amounts": [1, 2, 3] }
+  ],
+  "OpenRows": [
+    { "Name": "A", "Amounts": [1, 2, 3] }
+  ],
+  "EmptyQuarters": [],
+  "EmptyColumnRows": [
+    { "Name": "A", "Amounts": [] }
+  ]
 }

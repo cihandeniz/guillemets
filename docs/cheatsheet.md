@@ -302,6 +302,23 @@ false/true: USB-C Hub
 | USB-C Hub | 2 |
 ```
 
+### Dynamic columns
+
+```markdown
+««items
+
+| Item   | «quarters» |
+| ------ | ---------- |
+| «name» | «sales»    |
+
+»»
+→
+| Item   | Q1 | Q2 |
+| ------ | ---------- | ---------- |
+| Wireless Mouse | 3 | 4    |
+| USB-C Hub | 1 | 9    |
+```
+
 ### Table inside a blockquote
 
 ```markdown

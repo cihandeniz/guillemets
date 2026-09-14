@@ -11,9 +11,12 @@ internal class TextParser(TokenCursor _tokens)
     public IRenderable Parse(Token token)
     {
         var marksBlankLine = token.Kind is Quote && _tokens.CurrentOnBlankLine;
+        var isPipe = token.Kind is Pipe;
         _tokens.Advance();
 
-        return new LiteralNode(TextOf(token, marksBlankLine));
+        var text = TextOf(token, marksBlankLine);
+
+        return isPipe ? new PipeNode(text) : new LiteralNode(text);
     }
 
     string TextOf(Token token, bool marksBlankLine)

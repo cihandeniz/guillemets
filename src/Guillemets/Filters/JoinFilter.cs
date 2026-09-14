@@ -5,12 +5,14 @@ namespace Guillemets.Filters;
 /// <summary>
 /// Collapses a list via plain string concatenation (<c>string.Join</c>) —
 /// no locale-aware list formatting beyond what the template itself
-/// writes. With no argument, defaults to <c>, </c> inline but a newline
-/// in a block footer (see <see cref="GetDefaultArg"/>).
+/// writes. With no argument, defaults to <c>, </c> inline, <c> | </c> in a
+/// table cell and a newline in a block footer (see
+/// <see cref="GetDefaultArg"/>).
 /// </summary>
 public class JoinFilter : IFilter
 {
     const string INLINE_DEFAULT = ", ";
+    const string TABLE_CELL_DEFAULT = " | ";
 
     /// <inheritdoc/>
     public IEnumerable<string> Apply(IEnumerable<string> values, string? arg)
@@ -21,6 +23,11 @@ public class JoinFilter : IFilter
     }
 
     /// <inheritdoc/>
-    public string GetDefaultArg(FilterContext context) =>
-        context == FilterContext.Inline ? INLINE_DEFAULT : NEWLINE.ToString();
+    public string GetDefaultArg(FilterContext context) => context switch
+    {
+        FilterContext.Inline => INLINE_DEFAULT,
+        FilterContext.TableCell => TABLE_CELL_DEFAULT,
+        FilterContext.Footer => NEWLINE.ToString(),
+        _ => NEWLINE.ToString(),
+    };
 }

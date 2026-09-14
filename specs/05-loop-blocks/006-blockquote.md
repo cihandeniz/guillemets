@@ -66,3 +66,9 @@
 > > Name: B
 > >
 > > Second paragraph.
+
+## Dynamic columns
+
+> | Item   | Q1 | Q2 | Q3 |
+> | ------ | ---------- | ---------- | ---------- |
+> | A | 1 | 2 | 3  |

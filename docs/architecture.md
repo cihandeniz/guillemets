@@ -83,6 +83,9 @@ The parsed tree. Plain data, with no behavior beyond rendering dispatch.
 
 `IRenderable` is the one interface `Renderer` walks. A few node types are data
 only and never render themselves; `Rendering` resolves or applies those instead.
+`TableBody` is a third shape — a view over a block's body that regroups it into
+`TableRow`s and `TableCell`s, rendered directly by the behavior that owns them
+rather than by walking.
 
 ## Rendering
 

@@ -13,9 +13,10 @@ Doc ownership, in precedence order:
 
 - `docs/specs.md` — the source of truth for behaviour, authoritative over this
   file. Runtime-agnostic: it defines the language itself, including the filter
-  *mechanism* and the filters it guarantees (`join`, `join last`, `upper`,
-  `lower`, `default`, `truncate`), but not what other filters exist or how they
-  format.
+  *mechanism* and which filters every implementation must provide, but not what
+  other filters exist or how they format. Its rules are easy to re-derive
+  wrongly from the code alone — read it before changing behaviour, and don't
+  restate it here.
 - `docs/implementations/dotnet.md` — this .NET implementation's own behaviour
   on top of that (`date`/`currency`/`number`, plus .NET-specific notes). A
   port to another runtime gets its own file here, never edits to `specs.md`.
@@ -38,9 +39,8 @@ is not a feature of its own and gets no group or top-level section. It earns one
 basic case in `00-basics` proving it passes through, and beyond that every case
 lives with the Guillemets feature it combines with, so a table inside a loop is
 a loop case and a wrapped reference inside a quote is a variables case.
-`docs/specs.md` mirrors that as subsections (`### In a Blockquote` and `###
-Quote Markers` under Blocks, `### As a Table` under Loop Blocks). Without this
-the corpus repeats every feature once per markdown construct.
+`docs/specs.md` mirrors that as subsections of the feature's own section.
+Without this the corpus repeats every feature once per markdown construct.
 
 Published-doc prose style: every paragraph introducing a concept gets a worked
 `markdown` example (template → output) right there. A MUST-rule or an
@@ -52,6 +52,10 @@ rendered output as live markdown, with the literal characters preserved in a
 When a new language feature raises a "what if X doesn't exist" question, check
 whether resolving to nothing at render time already matches how the rest of the
 language treats missing data before reaching for a `TemplateParseException`.
+
+New built-in filter names should read as verbs (`truncate`, not `length`), but
+a short conventional name other engines share can win, as `upper`/`lower` did.
+`date`/`currency` are settled; don't relitigate them.
 
 Adding a symbol? Check it against markdown rendering of the *template* itself,
 not just the output — a `.guil.md` gets read on GitHub, so a marker that pairs
@@ -125,54 +129,14 @@ within their group, and carry no `# H1` since their message pins a line and
 column. `90-integration` is excluded from `SpecTests.cs` and driven by each data
 source's own `*IntegrationTests.cs`.
 
-## Core concepts
-
-A map only — `docs/specs.md` is the contract, and its rules are easy to
-re-derive wrongly from the code alone. Go there before changing behaviour.
-
-- **Delimiters**: `«»`. One is an inline variable; a run of two or more opens a
-  block, closed by the same run length. Depth beyond 2 is cosmetic.
-- **Property access**: `:` drills into objects and projects over lists;
-  chained across lists it flattens.
-- **Scope navigation**: `.: name` pins to the current scope, `..: name` climbs;
-  both chainable and composable.
-- **Blocks**: `««name` ... `»»`, behaviour inferred from the resolved type —
-  boolean → if, list → loop, object → scope. No keywords. Lookup falls back to
-  enclosing scopes.
-- **Else**: `~` alone on a line splits the branches.
-- **Whitespace**: blank lines around markers are required and partly swallowed;
-  `««~`/`~»»` trim at render time only; a hard-wrapped `«...»` treats one
-  newline as the space a symbol needs, two as a paragraph break.
-- **Magic loop variables**: `«first»`, `«last»`; `!` negates any boolean.
-- **Variable definitions**: `««name = expr` ... `»»` captures rendered output
-  for reuse below.
-- **Tables**: a block may open/close with a leading/trailing `|` to stay valid
-  in a markdown table row.
-- **Blockquotes**: any block works inside `>`-prefixed lines, at any nesting
-  depth. Depth is counted in `Quote` tokens, so `>>` and `> >` are the same
-  depth; a blank line keeps its own spelling minus a trailing space, and one the
-  engine produces copies the block's opening spelling.
-- **Inline lists**: scalar lists auto-join with `, `; override with
-  `join`/`join last`.
-- **Filters**: `name: value` chained with ` / `, no parens. Built-ins: `date`,
-  `currency`, `join`, `join last`, `upper`, `lower`, `default`, `truncate`.
-
-New built-in filter names should read as verbs (`truncate`, not `length`), but
-a short conventional name other engines share can win, as `upper`/`lower` did.
-`date`/`currency` are settled; don't relitigate them.
-
 ## Localization / naming
 
-Authors write natural space-separated words; models are PascalCase. Direct
-resolution via `.Dehumanize()` bridges them whenever they agree
-case-insensitively. Where they don't ("quote no" vs `OfferNo`), a glossary of
-`Term = PropertyName` rows is matched case-insensitively and is *additive* — a
-term with no entry still falls back to direct resolution.
-
-`SpecTests.cs` builds its `IStringLocalizer` from a case's `.<culture>.json` via
-`FakeStringLocalizer`. `GlossaryResourceIntegrationTests.cs` separately
-exercises a real `.restext`-backed localizer — `Resources/Glossary.restext`
-plus a same-named empty marker type, needed so
+The contract is `docs/specs.md`'s Glossary & Localization section. What isn't
+there is the test wiring: `SpecTests.cs` builds its `IStringLocalizer` from a
+case's `.<culture>.json` via `FakeStringLocalizer`, while
+`GlossaryResourceIntegrationTests.cs` separately exercises a real
+`.restext`-backed localizer — `Resources/Glossary.restext` plus a same-named
+empty marker type, needed so
 `ResourceManagerStringLocalizerFactory.Create(Type)` can locate the resource by
 convention.
 

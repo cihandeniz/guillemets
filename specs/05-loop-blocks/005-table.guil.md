@@ -100,3 +100,73 @@ join»»
 | «this» |
 
 »»
+
+## Dynamic columns
+
+««quarterly items
+
+| Item   | «quarters» |
+| ------ | ---------- |
+| «name» | «amounts»  |
+
+»»
+
+## Literal, single value and list columns
+
+««report rows
+
+| Name    | «quarters» | Note   | «period» | «regions» |
+| ------- | :--------: | ------ | -------- | --------: |
+| «label» | «amounts»  | «note» | «span»   | «shares»  |
+
+»»
+
+## Cells not matching columns
+
+««uneven rows
+
+| Item   | «quarters» |
+| ------ | ---------- |
+| «name» | «amounts»  |
+
+»»
+
+## Joining a cell list explicitly
+
+««tag rows
+
+| Item   | Tags                |
+| ------ | ------------------- |
+| «name» | «labels / join: , » |
+
+»»
+
+## Empty column list
+
+««empty column rows
+
+| Item   | «empty quarters» |
+| ------ | ---------------- |
+| «name» | «amounts»        |
+
+»»
+
+## Row without a closing pipe
+
+««open rows
+
+| Item   | «quarters»
+| ------ | ----------
+| «name» | «amounts»
+
+»»
+
+## Bare join in a cell
+
+««join column rows
+
+| Item   | «quarters»       |
+| ------ | ---------------- |
+| «name» | «amounts / join» |
+
+»»

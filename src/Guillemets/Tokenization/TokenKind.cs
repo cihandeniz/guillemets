@@ -15,6 +15,7 @@ internal enum TokenKind
     FilterDelimiter,
     Newline,
     Quote,
+    Pipe,
     Else,
     Negation,
     Assign,

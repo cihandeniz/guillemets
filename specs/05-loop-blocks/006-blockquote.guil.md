@@ -88,3 +88,13 @@
 > > Second paragraph.
 > >
 > > »»
+
+## Dynamic columns
+
+> ««quarterly items
+>
+> | Item   | «quarters» |
+> | ------ | ---------- |
+> | «name» | «amounts»  |
+>
+> »»

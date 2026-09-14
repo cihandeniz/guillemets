@@ -69,3 +69,48 @@ join
 |--------|
 | philosophy |
 | wisdom |
+
+## Dynamic columns
+
+| Item   | Q1 | Q2 | Q3 |
+| ------ | ---------- | ---------- | ---------- |
+| A | 1 | 2 | 3  |
+| B | 4 | 5 | 6  |
+
+## Literal, single value and list columns
+
+| Name    | Q1 | Q2 | Q3 | Note   | 2026 | EU | US | APAC |
+| ------- | :--------: | :--------: | :--------: | ------ | -------- | --------: | --------: | --------: |
+| A | 1 | 2 | 3  | ok | H1   | 10 | 20 | 30  |
+
+## Cells not matching columns
+
+| Item   | Q1 | Q2 | Q3 |
+| ------ | ---------- | ---------- | ---------- |
+| A | 1 | 2  |
+| B | 3 | 4 | 5 | 6  |
+
+## Joining a cell list explicitly
+
+| Item   | Tags                |
+| ------ | ------------------- |
+| A | x, y |
+| B | z |
+
+## Empty column list
+
+| Item   |  |
+| ------ | ---------------- |
+| A |         |
+
+## Row without a closing pipe
+
+| Item   | Q1 | Q2 | Q3
+| ------ | ----------
+| A | 1 | 2 | 3
+
+## Bare join in a cell
+
+| Item   | Q1 | Q2 | Q3       |
+| ------ | ---------------- | ---------------- | ---------------- |
+| A | 1 | 2 | 3 |

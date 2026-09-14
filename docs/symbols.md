@@ -26,6 +26,8 @@ flowchart TB
     NewlineOne --> WrapSlash["/"] --> FilterDelimiterKind
     Root --> Quote[">"] --> QuoteKind["Quote\n(one blockquote marker)"]
     Quote --> QuoteSpace[" "] --> QuoteKind
+    Root --> Pipe["|"] --> PipeKind["Pipe\n(one table cell boundary)"]
+    Pipe --> PipeSpace[" "] --> PipeKind
     Root --> Esc["backslash"] --> EscChar["« or » or backslash or ~"] --> EscapedKind["Escaped literal"]
     Root --> Colon[":"] --> BareColonKind["BareColon\n(malformed-filter signal)"]
     Colon --> ColonSpace[" "] --> ColonKind["Colon"]
@@ -36,7 +38,8 @@ flowchart TB
 ```
 
 A kind whose special meaning doesn't apply in context falls back to plain
-literal text, so the tokenizer never has to understand context. One `Quote`
-token is one marker, whatever the spacing, which is what makes a line's
-blockquote depth a count of consecutive `Quote` tokens rather than a character
-scan.
+literal text, so the tokenizer never has to understand context. `Quote` and
+`Pipe` share a shape: one token is one marker whatever the spacing, which is
+what makes a line's blockquote depth a count of consecutive `Quote` tokens and a
+table row a list of cells split on `Pipe` tokens, rather than either being a
+character scan.
