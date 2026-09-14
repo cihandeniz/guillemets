@@ -42,11 +42,10 @@ jobs:
       - name: Parse Version
         id: parse
         run: |
-          # 1. cat outputs content of Directory.Build.props file to stream editor (sed)
-          # 2. first sed removes all lines except with Version info
-          # 3. second sed removes <Version> and </Version> and spaces
-          # 4. result is only version which is set to the $version variable
-          version=$(cat Directory.Build.props | sed -n '/<Version>/p' | sed '/[ <>a-zA-Z\/]/ s///g')
+          # sed captures whatever sits between <Version> and </Version>,
+          # so a prerelease suffix (0.3.0-rc.1) survives intact — stripping
+          # character classes instead would eat its letters
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)
           # value of $version is set as a step output
           echo "version="$version >> $GITHUB_OUTPUT
       - name: Check Version in NuGet

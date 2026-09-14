@@ -477,10 +477,41 @@ Use «name» for a variable.
 50~60 and a\b
 ```
 
-## .NET filters
+## Glossary and localization
 
-See [implementations/dotnet.md](implementations/dotnet.md) for arguments and
-culture behaviour.
+```json
+{
+  "OfferNo": "Quote No",
+  "Company": "Firm",
+  "FullName": "Contact"
+}
+```
+
+### Term mapped to another property name
+
+```markdown
+Quote No: «quote no»
+→
+Quote No: 2026-0711
+```
+
+### Term with no entry, resolved directly
+
+```markdown
+«valid until»
+→
+2026-12-31
+```
+
+### One entry per chain segment
+
+```markdown
+«firm: contact»
+→
+Bob Lee
+```
+
+## .NET filters
 
 ```markdown
 «due date / date: dd/MM/yyyy»

@@ -58,5 +58,9 @@
   "EmptyQuarters": [],
   "EmptyColumnRows": [
     { "Name": "A", "Amounts": [] }
+  ],
+  "SingleColumnRows": [
+    { "Amounts": [1, 2, 3] },
+    { "Amounts": [4, 5, 6] }
   ]
 }

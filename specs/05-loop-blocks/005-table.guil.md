@@ -170,3 +170,13 @@ join»»
 | «name» | «amounts / join» |
 
 »»
+
+## Single dynamic column
+
+««single column rows
+
+| «quarters» |
+| ---------- |
+| «amounts»  |
+
+»»

@@ -1,3 +1,3 @@
 specs/** text eol=lf
-specs/10-whitespace/001-crlf.guil.md text eol=crlf
-specs/10-whitespace/001-crlf.md text eol=crlf
+specs/09-whitespace/001-crlf.guil.md text eol=crlf
+specs/09-whitespace/001-crlf.md text eol=crlf
