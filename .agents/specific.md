@@ -28,18 +28,18 @@ Doc ownership, in precedence order:
   were verified against the engine; keep it that way when adding a feature.
 
 Resolve a spec ambiguity in the owning doc alongside the code change; don't
-patch around it. Section order in `docs/specs.md` follows the `/specs` folder
-groups, so a fixture group and a spec section map one to one — note that its
-full example contains `##` headings inside a fence, so anything walking that
-file's structure has to track fences rather than grep for `^## `.
+patch around it. `docs/specs.md` and `docs/cheatsheet.md` both run one section
+per `/specs` group, in the same order; a new group means a new section in each.
+Both files put `##` headings inside fences, so anything walking their structure
+has to track fences rather than grep for `^## `.
 
 A markdown construct a feature merely has to survive — a table, a blockquote —
 is not a feature of its own and gets no group or top-level section. It earns one
 basic case in `00-basics` proving it passes through, and beyond that every case
 lives with the Guillemets feature it combines with, so a table inside a loop is
 a loop case and a wrapped reference inside a quote is a variables case.
-`docs/specs.md` mirrors that as subsections (`### As a Table`, `### In a
-Blockquote` under Blocks; `### Quote Markers` under Whitespace). Without this
+`docs/specs.md` mirrors that as subsections (`### In a Blockquote` and `###
+Quote Markers` under Blocks, `### As a Table` under Loop Blocks). Without this
 the corpus repeats every feature once per markdown construct.
 
 Published-doc prose style: every paragraph introducing a concept gets a worked

@@ -105,22 +105,6 @@ Ships to «company: city».
 Ships to Austin.
 ```
 
-### List, auto-joined
-
-```markdown
-Tags: «tags»
-→
-Tags: philosophy, wisdom
-```
-
-### Field from each item
-
-```markdown
-Items: «items: name»
-→
-Items: Wireless Mouse, USB-C Hub
-```
-
 ## Filters
 
 ### Chain with ` / `
@@ -165,6 +149,45 @@ Consulting…
 
 ## Blocks
 
+### Scope
+
+```markdown
+««company
+
+«street», «city»
+
+»»
+→
+1 Main St, Austin
+```
+
+### Block footer
+
+```markdown
+««items
+
+«name»
+
+join last:  and  / join: , »»
+→
+Wireless Mouse and USB-C Hub
+```
+
+### Block inside a blockquote
+
+```markdown
+> ««items
+>
+> - «name»
+>
+> »»
+→
+> - Wireless Mouse
+> - USB-C Hub
+```
+
+## Conditional blocks
+
 ### If / else
 
 ```markdown
@@ -181,29 +204,16 @@ Welcome!
 Welcome back!
 ```
 
-### Loop
+### Negation
 
 ```markdown
-««items
+««!is member
 
-- «name»
+Become a member!
 
 »»
 →
-- Wireless Mouse
-- USB-C Hub
-```
-
-### Scope
-
-```markdown
-««company
-
-«street», «city»
-
-»»
-→
-1 Main St, Austin
+Become a member!
 ```
 
 ### Empty list fallback
@@ -220,6 +230,21 @@ Nothing ordered.
 »»
 →
 Nothing ordered.
+```
+
+## Loop blocks
+
+### Loop
+
+```markdown
+««items
+
+- «name»
+
+»»
+→
+- Wireless Mouse
+- USB-C Hub
 ```
 
 ### Current value
@@ -248,18 +273,6 @@ true/false: Wireless Mouse
 false/true: USB-C Hub
 ```
 
-### Negation
-
-```markdown
-««!is member
-
-Become a member!
-
-»»
-→
-Become a member!
-```
-
 ### Keep only flagged items
 
 ```markdown
@@ -270,18 +283,6 @@ Become a member!
 »»
 →
 - Hub
-```
-
-### Block footer
-
-```markdown
-««items
-
-«name»
-
-join last:  and  / join: , »»
-→
-Wireless Mouse and USB-C Hub
 ```
 
 ### Table from one row
@@ -301,19 +302,6 @@ Wireless Mouse and USB-C Hub
 | USB-C Hub | 2 |
 ```
 
-### Block inside a blockquote
-
-```markdown
-> ««items
->
-> - «name»
->
-> »»
-→
-> - Wireless Mouse
-> - USB-C Hub
-```
-
 ### Table inside a blockquote
 
 ```markdown
@@ -331,6 +319,8 @@ Wireless Mouse and USB-C Hub
 > | USB-C Hub | 2 |
 ```
 
+## Variable definitions
+
 ### Capture output as a name
 
 ```markdown
@@ -343,6 +333,24 @@ Wireless Mouse and USB-C Hub
 Ships to «delivery».
 →
 Ships to Austin.
+```
+
+## Inline lists
+
+### List, auto-joined
+
+```markdown
+Tags: «tags»
+→
+Tags: philosophy, wisdom
+```
+
+### Field from each item
+
+```markdown
+Items: «items: name»
+→
+Items: Wireless Mouse, USB-C Hub
 ```
 
 ## Scope navigation

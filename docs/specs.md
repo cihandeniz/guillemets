@@ -4,18 +4,17 @@ A markdown-aware template engine for non-technical authors. Syntax is
 minimal and language-neutral, favoring readability over ease of typing —
 see [`README.md`](../README.md) for why.
 
-This document uses MUST and SHOULD in the RFC 2119 sense. MUST marks a rule the
-engine enforces — the parser throws `TemplateParseException` if it's broken.
-SHOULD marks a convention this document recommends, which the parser does not
-enforce.
+MUST and SHOULD are used in the RFC 2119 sense. MUST marks a rule the engine
+enforces — the parser throws `TemplateParseException` if it's broken. SHOULD
+marks a convention the parser does not enforce.
 
 ---
 
 ## Delimiters
 
-`«»` — guillemets, pronounced *ghee-uh-MAY* — are angle quotation marks used for
-punctuation in French and several other languages. They're the only delimiter
-characters this engine recognizes.
+`«»` — guillemets, pronounced *ghee-uh-MAY* — are the angle quotation marks used
+for punctuation in French and several other languages. They are this engine's
+only delimiters.
 
 Everything else is markdown the engine never interprets — a table, a blockquote,
 a list, a fence — reaching the output exactly as written, with only the `«...»`
@@ -34,11 +33,10 @@ renders as
 ```
 
 A `>` or a `|` takes on meaning only where a block's own lines are built around
-it — see In a Blockquote and As a Table under Blocks, below.
+it — see In a Blockquote under Blocks and As a Table under Loop Blocks, below.
 
 Multi-guillemet depth (`««`, `«««`, ...) exists for readability at nesting
-levels. The engine accepts any consistent depth — the author chooses based on
-surrounding context.
+levels. The engine accepts any consistent depth.
 
 ```markdown
 ««company
@@ -54,9 +52,8 @@ Quote: «number»
 »»
 ```
 
-`company` opens at depth 2, and the nested `quotes` block opens one level deeper
-at depth 3 purely so the two are easier to tell apart on the page — depth 2 all
-the way down would behave identically.
+`quotes` opens one level deeper than `company` purely so the two are easier to
+tell apart on the page — depth 2 all the way down behaves identically.
 
 ## Variables
 
@@ -98,12 +95,10 @@ uses `.SelectMany()` internally, so the result stays flat.
 > space isn't recognized as the property accessor at all; it renders as literal
 > text instead of drilling into `company`.
 
-Each segment matches the underlying property case-insensitively, regardless of
-the model's own naming convention — `«full name»` resolves `FullName`,
-`fullName`, and `full_name` identically. This holds for every built-in data
-source (POCOs, `System.Text.Json`, Newtonsoft `JToken`); a third-party
-`IDataSource` SHOULD do the same for `TryGetProperty` to behave consistently
-with the rest of the engine.
+Each segment matches its property case-insensitively, whatever the model's own
+naming convention — `«full name»` resolves `FullName`, `fullName` and
+`full_name` identically. Every built-in data source does this, and a third-party
+`IDataSource` SHOULD do the same in `TryGetProperty`.
 
 ## Filters
 
@@ -129,9 +124,8 @@ same as property access above — it marks where a filter's value starts.
 > text inside a value and need no escape. See Escaping, below, for how to fit a
 > literal `/` or `»`, or an actual newline/tab, inside a value.
 
-A filter's value is optional — write the bare name, with no `: value` at all, to
-use its default; what that default resolves to, and whether a bare name is even
-meaningful, is up to the filter itself.
+A filter's value is optional — a bare name uses the filter's own default, if it
+has a meaningful one.
 
 Filters chain into a pipeline, applied left to right — each stage receives the
 previous stage's output. A single-value filter maps over every item when its
@@ -139,10 +133,9 @@ input is still a list; a list-collapsing filter (like `join`) acts on the whole
 list at once and produces a single string. Order matters for a pipeline mixing
 both kinds — they're genuinely sequential stages, not a paired configuration.
 
-A few filters are part of the language itself, not implementation-defined like
-the formatting filters below — every implementation MUST provide them, with a
-fixed contract that doesn't vary by runtime. Each gets its own subsection below
-explaining why it belongs here rather than in a runtime's own filter catalog.
+The filters below are part of the language itself: none of them wraps a
+host-specific parsing or formatting primitive, so every implementation MUST
+provide them with the same contract.
 
 ### Join
 
@@ -154,18 +147,15 @@ value. Zero or one items is a no-op.
 → philosophy / wisdom / ancient-greek
 ```
 
-Its own default value (used when written bare, with no `: value`) is `, ` when
-used inline, and a newline when used as a block footer (see Block Footer, below)
-— a bare `join` in a footer is a natural fit for joining loop output that
-already looks like separate lines, e.g. a list of `- «name»` rows. `join` is
-guaranteed because Inline Lists (below) defines its default comma-join in terms
-of it and `join last`.
+Its bare default is `, ` inline, and a newline as a block footer (see Block
+Footer, below) — a fit for loop output that already looks like separate lines, a
+list of `- «name»` rows say.
 
 ### Join Last
 
 `join last` merges the last two items of the current list into one, joined by
 its value; fewer than two items is a no-op. Order matters when combined with
-`join` — they're genuinely sequential stages, not a paired configuration:
+`join`:
 
 ```markdown
 «quote: tags / join last:  and  / join: , »
@@ -176,33 +166,27 @@ The default auto-join (`, `, see Inline Lists, below) still applies if the
 pipeline ends without fully collapsing the list to a string, so `join last`
 alone is enough for the common "A, B and C" case.
 
-`join last`'s own bare-name default (used with no `: value` at all) is an empty
-separator — the last two items merge with nothing between them. Unlike `join`,
-there's no natural single default for `join last` across contexts, so write an
-explicit value (e.g. `join last:  and `) rather than relying on the bare form.
-Guaranteed alongside `join`, for the same reason — see Join, above.
+Its bare default is an empty separator — the last two items merge with nothing
+between them. There's no natural default here as there is for `join`, so write
+the value explicitly (`join last:  and `).
 
 ### Upper
 
 `upper` converts every value to uppercase, following whatever casing rules the
-implementation's language/culture setting applies (see below). It takes no value
-— write it bare, since anything after `: ` is ignored, the same as any filter
-that has no use for its argument.
+implementation's language/culture setting applies. It takes no value — write it
+bare, since anything after `: ` is ignored.
 
 ```markdown
 «name / upper»
 → ADA LOVELACE
 ```
 
-It's guaranteed because, unlike a date or currency filter, it doesn't parse the
-value through a host-specific primitive — it just transforms characters. Exactly
-how casing behaves for a given language is still implementation-defined (see
-below), but the filter itself is always available.
+How casing behaves for a given language stays implementation-defined, but the
+filter itself is always available.
 
 ### Lower
 
-`lower` converts every value to lowercase, the same shape as `upper` in every
-other respect, guaranteed for the same reason:
+`lower` converts every value to lowercase, identical to `upper` otherwise:
 
 ```markdown
 «name / lower»
@@ -211,21 +195,17 @@ other respect, guaranteed for the same reason:
 
 ### Default
 
-`default` substitutes its value for any value that would otherwise
-render as empty — an unresolved chain (see Resolving the Block Name,
-below) or a property whose own value is empty (an explicit null, or an
-empty string). Applied per item when the input is still a list, the
-same as `upper`/`lower`; a resolved, non-empty value passes through
-unchanged.
+`default` substitutes its value for any value that would otherwise render as
+empty — an unresolved chain (see Resolving the Block Name, below) or a property
+whose own value is an explicit null or an empty string. Applied per item when
+the input is still a list, the same as `upper`/`lower`.
 
 ```markdown
 «nickname / default: N/A»
 ```
 
-Given `nickname` is missing entirely, this renders `N/A`; given
-`nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
-reason as `upper`/`lower` — it's a direct string substitution, not a
-wrapper around a host-specific parsing/formatting primitive.
+Given `nickname` is missing entirely, this renders `N/A`; given `"Al"`, it
+renders `Al` unchanged.
 
 ### Truncate
 
@@ -245,38 +225,29 @@ Given `description` is `Consulting services`, this renders `Consulting…`; give
 > The argument MUST be a whole number, zero or greater. A missing, non-numeric,
 > or negative argument is a parse error.
 
-Length is counted in the runtime's own string units, and an implementation
-SHOULD avoid cutting in the middle of a character that those units encode as a
-pair — backing the cut off by one rather than splitting it. How far beyond that
-an implementation goes (combining marks, ZWJ sequences) is its own business and
-belongs in its own doc. It's guaranteed because, like `upper`/`lower`, it
-transforms characters rather than wrapping a host-specific parsing primitive.
+Length is counted in the runtime's own string units. An implementation SHOULD
+back the cut off by one rather than split a character those units encode as a
+pair; how much further it goes (combining marks, ZWJ sequences) belongs in its
+own doc.
 
-Other utility filters — formatting a date or a currency amount, and so on — are
-commonly provided but implementation-defined, not part of this language-level
-spec. Each is a thin wrapper around whatever formatting/parsing primitives the
-host runtime provides: a date filter around the runtime's own date formatter, a
-currency filter around its number formatter, and so on. The exact catalog and
-behavior necessarily vary by runtime, so every implementation MUST document such
-filters separately rather than folding them in here. This repository's .NET
-implementation documents its `date`, `currency`, and `number` (plus any
-.NET-specific notes on the guaranteed filters) in
+Other utility filters — formatting a date or a currency amount, say — wrap a
+host primitive, so their catalog and behavior vary by runtime. Every
+implementation MUST document its own separately rather than folding them in
+here. This repository's .NET implementation covers `date`, `currency` and
+`number`, plus any .NET-specific notes on the guaranteed filters, in
 [`implementations/dotnet.md`](implementations/dotnet.md).
 
 ## Blocks
 
 A block opens with `««name` on its own line and closes with `»»` on its own
-line. The double guillemet marks it as a block, not an inline variable — an
-inline variable always uses a single `«»`, even across multiple lines (see
-Variables, above).
+line. The double guillemet is what marks it as a block — an inline variable
+always uses a single `«»`, even across multiple lines (see Variables, above).
 
-A blank line MUST surround `««name` and `»»` on every side — before and
-after each marker line. A markdown formatter treats them as plain text, and
-would otherwise merge a marker into an adjacent paragraph and corrupt the
-template. Only the two blank lines *inside* the block (right after `««name`,
-right before `»»`) are swallowed — they're the block's own body padding.
-The two *outside* it (right before `««name`, right after `»»`) are ordinary
-surrounding text; the block only requires that they're there.
+A blank line MUST surround `««name` and `»»` on every side; a markdown formatter
+treats them as plain text and would otherwise merge a marker into an adjacent
+paragraph and corrupt the template. Only the two *inside* the block are
+swallowed — they're its body padding. The two *outside* are ordinary
+surrounding text the block merely requires be there.
 
 ```markdown
 Before.
@@ -311,16 +282,14 @@ After.
 > of template may follow it to count as a close. Anything else on that
 > line makes it ordinary text, and the search for a real close continues.
 
-The closing depth MUST match the opening depth exactly. Deeper depths
-(`«««`/`»»»`, and so on) behave identically; they only exist to make nested
-blocks easier to read.
+The closing depth MUST match the opening depth exactly. Deeper depths behave
+identically; they only make nested blocks easier to read.
 
 > [!TIP]
 >
 > A run of the same guillemet may not exceed 7 deep. Depth is only ever
-> compared within a single block's own open/close pair, never to a sibling's
-> or an ancestor's — so past a readable depth, just reuse any depth up to 7
-> instead of growing it further.
+> compared within one block's own open/close pair, never to a sibling's or an
+> ancestor's — so past a readable depth, reuse any depth rather than grow it.
 
 Behavior is inferred from the resolved type of `name`:
 
@@ -336,10 +305,9 @@ No keyword is required. The same syntax covers all cases.
 
 > [!NOTE]
 >
-> For a string or number, truthiness is about *presence*, not content — `""` and
-> `0` are truthy, the same as any other value. Only `null` and an unresolved
-> chain are falsy. Use a filter or explicit comparison in the data layer if you
-> need "is this blank/zero" instead of "is this present".
+> For a string or number, truthiness is *presence*, not content — `""` and `0`
+> are truthy. Only `null` and an unresolved chain are falsy. For "is this
+> blank/zero", compare in the data layer instead.
 
 ```markdown
 ««individual
@@ -390,197 +358,14 @@ Tax No: «tax no»
 »»
 ```
 
-Above example passes `company` value of `quote` property to the block body. When
-the chain projects through two list levels (e.g. `quotes: prices`, where each
-quote has its own list of prices), a loop block flattens them into one combined
-loop over every price, the same way chaining across lists already flattens for
-an inline variable.
+The body is scoped to `quote`'s `company`. When the chain projects through two
+list levels (`quotes: prices`, where each quote has its own list of prices), a
+loop block flattens them into one loop over every price, the same way chaining
+across lists already flattens for an inline variable.
 
-If the chain doesn't resolve to anything at all — whether because it projects
-through an empty list, or because the named property doesn't exist anywhere in
-the data at all — the block is treated as falsy, the same as an explicit
+A chain that resolves to nothing — an empty projection, or a property that
+exists nowhere in the data — makes the block falsy, the same as an explicit
 `false`. This is not an error.
-
-### Else
-
-`~` on its own line inside a block separates the truthy and falsy branches. It's
-used with boolean blocks and variable definitions. Like `««name` and `»»` (see
-Whitespace, below), a blank line MUST surround `~` on both sides, swallowed the
-same way — for the same reason: a markdown formatter would otherwise merge it
-into an adjacent paragraph.
-
-```markdown
-««individual
-
-Dear «full name»,
-
-~
-
-Dear representatives of «company name»,
-
-»»
-```
-
-Else also works when an object is null.
-
-```markdown
-««company info
-
-Company name: «name»
-
-~
-
-No company information available
-
-»»
-```
-
-Else works the same way for a loop block whose list is empty — whether that's
-because the list itself has zero items, or because "Filtering Out Items in
-Lists" (below) filtered every item out:
-
-```markdown
-««items
-
-- «description»
-
-~
-
-No items.
-
-»»
-```
-
-### The Current Value
-
-`«this»` renders the value the current scope sits on, whatever that value is.
-It's injected automatically in every scope, not only inside a loop.
-
-Its main use is a loop over a list of scalars, where an item has no property to
-name:
-
-```markdown
-Tags:
-
-««tags
-
-- «this»
-
-»»
-```
-
-Given `tags` is `["philosophy", "wisdom"]`, this renders a `- philosophy` line
-and a `- wisdom` line. Without `«this»` such a list can only be rendered
-inline, auto-joined onto one line (see Inline Lists, below).
-
-`this` sits in a chain position like any other name, so it composes with
-everything else: `«this / upper»` filters it, `«!this»` negates it, a table row
-cell (`| «this» |`) renders it per item, `««this` opens a block on it, and
-`«..: this»` reaches the enclosing scope's value (see Scope Navigation, below).
-
-On an object, `«this»` renders that object's own display representation, which
-is rarely useful and whose exact text depends on the data adapter — the same
-caveat as inline filtering (see Filtering Out Items in Lists, below). Open a
-block to reach an object's fields instead.
-
-`this` always takes precedence over a property of the same name, exactly as
-`first`/`last` do — a `this` field in the data is unreachable via `«this»` and
-needs `«.: this»` (see This Scope Only, below).
-
-`this` also stands alone: it can't be followed by `: ` to drill further, since
-`«this: name»` could only ever mean `«.: name»`, so it's rejected as an error
-naming that replacement. Pinning first keeps `this` an ordinary property name,
-so `«.: this: name»` reads the data's own `this` field and drills into that.
-
-### Magic Loop Variables
-
-The following variables are injected automatically inside every loop block:
-
-| Variable | Meaning              |
-| ---      | ---                  |
-| `«first»`| true on first item   |
-| `«last»` | true on last item    |
-
-```markdown
-««items
-
-«first»: «name»
-
-»»
-```
-
-Given three items named `A`, `B`, `C`, this renders `true: A`, then `false: B`,
-then `false: C` — only the first row's magic variable is `true`.
-
-`first`/`last` always take precedence over an item property of the same name —
-if a loop item's own data has a `first` or `last` field, that field becomes
-unreachable via `«first»`/`«last»` inside that loop.
-
-Inside a nested loop, `«first»`/`«last»` always refer to the *innermost* loop's
-position — the same shadowing rule as any other name lookup falling back to an
-enclosing scope (see Blocks, above), except `first`/`last` are always defined
-the moment you're inside any loop, so they never fall back to an outer loop.
-There's no *automatic* fallback to an outer loop's `first`/`last` — reaching one
-deliberately requires explicit scope navigation (`..: `, see Scope Navigation,
-below).
-
-### Filtering Out Items in Lists
-
-If the chain's last segment is a boolean property projected through a list,
-resolving the chain filters the list down to the item(s) where that property is
-true, instead of collapsing the projected booleans into a single truthy/falsy
-check. This holds everywhere a property chain resolves, not just in a block
-header:
-
-```markdown
-««items: active
-
-Dear «full name»,
-
-»»
-```
-
-Given `items` is a list of objects each with `active` and `full name`, the block
-filters the list down to the item(s) where `active` is true and scopes into the
-match — `full name` resolves against that matched item, not the outer scope.
-
-Used inline (`«items: active»`), the same filtering happens, but there's no body
-to scope into — each matched item's own display representation is used directly,
-auto-joined like any other list (see Inline Lists, below). This is rarely useful
-on its own, since a plain boolean field carries no display text of its own.
-
-> [!NOTE]
->
-> ```markdown
-> «quotes: prices: active»
-> ```
->
-> The filtered list is whichever one the last segment is a direct boolean
-> property of, not necessarily the chain's first segment — here, each quote's
-> `prices`, flattened and scoped into the matched `price`, not `quote`. A price
-> missing `active` (sparse JSON) is just falsy, not an error.
-
-### Negation
-
-`!` prefix negates the truthiness of any variable (see the type table under
-Blocks, above, for what counts as truthy per resolved type):
-
-```markdown
-«!last»          → true when not last item
-«!first»         → true when not first item
-«!company name»  → true when company name is null or unresolved
-```
-
-> [!WARNING]
->
-> A negated segment MUST be the last one in its property chain:
->
-> ```markdown
-> «company: !active»
-> ```
->
-> Negating an earlier segment (for example, `company: !active: something`) is
-> invalid.
 
 ### Block Footer
 
@@ -597,15 +382,14 @@ join: , »»
 ```
 
 renders as a comma-separated list when used via `«tags»`. The pipeline MUST be
-the only thing on that line — nothing else may share it, before or after — and
-MUST end right where the closing `»»` starts, with no line break between them. A
-pipeline that isn't glued to the close this way isn't recognized as a footer at
-all; it's ordinary literal body content instead.
+the only thing on that line and MUST end right where the closing `»»` starts,
+with no line break between them. A pipeline not glued to the close this way is
+ordinary literal body content, not a footer.
 
 > [!NOTE]
 >
-> This means a new custom filter can retroactively change how an
-> already-written template parses, if its name matches a glued last line:
+> A new custom filter can retroactively change how an already-written template
+> parses, if its name matches a glued last line:
 >
 > ```markdown
 > ««notes
@@ -615,64 +399,26 @@ all; it's ordinary literal body content instead.
 > highlight»»
 > ```
 >
-> A hard parse error with no `highlight` filter registered, silently
-> different output the moment a host app registers one — even for an
-> unrelated feature. Expected, not a bug; keep custom filter names
-> distinctive.
+> A hard parse error with no `highlight` filter registered, different output
+> the moment a host app registers one — even for an unrelated feature.
+> Expected, not a bug; keep custom filter names distinctive.
 
 When the block has an else branch, the footer goes on the last line of whichever
 branch renders last: the truthy body if there is no `~`, the falsy body if there
 is one. `~` itself always stays on its own line and is never adjacent to it.
 
 An unescaped `»»` at the block's own depth always terminates the last filter's
-value, even mid-value with no space before it — `join: , »»` isn't ambiguous,
-the value is exactly `, `. This is the same closing-token rule that ends any
-other block body (see Blocks, above), not something specific to filter values.
+value, even mid-value with no space before it — `join: , »»` gives exactly `, `.
+This is the same closing-token rule that ends any other block body.
 
-A table's own trailing footer rows (see As a Table, above) are a different,
-non-conflicting concept from this pipeline. The "glued to the close" rule above
-keeps them from colliding in practice: a table row written on its own line, even
-one that happens to look like a filter name, is just another literal row — the
-pipeline only ever wins when it's written right up against `»»`.
+A table's own trailing footer rows (see As a Table, below) are a different,
+non-conflicting concept. The "glued to the close" rule keeps them apart: a row
+written on its own line is just another literal row, even one that looks like a
+filter name.
 
-In that glued form, a table always collapses to one rendered block of text, so
-the pipeline applies to that whole rendered table as a single value, exactly
-like it would for a conditional or scope block's single output. `join`/`join
-last` are no-ops there (a single value has nothing to join), so they're harmless
-if written out of habit. Any other filter (`truncate`, `date`, ...) would
-reformat the entire rendered table text, which is never useful — don't attach a
-filter pipeline to a table body.
-
-### As a Table
-
-When a loop block's body is a markdown table, only the third row repeats — the
-first two rows (heading and separator) render once, and any rows after the third
-render once as a footer.
-
-```markdown
-««items
-
-| Description   | Quantity          | Unit Price            | Total         |
-| ------------- | ----------------- | --------------------- | ------------- |
-| «description» | «quantity» «unit» | «unit price»          | «total»       |
-|               |                   | **Subtotal**          | «subtotal»    |
-|               |                   | **Tax (%«tax rate»)** | «tax»         |
-|               |                   | **Grand Total**       | «grand total» |
-
-»»
-```
-
-> [!NOTE]
->
-> A body with fewer than three rows isn't treated as a table — it renders as a
-> normal repeating block instead. A one-row body (just `| «description» |
-> «total» |`, no heading or divider) repeats that single row for every item,
-> exactly like a non-table loop body would.
-
-Column alignment across rows (matching `|` counts) is the author's
-responsibility — the engine doesn't parse or validate table structure at
-all, only which row repeats. A row with a different cell count than its
-header still renders exactly as written, substituted and unmodified.
+Glued to a table, the pipeline sees the whole rendered table as one value.
+`join`/`join last` are harmless no-ops there; anything else reformats the entire
+table text, which is never useful — don't attach a pipeline to a table body.
 
 ### In a Blockquote
 
@@ -744,14 +490,255 @@ body — the markers are then just literal text, and nothing above applies:
 »»
 ```
 
-A loop body whose lines form a markdown table (see As a Table, above) works
-inside a blockquote too. Every row line carries the marker, the repeating row
-included, so the heading renders once and each item becomes one more quoted row.
+A table loop body (see As a Table, below) works inside a blockquote too: every
+row line carries the marker, the repeating row included, so the heading renders
+once and each item becomes one more quoted row.
 
 > [!NOTE]
 >
 > A block's closing must sit at the same depth as its opening; a mismatch is an
 > error.
+
+### Quote Markers
+
+Inside a blockquote (see In a Blockquote, above) what counts is the **depth** —
+how many `>` markers deep the line sits — not the exact spelling, so `>` and
+`> ` are the same depth and mix freely within one block. That matters because
+editors and formatters strip the trailing space, leaving blank quoted lines as a
+bare `>`.
+
+Everything after the marker run is content, preserved as written, so `>- «name»`
+renders as `>- A`. A `>` that is not part of a line's leading run is ordinary
+content too.
+
+A *blank* line keeps the spelling the template gave it, minus any trailing
+space: a `> >` blank line inside a depth-2 quote renders as `> >`, and a `>>`
+one as `>>` — a blank line has no content for a trailing space to separate.
+
+Blank lines the engine produces *within* a block's own output — between the
+paragraphs of a multi-paragraph loop item (see Blank Lines in the Output,
+below), or where a block that rendered nothing stood — carry the block's marker
+too, copying the spelling of its opening line, so they read no differently from
+one the author wrote. An empty line there would end the blockquote and split it
+in two, which is why the depth has to match rather than merely being tolerated.
+The blank line after a block's close is not one of these: it belongs to the
+template and keeps whatever the template gave it (see In a Blockquote, above).
+
+## Conditional Blocks
+
+A block whose name resolves to a boolean is a conditional: its body renders once
+when the value is true, and not at all when it's false. A string or number
+behaves the same way on presence, and `null` or an unresolved chain is always
+falsy (see the type table under Blocks, above).
+
+### Else
+
+`~` on its own line inside a block separates the truthy and falsy branches. Like
+`««name` and `»»` (see Whitespace, below), a blank line MUST surround it on both
+sides, swallowed the same way and for the same reason.
+
+```markdown
+««individual
+
+Dear «full name»,
+
+~
+
+Dear representatives of «company name»,
+
+»»
+```
+
+Else also works when an object is null.
+
+```markdown
+««company info
+
+Company name: «name»
+
+~
+
+No company information available
+
+»»
+```
+
+It works the same for an empty loop, whether the list has zero items or
+Filtering Out Items in Lists (below) removed them all:
+
+```markdown
+««items
+
+- «description»
+
+~
+
+No items.
+
+»»
+```
+
+### Negation
+
+`!` prefix negates the truthiness of any variable (see the type table under
+Blocks, above, for what counts as truthy per resolved type):
+
+```markdown
+«!last»          → true when not last item
+«!first»         → true when not first item
+«!company name»  → true when company name is null or unresolved
+```
+
+> [!WARNING]
+>
+> A negated segment MUST be the last one in its property chain:
+>
+> ```markdown
+> «company: !active»
+> ```
+>
+> Negating an earlier segment (for example, `company: !active: something`) is
+> invalid.
+
+## Loop Blocks
+
+A block whose name resolves to a list is a loop: its body renders once per item,
+each item becoming the current scope for the names inside it.
+
+### The Current Value
+
+`«this»` renders the value the current scope sits on, whatever that value is.
+It's injected automatically in every scope, not only inside a loop.
+
+Its main use is a loop over a list of scalars, where an item has no property to
+name:
+
+```markdown
+Tags:
+
+««tags
+
+- «this»
+
+»»
+```
+
+Given `tags` is `["philosophy", "wisdom"]`, this renders a `- philosophy` line
+and a `- wisdom` line. Without `«this»` such a list can only be rendered
+inline, auto-joined onto one line (see Inline Lists, below).
+
+`this` sits in a chain position like any other name, so it composes with
+everything else: `«this / upper»` filters it, `«!this»` negates it, a table row
+cell (`| «this» |`) renders it per item, `««this` opens a block on it, and
+`«..: this»` reaches the enclosing scope's value (see Scope Navigation, below).
+
+On an object, `«this»` renders that object's own display representation —
+adapter-dependent and rarely useful, the same caveat as inline filtering (see
+Filtering Out Items in Lists, below). Open a block to reach its fields instead.
+
+`this` always takes precedence over a property of the same name, exactly as
+`first`/`last` do — a `this` field in the data is unreachable via `«this»` and
+needs `«.: this»` (see This Scope Only, below).
+
+`this` also stands alone: it can't be followed by `: ` to drill further, since
+`«this: name»` could only ever mean `«.: name»` — it's an error naming that
+replacement. Pinning first keeps `this` an ordinary property name, so
+`«.: this: name»` reads the data's own `this` field and drills into that.
+
+### Magic Loop Variables
+
+The following variables are injected automatically inside every loop block:
+
+| Variable | Meaning              |
+| ---      | ---                  |
+| `«first»`| true on first item   |
+| `«last»` | true on last item    |
+
+```markdown
+««items
+
+«first»: «name»
+
+»»
+```
+
+Given three items named `A`, `B`, `C`, this renders `true: A`, then `false: B`,
+then `false: C` — only the first row's magic variable is `true`.
+
+`first`/`last` always take precedence over an item property of the same name —
+if a loop item's own data has a `first` or `last` field, that field becomes
+unreachable via `«first»`/`«last»` inside that loop.
+
+Inside a nested loop, `«first»`/`«last»` always refer to the *innermost* loop's
+position: they're defined the moment you're inside any loop, so they never fall
+back to an outer one. Reaching an outer loop's takes explicit scope navigation
+(`..: `, see Scope Navigation, below).
+
+### Filtering Out Items in Lists
+
+If the chain's last segment is a boolean property projected through a list,
+resolving the chain filters the list down to the item(s) where that property is
+true, instead of collapsing the projected booleans into a single truthy/falsy
+check. This holds everywhere a property chain resolves, not just in a block
+header:
+
+```markdown
+««items: active
+
+Dear «full name»,
+
+»»
+```
+
+Given `items` is a list of objects each with `active` and `full name`, the block
+filters the list down to the item(s) where `active` is true and scopes into the
+match — `full name` resolves against that matched item, not the outer scope.
+
+Used inline (`«items: active»`), the filtering is the same but there's no body
+to scope into — each match's own display representation is auto-joined like any
+other list (see Inline Lists, below). Rarely useful on its own, since a boolean
+field carries no display text.
+
+> [!NOTE]
+>
+> ```markdown
+> «quotes: prices: active»
+> ```
+>
+> The filtered list is whichever one the last segment is a direct boolean
+> property of, not necessarily the chain's first segment — here, each quote's
+> `prices`, flattened and scoped into the matched `price`, not `quote`. A price
+> missing `active` (sparse JSON) is just falsy, not an error.
+
+### As a Table
+
+When a loop block's body is a markdown table, only the third row repeats — the
+first two rows (heading and separator) render once, and any rows after the third
+render once as a footer.
+
+```markdown
+««items
+
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| «description» | «quantity» «unit» | «unit price»          | «total»       |
+|               |                   | **Subtotal**          | «subtotal»    |
+|               |                   | **Tax (%«tax rate»)** | «tax»         |
+|               |                   | **Grand Total**       | «grand total» |
+
+»»
+```
+
+> [!NOTE]
+>
+> A body with fewer than three rows isn't treated as a table — it renders as a
+> normal repeating block instead. A one-row body (just `| «description» |
+> «total» |`, no heading or divider) repeats that single row for every item,
+> exactly like a non-table loop body would.
+
+Column alignment across rows is the author's responsibility — the engine only
+decides which row repeats, never parsing or validating table structure. A row
+with a different cell count than its header still renders exactly as written.
 
 ## Variable Definitions
 
@@ -781,9 +768,7 @@ Dear «contact person»,
 This quote has been prepared for «contact person».
 ```
 
-If a defined variable's name matches an existing property in the current scope,
-the variable wins — a reference to that name resolves to what was defined, not
-the scope property it shadows.
+A defined variable shadows a same-named property in the current scope.
 
 > [!TIP]
 >
@@ -793,9 +778,8 @@ the scope property it shadows.
 
 "Anywhere below its definition" is bounded by the nearest enclosing loop
 iteration or object scope — the same boundary that governs regular property
-fallback (see Blocks, above). A definition made inside a loop or object block
-is visible for the rest of that same iteration/object's body, but doesn't
-survive past the loop or object block closing:
+fallback (see Blocks, above). A definition inside one is visible for the rest of
+that body, but doesn't survive its closing `»»`:
 
 ```markdown
 ««items
@@ -821,9 +805,8 @@ After loop: «current»
 `After loop: «current»` resolves to nothing, regardless of what the last item's
 value was.
 
-A conditional (boolean) block is different: it doesn't open a new scope, so a
-definition made inside one behaves exactly like a top-level definition — it
-keeps leaking forward past the conditional's own closing `»»`, into whatever
+A conditional block is different: it opens no new scope, so a definition inside
+one leaks forward past its closing `»»` like a top-level one, into whatever
 scope was already active:
 
 ```markdown
@@ -873,6 +856,122 @@ property, depending on what it encounters.
 
 Override the default `, ` join with the `join`/`join last` filters — see
 Filters, above.
+
+## Scope Navigation
+
+Resolving a property chain (see Nested Property Access, above) normally searches
+the current scope first, then falls back through each enclosing scope in turn
+(see Blocks, above) — so a property that already exists locally shadows
+same-named ones further out. The magic `«this»`, and `«first»`/`«last»` inside a
+loop, shadow a property of the same name too (see The Current Value and Magic
+Loop Variables, above).
+
+`.: ` and `..: ` are two markers, written at the very start of a property chain,
+that override this default and pin resolution to an exact scope instead.
+
+`.: ` and `..: ` (dot(s), colon, exactly one space) follow the same fixed-token
+rule as `: ` (see Nested Property Access, above) — written without the trailing
+space, neither is recognized as a navigator at all.
+
+### This Scope Only
+
+`.: name` resolves `name` against the current scope's own data only — no falling
+back to an enclosing scope, no magic-var shadowing, and no shadowing by a
+defined variable (see Variable Definitions, above) of the same name either, so
+`.: first`/`.: last`/`.: this` reach the current scope's own `first`/`last`/
+`this` property even where the magic `«first»`/`«last»`/`«this»` would otherwise
+shadow it:
+
+```markdown
+««items
+
+«first»    → the magic variable
+«.: first» → the item's own "first" property, ignoring the magic variable
+«.: this»  → the item's own "this" property, ignoring the magic variable
+
+»»
+```
+
+If the current scope has no such property at all, the chain resolves to nothing
+— the same as any other unresolved chain (see Resolving the Block Name, above).
+
+### Climbing to a Parent Scope
+
+`..: name` starts resolution one scope higher than usual — at the enclosing
+scope rather than the current one — then applies the normal fallback/shadowing
+rules again from there, including a further fallback beyond it if `name` isn't
+found at that level either. Repeating the marker climbs one further level per
+repetition, so `..: ..: name` climbs two levels before resolving `name`.
+
+```markdown
+«««quotes
+
+Quote: «name»
+
+««««items
+
+Item: «name», quote: «..: name»
+
+»»»»
+
+»»»
+```
+
+Given each item has its own `name` as well as the enclosing quote, `«name»`
+inside the items loop resolves to the item's own name (it shadows the quote's),
+while `«..: name»` climbs past that shadow to reach the quote's.
+
+Climbing past the outermost scope isn't a parse error — there's simply nothing
+there, so the chain resolves to nothing, the same as any other chain that can't
+find its property (see Resolving the Block Name, above). It's the rule for
+drilling into a `null` object (see Nested Property Access, above) applied to
+scopes instead of properties, the same short-circuiting a null-conditional
+operator (`?.` in C#) gives once one link is null. A chain may carry as many
+`..: ` markers as the author writes, however many scopes actually enclose it —
+there's no cap.
+
+### Combining Both
+
+`..: ` and `.: ` compose: zero or more `..: ` climbs, followed by at most one
+`.: `, then the property chain itself. The `.: ` applies at whichever scope the
+climbs land on, pinning resolution to exactly that scope — including skipping
+*that* scope's own magic-var shadowing:
+
+```markdown
+«..: .: first»
+```
+
+climbs one level, then reads that parent scope's own `first` property, ignoring
+the parent's own magic `«first»` too.
+
+> [!WARNING]
+>
+> A `.: ` marker MUST be the last one before the property chain:
+>
+> ```markdown
+> «.: ..: name»
+> «.: .: name»
+> ```
+>
+> Both are invalid — a `..: ` climb or another `.: ` appearing after `.: ` has
+> already pinned the scope isn't allowed.
+
+Negation and filters both apply to the chain as a whole, after scope navigation
+has resolved it, exactly as they do without any navigator:
+
+```markdown
+«..: !active»
+«..: name / upper»
+```
+
+The same holds for filtering out items in a list (see Filtering Out Items in
+Lists, above) — a navigator only changes which scope the chain starts
+resolving from, not whether list-filtering applies to it:
+
+```markdown
+«.: items: active»
+«..: quotes: active»
+```
 
 ## Whitespace
 
@@ -935,9 +1034,8 @@ left to separate. A trailing run of them is trimmed back to a single newline.
 A loop renders its items one after another. When every item is a single
 paragraph they follow each other directly, so a body of `- «name»` gives a tight
 markdown list. When any item spans two or more paragraphs, a blank line goes
-between all of them instead, so the repeated chunks stay separate paragraphs
-rather than running together. Trimming a nested block's blank lines (see
-below) can change which of the two cases an item falls into.
+between all of them instead. Trimming a nested block's blank lines (see below)
+can change which of the two cases an item falls into.
 
 ```markdown
 ««items
@@ -953,36 +1051,6 @@ renders, given two items, as
 - alpha
 - beta
 ```
-
-### Quote Markers
-
-Inside a blockquote (see In a Blockquote, above) what counts is the **depth** —
-how many `>` markers deep the line sits — not the exact spelling, so `>` and
-`> ` are the same depth and mix freely within one block. That matters because a
-blank line inside a quote is usually written `>` with no trailing space, editors
-and formatters being prone to stripping one.
-
-Everything after the marker run is content, preserved as written, so `>- «name»`
-renders as `>- A`. A `>` that is not part of a line's leading run is ordinary
-content too.
-
-A *blank* line keeps the spelling the template gave it, minus any trailing
-space: a `> >` blank line inside a depth-2 quote renders as `> >`, and a `>>`
-one as `>>`. Trailing space is dropped because a blank line has no content for
-it to separate.
-
-Blank lines the engine produces *within* a block's own output — between loop
-items, or where a block that rendered nothing stood — carry the block's marker
-too, so the output stays a single blockquote, and they copy the spelling of the
-block's opening line. That is what keeps such a line indistinguishable from one
-the author wrote: the quote reads consistently whichever spelling the author
-chose, rather than both being forced to one. The blank line after a block's
-close is not one of these — it belongs to the template and keeps whatever the
-template gave it (see In a Blockquote, above). A multi-paragraph loop item is
-separated from the next item by a `>` line rather than an empty one (see Blank
-Lines in the Output, above), and a block that renders nothing leaves one `>`
-line where it stood. An empty line there would end the blockquote and split it
-in two, which is why the depth has to match rather than merely being tolerated.
 
 ### Trimming Blank Lines Around a Block
 
@@ -1129,18 +1197,16 @@ renders as
 ### Line Endings
 
 A template's own line-ending style (LF or CRLF, detected once from the source)
-is authoritative for the whole rendered output — any line breaks embedded in
-resolved data, a multi-line string value say, are normalized to match
-regardless of which style they originally used. Data never forces a mix of
-styles into the output.
+governs the whole rendered output — line breaks embedded in resolved data, a
+multi-line string value say, are normalized to match. Data never mixes styles
+into the output.
 
 ## Escaping
 
-Only a character that starts an interpretation needs an escape — `\` has no
-general "make whatever follows literal" meaning. It only does something when
-immediately followed by one of a small, fixed set of symbols; everywhere else,
-`\` is just a literal backslash and whatever follows it is read completely
-normally.
+Only a character that starts an interpretation needs an escape. `\` has no
+general "make whatever follows literal" meaning — followed by anything outside a
+small, fixed set of symbols, it is just a literal backslash and what follows it
+is read normally.
 
 `\«`, `\»`, `\~`, and `\\` are recognized in ordinary template text.
 
@@ -1177,12 +1243,10 @@ value — `\n` there is just the two characters `\` and `n`.
 
 ## Glossary & Localization
 
-Template authors write variable names as natural, space-separated words —
-whatever terms make sense to them. Developers name the underlying model in
-English, using standard code naming conventions. Direct resolution (see Nested
-Property Access, above) already bridges the two whenever the author's wording
-and the developer's naming agree once matched case-insensitively. A glossary
-exists for the terms where they don't.
+Template authors write variable names as natural, space-separated words;
+developers name the underlying model in standard code conventions. Direct
+resolution (see Nested Property Access, above) bridges the two wherever they
+agree case-insensitively. A glossary covers the terms where they don't.
 
 ### Template
 
@@ -1211,156 +1275,33 @@ name it resolves to. Only `quote no` needs an entry above — `full name` and
 `company: name` already reach `FullName`/`Company.Name` through direct
 resolution, so listing them would be redundant.
 
-A glossary's terms are scoped to a language. A template authored once may be
-matched against different term tables depending on which language is active for
-a given resolution. A business operating in Turkish and English might give the
-same `OfferNo` property a Turkish term in one glossary and an English term in
-another — either template author can write in their own vocabulary against the
-same underlying model. What determines the active language, and how many
-languages a glossary can hold at once, is host/runtime behavior, documented per
-implementation rather than by this spec.
+A glossary's terms are scoped to a language, so one template may be matched
+against different term tables depending on which language is active. A business
+operating in Turkish and English can give `OfferNo` a term in each, letting
+either author write in their own vocabulary against the same model. What
+determines the active language is host behavior, documented per implementation
+rather than by this spec.
 
 A template's space-separated words are matched, case-insensitively, against the
 localized terms in the glossary.
 
 > [!TIP]
 >
-> A glossary is additive, not exhaustive: it only needs to list the terms that
-> actually diverge from their model's naming. A word with no matching entry
-> falls back to direct resolution exactly as if no glossary were supplied at
-> all, so a partial glossary and no glossary behave identically for every term
-> it doesn't cover — there's no need to list `full name = FullName` just because
-> `quote no = OfferNo` was needed elsewhere.
+> A glossary is additive, not exhaustive: it only needs the terms that actually
+> diverge from their model's naming. A word with no matching entry falls back to
+> direct resolution exactly as if no glossary were supplied — there's no need to
+> list `full name = FullName` just because `quote no = OfferNo` was needed.
 
 Each segment of a property chain (`company: name`) is resolved independently,
 against direct resolution or the glossary in turn, so one glossary entry can
 bridge a single segment of a chain without needing to cover the others.
 
-## Scope Navigation
-
-Resolving a property chain (see Nested Property Access, above) normally searches
-the current scope first, then falls back through each enclosing scope in turn
-(see Blocks, above) — but only when the name isn't found locally. A property
-that already exists in the current scope shadows same-named properties further
-out. The magic `«this»` variable — and, inside a loop, `«first»`/ `«last»` —
-always win over a property of the same name too (see The Current Value and
-Magic Loop Variables, above).
-
-`.: ` and `..: ` are two markers, written at the very start of a property chain,
-that override this default and pin resolution to an exact scope instead.
-
-`.: ` and `..: ` (dot(s), colon, exactly one space) follow the same fixed-token
-rule as `: ` (see Nested Property Access, above) — written without the trailing
-space, neither is recognized as a navigator at all.
-
-### This Scope Only
-
-`.: name` resolves `name` against the current scope's own data only — no falling
-back to an enclosing scope, no magic-var shadowing, and no shadowing by a
-defined variable (see Variable Definitions, above) of the same name either, so
-`.: first`/`.: last`/`.: this` reach the current scope's own `first`/`last`/
-`this` property even where the magic `«first»`/`«last»`/`«this»` would otherwise
-shadow it:
-
-```markdown
-««items
-
-«first»    → the magic variable
-«.: first» → the item's own "first" property, ignoring the magic variable
-«.: this»  → the item's own "this" property, ignoring the magic variable
-
-»»
-```
-
-If the current scope has no such property at all, the chain resolves to nothing
-— the same as any other unresolved chain (see Resolving the Block Name, above).
-
-### Climbing to a Parent Scope
-
-`..: name` starts resolution one scope higher than usual — at the enclosing
-scope rather than the current one — then applies the normal fallback/shadowing
-rules again from there, including a further fallback beyond it if `name` isn't
-found at that level either. Repeating the marker climbs one further level per
-repetition, so `..: ..: name` climbs two levels before resolving `name`.
-
-```markdown
-«««quotes
-
-Quote: «name»
-
-««««items
-
-Item: «name», quote: «..: name»
-
-»»»»
-
-»»»
-```
-
-Given each item has its own `name` as well as the enclosing quote, `«name»`
-inside the items loop resolves to the item's own name (it shadows the quote's),
-while `«..: name»` climbs past that shadow to reach the quote's.
-
-Climbing past the outermost scope isn't a parse error — there's simply nothing
-there, so the chain resolves to nothing, the same as any other chain that can't
-find its property (see Resolving the Block Name, above). Drilling into a `null`
-object already works the same way (see Nested Property Access, above); climbing
-past the outermost scope is that same rule applied to scopes instead of
-properties, the same short-circuiting a null-conditional operator (`?.` in C#)
-gives a chain of member accesses once one link is null. A chain can carry as
-many `..: ` markers as the author writes, regardless of how many scopes actually
-enclose it in the template — there's no engine-enforced cap.
-
-### Combining Both
-
-`..: ` and `.: ` compose: zero or more `..: ` climbs, followed by at most one
-`.: `, then the property chain itself. The `.: ` applies at whichever scope the
-climbs land on, pinning resolution to exactly that scope — including skipping
-*that* scope's own magic-var shadowing:
-
-```markdown
-«..: .: first»
-```
-
-climbs one level, then reads that parent scope's own `first` property, ignoring
-the parent's own magic `«first»` too.
-
-> [!WARNING]
->
-> A `.: ` marker MUST be the last one before the property chain:
->
-> ```markdown
-> «.: ..: name»
-> «.: .: name»
-> ```
->
-> Both are invalid — a `..: ` climb or another `.: ` appearing after `.: ` has
-> already pinned the scope isn't allowed.
-
-Negation and filters both apply to the chain as a whole, after scope navigation
-has resolved it, exactly as they do without any navigator:
-
-```markdown
-«..: !active»
-«..: name / upper»
-```
-
-The same holds for filtering out items in a list (see Filtering Out Items in
-Lists, above) — a navigator only changes which scope the chain starts
-resolving from, not whether list-filtering applies to it:
-
-```markdown
-«.: items: active»
-«..: quotes: active»
-```
-
 ## Comments
 
-No dedicated comment syntax — a template is markdown, and markdown already
-has one. An HTML comment isn't `«»` syntax, so the engine treats it as
-ordinary literal text and passes it through unchanged; it renders into the
-output exactly as written and disappears only once that markdown is itself
-turned into HTML, the same as any HTML comment authored by hand.
+No dedicated comment syntax — a template is markdown, and markdown already has
+one. An HTML comment isn't `«»` syntax, so the engine passes it through as
+ordinary literal text; it renders exactly as written and disappears only once
+that markdown is itself turned into HTML.
 
 ```markdown
 <!-- reminder: confirm pricing before this goes out -->
@@ -1377,8 +1318,7 @@ Hello, Ada!
 > [!TIP]
 >
 > The comment is still present in the rendered markdown — Guillemets never
-> strips it. Only a markdown-to-HTML renderer downstream makes it invisible,
-> the same way it would for a comment authored directly in markdown.
+> strips it. Only a downstream markdown-to-HTML renderer makes it invisible.
 
 ---
 
