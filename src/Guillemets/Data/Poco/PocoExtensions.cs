@@ -10,17 +10,20 @@ namespace Guillemets;
 /// </summary>
 public static class PocoExtensions
 {
-    /// <summary>
-    /// Renders <paramref name="template"/> against <paramref name="data"/>.
-    /// Named <c>RenderObject</c> rather than overloading <c>Render</c> —
-    /// <see langword="object"/> is broad enough that folding it into the
-    /// same overload set would blur which overload a call actually hits.
-    /// </summary>
-    /// <param name="template">The template to render.</param>
-    /// <param name="data">
-    /// The object to resolve template properties against.
-    /// </param>
-    /// <returns>The rendered output.</returns>
-    public static string RenderObject(this Template template, object data) =>
-        template.Render(new PocoDataSource(data));
+    extension(Template template)
+    {
+        /// <summary>
+        /// Renders this template against <paramref name="data"/>. Named
+        /// <c>RenderObject</c> rather than overloading <c>Render</c> —
+        /// <see langword="object"/> is broad enough that folding it into
+        /// the same overload set would blur which overload a call actually
+        /// hits.
+        /// </summary>
+        /// <param name="data">
+        /// The object to resolve template properties against.
+        /// </param>
+        /// <returns>The rendered output.</returns>
+        public string RenderObject(object data) =>
+            template.Render(new PocoDataSource(data));
+    }
 }

@@ -11,14 +11,16 @@ namespace Guillemets;
 /// </summary>
 public static class JTokenExtensions
 {
-    /// <summary>
-    /// Renders <paramref name="template"/> against <paramref name="data"/>.
-    /// </summary>
-    /// <param name="template">The template to render.</param>
-    /// <param name="data">
-    /// The JSON data to resolve template properties against.
-    /// </param>
-    /// <returns>The rendered output.</returns>
-    public static string Render(this Template template, JToken data) =>
-        template.Render(new JTokenDataSource(data));
+    extension(Template template)
+    {
+        /// <summary>
+        /// Renders this template against <paramref name="data"/>.
+        /// </summary>
+        /// <param name="data">
+        /// The JSON data to resolve template properties against.
+        /// </param>
+        /// <returns>The rendered output.</returns>
+        public string Render(JToken data) =>
+            template.Render(new JTokenDataSource(data));
+    }
 }

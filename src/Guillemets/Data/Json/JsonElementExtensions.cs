@@ -13,18 +13,20 @@ public static class JsonElementExtensions
 {
     static readonly JsonElement EMPTY_OBJECT = JsonDocument.Parse("{}").RootElement;
 
-    /// <summary>
-    /// Renders <paramref name="template"/> against <paramref name="data"/>.
-    /// A JSON <see langword="null"/> root is treated as an empty object,
-    /// so any property looked up against it resolves the same way as an
-    /// object simply missing that property, rather than the root's own
-    /// nullness short-circuiting resolution.
-    /// </summary>
-    /// <param name="template">The template to render.</param>
-    /// <param name="data">
-    /// The JSON data to resolve template properties against.
-    /// </param>
-    /// <returns>The rendered output.</returns>
-    public static string Render(this Template template, JsonElement data) =>
-        template.Render(new JsonElementDataSource(data.ValueKind == JsonValueKind.Null ? EMPTY_OBJECT : data));
+    extension(Template template)
+    {
+        /// <summary>
+        /// Renders this template against <paramref name="data"/>. A JSON
+        /// <see langword="null"/> root is treated as an empty object, so
+        /// any property looked up against it resolves the same way as an
+        /// object simply missing that property, rather than the root's own
+        /// nullness short-circuiting resolution.
+        /// </summary>
+        /// <param name="data">
+        /// The JSON data to resolve template properties against.
+        /// </param>
+        /// <returns>The rendered output.</returns>
+        public string Render(JsonElement data) =>
+            template.Render(new JsonElementDataSource(data.ValueKind == JsonValueKind.Null ? EMPTY_OBJECT : data));
+    }
 }

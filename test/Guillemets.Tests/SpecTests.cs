@@ -4,6 +4,7 @@ using System.Text.Json;
 
 namespace Guillemets.Tests;
 
+[SetCulture("en-US")]
 public class SpecTests
 {
     static readonly HashSet<string> IGNORED_FIXTURES =

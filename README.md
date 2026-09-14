@@ -2,14 +2,12 @@
 
 A markdown-aware template engine for non-technical authors.
 
-`«»` — guillemets, pronounced *ghee-uh-MAY* — were chosen for readability:
-they never collide with markdown syntax and stand out visually in prose.
-That's a deliberate trade against writability — neither delimiter sits on
-a standard keyboard, so typing either takes a shortcut (see below), not a
-keystroke. Templates get read far more often than typed by hand, so that
-trade favors the reader.
+Templates use `«»`, guillemets, pronounced *ghee-uh-MAY*, the quotation marks
+French and several other languages use. Markdown assigns them no meaning, so
+`«first name»` drops into a heading, a table cell or a blockquote without
+escaping, and every placeholder is still easy to spot while skimming.
 
-> **Templates your customers could read over your shoulder**
+> [!TIP]
 >
 > - [**Cheatsheet**](docs/cheatsheet.md): Every feature, one example each
 > - [**Try it in .NET Fiddle**](https://dotnetfiddle.net/S6JocQ): Nothing to
@@ -159,8 +157,10 @@ var output = template.RenderObject(new { FullName = "Alice Smith" });
 // => "Dear Alice Smith,"
 ```
 
-`Render`/`RenderObject` also accept `System.Text.Json.JsonElement`
-(`template.Render(jsonElement)`) and `Newtonsoft.Json.Linq.JToken`.
+`Render` also accepts `System.Text.Json.JsonElement`
+(`template.Render(jsonElement)`) and `Newtonsoft.Json.Linq.JToken`;
+`RenderObject` is the plain-C#-object overload, named apart because `object` is
+too broad to overload `Render` on.
 
 A `Template` is immutable and stateless once created — parse it once and
 reuse the same instance for every `Render` call, including concurrently
@@ -169,14 +169,10 @@ across threads, rather than re-parsing per request.
 ### Custom filters
 
 `Template.Create`'s optional `configure` callback exposes
-`ParseOptions.Filters`, the registry `Register(instance)` adds a filter to
-alongside the built-ins (`join`, `date`, `upper`, ...) — re-registering an
-existing name (e.g. `Register(new CurrencyFilter("TL"))`) replaces it, and
-`Remove<TFilter>()` drops one entirely. A filter's template name drops the
-`Filter` suffix and lowercases the rest — `ReverseFilter` becomes `reverse`.
-`Apply` maps over the current sequence: a single-value filter like `date`
-returns one string per input; a collapsing filter like `join` returns fewer
-strings than it received.
+`ParseOptions.Filters`: `Register(instance)` adds a filter alongside the
+built-ins (`join`, `date`, `upper`, ...) or replaces one by name,
+`Remove<TFilter>()` drops one. The template name is the class name minus its
+`Filter` suffix, lowercased — `ReverseFilter` becomes `reverse`.
 
 ```csharp
 using Guillemets.Filters;
@@ -205,6 +201,7 @@ property names when they don't already match — see
 - [`docs/implementations/dotnet.md`](docs/implementations/dotnet.md) — this
   .NET implementation's own behavior, including its runtime-specific filters.
 - [`docs/architecture.md`](docs/architecture.md) — how the engine is built.
+- [`docs/symbols.md`](docs/symbols.md) — the symbols the tokenizer recognizes.
 
 ## License
 

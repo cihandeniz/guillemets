@@ -15,16 +15,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Product>Guillemets</Product>
-    <Version>0.2.0</Version>
-    <Authors>Mouseless</Authors>
-    <Company>Mouseless</Company>
-    <Copyright>Copyright (c) 2026 Mouseless</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/mouseless/guillemets</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/mouseless/guillemets.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>

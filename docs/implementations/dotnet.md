@@ -201,16 +201,17 @@ as `Upper`, above (Turkish `tr-TR` maps `I` to `ı`, not `i`).
 
 > [!NOTE]
 >
-> Because both depend on `CurrentCulture`, the `/specs` fixtures that use them
-> (`02-filters/002-value-filters` and
-> `06-variable-definitions/001-variable-definition`) only pass under whatever
-> ambient culture the test process runs with. That's true today since CI
-> defaults to
-> invariant/en-US and the fixture text has no culture-sensitive casing under
-> that, but it would break under a different default (e.g. `tr-TR`, per the
-> Turkish mapping above). `FilterCultureTests.cs`'s
-> `Upper_filter_respects_ambient_culture` test (and its `Lower` counterpart)
-> exercises that divergence directly under `[SetCulture("tr-TR")]`.
+> Because both depend on `CurrentCulture`, the three `/specs` fixtures that push
+> cased text through them — `02-filters/002-value-filters`,
+> `05-loop-blocks/004-current-value` and
+> `06-variable-definitions/001-variable-definition` — have culture-dependent
+> expected output. `SpecTests` pins `[SetCulture("en-US")]` for that reason:
+> left to the machine's own default the corpus would pass or fail by accident,
+> and under `tr-TR` all three differ (`ALICE` comes out `ALİCE`, per the Turkish
+> mapping above). So the corpus asserts one culture's casing on purpose; the
+> divergence itself is `FilterCultureTests.cs`'s to cover, in
+> `Upper_filter_respects_ambient_culture` and its `Lower` counterpart, under
+> `[SetCulture("tr-TR")]`.
 
 ## Glossary & Localization
 

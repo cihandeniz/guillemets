@@ -10,4 +10,15 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Version>0.2.0</Version>
+    <Product>Guillemets</Product>
+    <Authors>Mouseless</Authors>
+    <Company>Mouseless</Company>
+    <Copyright>Copyright (c) 2026 Mouseless</Copyright>
+    <PackageProjectUrl>https://github.com/mouseless/guillemets</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mouseless/guillemets.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
 </Project>
