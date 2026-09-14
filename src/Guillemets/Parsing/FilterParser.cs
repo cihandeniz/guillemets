@@ -126,6 +126,8 @@ internal class FilterParser(TokenCursor _tokens, FilterRegistry _filters)
         var builder = new StringBuilder();
         while (!_tokens.AtEnd && ContinuesText(stopAtNewline, inValue))
         {
+            if (_tokens.TrySkipQuoteMarker()) { continue; }
+
             builder.Append(SegmentText(_tokens.Current, unescape));
             _tokens.Advance();
         }

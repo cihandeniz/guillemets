@@ -1,0 +1,9 @@
+{
+  "Company": {
+    "Name": "Acme",
+    "Address": { "City": "Springfield" }
+  },
+  "One": { "Name": "one" },
+  "Two": { "Name": "two" },
+  "Outer": { "Inner": { "Name": "inner" } }
+}

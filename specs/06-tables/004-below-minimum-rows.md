@@ -1,4 +1,0 @@
-| Description   |
-| A |
-| Description   |
-| B |

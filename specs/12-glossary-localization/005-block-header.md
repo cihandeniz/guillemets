@@ -1,5 +1,0 @@
-Before.
-
-Yes
-
-After.

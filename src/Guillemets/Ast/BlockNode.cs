@@ -13,7 +13,7 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
     IReadOnlyList<FilterNode>? Footer = null,
     string QuoteMarker = "",
     int QuoteDepth = 0,
-    bool BlankLineAfterClose = false
+    string? BlankLineAfterClose = null
 ) : IRenderable
 {
     readonly TableBody? _table = TableBody.From(Body, QuoteDepth);
@@ -38,8 +38,13 @@ internal record BlockNode(PropertyChainNode Properties, IReadOnlyList<IRenderabl
         return string.Empty;
     }
 
-    string RestoreBlankLineAfterClose(string rendered) =>
-        BlankLineAfterClose && rendered.Length > 0 ? rendered + BlankLineSeparator : rendered;
+    string RestoreBlankLineAfterClose(string rendered)
+    {
+        if (BlankLineAfterClose is null) { return rendered; }
+        if (rendered.Length == 0) { return rendered; }
+
+        return rendered + BlankLineAfterClose + NEWLINE;
+    }
 
     string JoinItems(IEnumerable<string> items)
     {

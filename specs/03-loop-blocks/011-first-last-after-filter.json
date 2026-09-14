@@ -1,7 +1,0 @@
-{
-  "Items": [
-    { "Active": false, "Name": "X" },
-    { "Active": true, "Name": "A" },
-    { "Active": true, "Name": "C" }
-  ]
-}

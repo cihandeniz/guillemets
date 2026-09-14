@@ -1,6 +1,0 @@
-Start:
-
-one
-two
-
-End.

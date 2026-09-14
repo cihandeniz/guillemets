@@ -1,5 +1,0 @@
-Tags:
-
-- alpha
-- beta
-Done.

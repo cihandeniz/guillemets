@@ -1,1 +1,0 @@
-- magic: `{ "This": "own", "Name": "A" }`, property: own

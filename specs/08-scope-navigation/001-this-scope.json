@@ -1,0 +1,19 @@
+{
+  "Items": [
+    { "First": "uno" },
+    { "First": "dos" }
+  ],
+  "QuoteNo": "Q-100",
+  "OtherItems": [
+    { "Description": "Widget" }
+  ],
+  "Quote": { "Number": "OV-1" },
+  "This": { "Name": "inner" },
+  "ActiveItems": [
+    { "Active": true, "FullName": "Alice Smith" },
+    { "Active": false, "FullName": "Bob Jones" }
+  ],
+  "ShadowItems": [
+    { "This": "own", "Name": "A" }
+  ]
+}

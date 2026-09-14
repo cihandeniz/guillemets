@@ -1,3 +1,0 @@
-Note:
-
-> It is shown.

@@ -1,5 +1,0 @@
-> ««address
->
-> «city», «country»
->
-> »»

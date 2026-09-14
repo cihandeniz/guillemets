@@ -1,4 +1,0 @@
-Tags:
-
-- philosophy
-- wisdom

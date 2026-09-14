@@ -1,0 +1,70 @@
+{
+  "Items": [
+    {
+      "Description": "A"
+    },
+    {
+      "Description": "B"
+    },
+    {
+      "Description": "C"
+    }
+  ],
+  "CollisionItems": [
+    {
+      "First": "one",
+      "Name": "Alice"
+    },
+    {
+      "First": "two",
+      "Name": "Bob"
+    }
+  ],
+  "Quotes": [
+    {
+      "Items": [
+        {
+          "Name": "A"
+        },
+        {
+          "Name": "B"
+        }
+      ]
+    },
+    {
+      "Items": [
+        {
+          "Name": "C"
+        }
+      ]
+    }
+  ],
+  "FilteredItems": [
+    {
+      "Active": false,
+      "Name": "X"
+    },
+    {
+      "Active": true,
+      "Name": "A"
+    },
+    {
+      "Active": true,
+      "Name": "C"
+    }
+  ],
+  "Companies": [
+    {
+      "CompanyName": "Acme Inc.",
+      "Address": {
+        "City": "Springfield"
+      }
+    },
+    {
+      "CompanyName": "Globex Corp.",
+      "Address": {
+        "City": "Shelbyville"
+      }
+    }
+  ]
+}

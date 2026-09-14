@@ -1,5 +1,0 @@
-Flush:
-
-inner text
-
-End.

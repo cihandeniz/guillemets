@@ -13,10 +13,11 @@ Doc ownership, in precedence order:
 
 - `docs/specs.md` — the source of truth for behaviour, authoritative over this
   file. Runtime-agnostic: it defines the language itself, including the filter
-  *mechanism* and the `join`/`join last` filters it guarantees, but not what
-  other filters exist or how they format.
+  *mechanism* and the filters it guarantees (`join`, `join last`, `upper`,
+  `lower`, `default`, `truncate`), but not what other filters exist or how they
+  format.
 - `docs/implementations/dotnet.md` — this .NET implementation's own behaviour
-  on top of that (`date`/`currency`/`truncate`, plus .NET-specific notes). A
+  on top of that (`date`/`currency`/`number`, plus .NET-specific notes). A
   port to another runtime gets its own file here, never edits to `specs.md`.
 - `docs/architecture.md` — how the engine is built. See `.agents/generic.md`
   for what belongs there. High-level only: meta entities and the parse/render
@@ -31,6 +32,15 @@ patch around it. Section order in `docs/specs.md` follows the `/specs` folder
 groups, so a fixture group and a spec section map one to one — note that its
 full example contains `##` headings inside a fence, so anything walking that
 file's structure has to track fences rather than grep for `^## `.
+
+A markdown construct a feature merely has to survive — a table, a blockquote —
+is not a feature of its own and gets no group or top-level section. It earns one
+basic case in `00-basics` proving it passes through, and beyond that every case
+lives with the Guillemets feature it combines with, so a table inside a loop is
+a loop case and a wrapped reference inside a quote is a variables case.
+`docs/specs.md` mirrors that as subsections (`### As a Table`, `### In a
+Blockquote` under Blocks; `### Quote Markers` under Whitespace). Without this
+the corpus repeats every feature once per markdown construct.
 
 Published-doc prose style: every paragraph introducing a concept gets a worked
 `markdown` example (template → output) right there. A MUST-rule or an
@@ -80,16 +90,39 @@ Each case is a flat file group sharing a basename inside a numbered folder:
 - `.json` — optional data; omit it and the case renders against `{}`.
 - `.<culture>.json` — optional glossary sidecar, per exact case.
 
+A fixture covers a whole feature rather than one line of it — several related
+cases merged into one template, each keeping its own name as a `##` heading
+above the lines it contributed, so the name survives the merge and the expected
+output reads as a labelled list. Every fixture opens with an `# H1` titling
+itself, its own basename in Title Case (`001-simple-variable` → `# Simple
+Variable`) — renaming a fixture means retitling it in the same edit, in both the
+`.guil.md` and the `.md`. Three kinds of fixture go untitled, because a title
+would change what they assert: `90-integration`, whose samples are whole
+realistic documents where the `# H1` is content rather than a label; error
+fixtures, whose message pins a line and column a title would shift; and a case
+whose premise is that nothing precedes the block, like
+`03-blocks/005-block-trim-at-template-edges`. Split only where the data would
+conflict (two cases needing the same property to hold different values) or where
+absence is the point and half the output would otherwise render empty.
+
 Several cases share one template by giving it just the group number and
 suffixing each case with a letter (`005-nested-blocks.guil.md` +
 `005a-...`/`005b-...`); `SpecTests.cs` matches by leading digits.
 
+The corpus reads front to back as a teaching order, so a fixture MUST NOT use
+syntax no earlier group has introduced. When a case needs a later feature, it
+moves to that feature's group rather than the group it thematically belongs to —
+a filter case that needs a block is a block case. Filters sit early, right after
+variables, because nearly everything else uses them.
+
 Folders are numbered for sort order only — refer to fixtures by name in prose.
-Feature groups run from `00-` up and `99-errors` stays last; a new group
-appends at the next free number, nothing is renumbered, and the gap before 99
-stays. `08-filters` holds only what `docs/specs.md` guarantees; a case whose
-output depends on .NET formatting belongs in a unit test instead.
-`09-integration` is excluded from `SpecTests.cs` and driven by each data
+Feature groups run from `00-` up and `90-integration` stays last; a new group
+appends at the next free number, and the gaps stay — including the ones left by
+a dissolved group. `02-filters` holds only what `docs/specs.md` guarantees; a
+case whose output depends on .NET formatting belongs in a unit test instead.
+Errors live with the feature they break, `9xx-` prefixed so they sort last
+within their group, and carry no `# H1` since their message pins a line and
+column. `90-integration` is excluded from `SpecTests.cs` and driven by each data
 source's own `*IntegrationTests.cs`.
 
 ## Core concepts
@@ -116,12 +149,13 @@ re-derive wrongly from the code alone. Go there before changing behaviour.
 - **Tables**: a block may open/close with a leading/trailing `|` to stay valid
   in a markdown table row.
 - **Blockquotes**: any block works inside `>`-prefixed lines, at any nesting
-  depth. Depth is counted in `Quote` tokens, so `>>` and `> >` are the same;
-  blank lines render a canonical marker, one `>` per level.
+  depth. Depth is counted in `Quote` tokens, so `>>` and `> >` are the same
+  depth; a blank line keeps its own spelling minus a trailing space, and one the
+  engine produces copies the block's opening spelling.
 - **Inline lists**: scalar lists auto-join with `, `; override with
   `join`/`join last`.
 - **Filters**: `name: value` chained with ` / `, no parens. Built-ins: `date`,
-  `currency`, `truncate`, `join`, `join last`, `upper`, `lower`, `default`.
+  `currency`, `join`, `join last`, `upper`, `lower`, `default`, `truncate`.
 
 New built-in filter names should read as verbs (`truncate`, not `length`), but
 a short conventional name other engines share can win, as `upper`/`lower` did.

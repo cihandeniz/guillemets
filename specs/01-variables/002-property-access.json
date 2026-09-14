@@ -1,0 +1,9 @@
+{
+  "FullName": "Alice Smith",
+  "Company": {
+    "Name": "Acme Software"
+  },
+  "CompanyName": "Acme Holdings",
+  "contactName": "Bob Jones",
+  "ValidUntil": "2026-12-31"
+}

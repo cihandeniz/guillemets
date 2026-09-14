@@ -1,3 +1,0 @@
-Shout: ADA
-
-Both: ADA

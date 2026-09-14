@@ -1,5 +1,0 @@
-«««outer
-
-Some »» text.
-
-»»»

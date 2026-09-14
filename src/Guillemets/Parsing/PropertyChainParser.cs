@@ -90,6 +90,8 @@ internal class PropertyChainParser(TokenCursor _tokens)
                 continue;
             }
 
+            if (_tokens.TrySkipQuoteMarker()) { continue; }
+
             if (_tokens.Current.Kind is Literal or Escaped or Quote)
             {
                 buffer.Append(_tokens.Current.Text);

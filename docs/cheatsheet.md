@@ -121,6 +121,48 @@ Items: «items: name»
 Items: Wireless Mouse, USB-C Hub
 ```
 
+## Filters
+
+### Chain with ` / `
+
+```markdown
+«first name / upper»
+→
+ADA
+```
+
+### Custom separator
+
+```markdown
+Tags: «tags / join: ; »
+→
+Tags: a; b; c
+```
+
+### Natural sentence
+
+```markdown
+Tags: «tags / join last:  and  / join: , »
+→
+Tags: a, b and c
+```
+
+### Fallback value
+
+```markdown
+Hi «nickname / default: friend»,
+→
+Hi friend,
+```
+
+### Shorten
+
+```markdown
+«description / truncate: 10»
+→
+Consulting…
+```
+
 ## Blocks
 
 ### If / else
@@ -230,6 +272,18 @@ Become a member!
 - Hub
 ```
 
+### Block footer
+
+```markdown
+««items
+
+«name»
+
+join last:  and  / join: , »»
+→
+Wireless Mouse and USB-C Hub
+```
+
 ### Table from one row
 
 ```markdown
@@ -247,6 +301,36 @@ Become a member!
 | USB-C Hub | 2 |
 ```
 
+### Block inside a blockquote
+
+```markdown
+> ««items
+>
+> - «name»
+>
+> »»
+→
+> - Wireless Mouse
+> - USB-C Hub
+```
+
+### Table inside a blockquote
+
+```markdown
+> ««items
+>
+> | Item   | Qty   |
+> | ------ | ----- |
+> | «name» | «qty» |
+>
+> »»
+→
+> | Item   | Qty   |
+> | ------ | ----- |
+> | Wireless Mouse | 1 |
+> | USB-C Hub | 2 |
+```
+
 ### Capture output as a name
 
 ```markdown
@@ -259,52 +343,6 @@ Become a member!
 Ships to «delivery».
 →
 Ships to Austin.
-```
-
-## Filters
-
-### Chain with ` / `
-
-```markdown
-«first name / upper»
-→
-ADA
-```
-
-### Custom separator
-
-```markdown
-Tags: «tags / join: ; »
-→
-Tags: a; b; c
-```
-
-### Natural sentence
-
-```markdown
-Tags: «tags / join last:  and  / join: , »
-→
-Tags: a, b and c
-```
-
-### Fallback value
-
-```markdown
-Hi «nickname / default: friend»,
-→
-Hi friend,
-```
-
-### Block footer
-
-```markdown
-««items
-
-«name»
-
-join last:  and  / join: , »»
-→
-Wireless Mouse and USB-C Hub
 ```
 
 ## Scope navigation
@@ -374,22 +412,16 @@ name»,
 Hi Ada,
 ```
 
-## Blockquotes
-
-### Block inside a blockquote
+### Wrap a long reference in a blockquote
 
 ```markdown
-> ««items
->
-> - «name»
->
-> »»
+> Company name: «company:
+> name»
 →
-> - Wireless Mouse
-> - USB-C Hub
+> Company name: Acme
 ```
 
-### Nested depth
+### Nested quote depth
 
 ```markdown
 > > ««tags
@@ -400,23 +432,6 @@ Hi Ada,
 →
 > > - a
 > > - b
-```
-
-### Table inside a blockquote
-
-```markdown
-> ««items
->
-> | Item   | Qty   |
-> | ------ | ----- |
-> | «name» | «qty» |
->
-> »»
-→
-> | Item   | Qty   |
-> | ------ | ----- |
-> | Wireless Mouse | 1 |
-> | USB-C Hub | 2 |
 ```
 
 ## Escaping
@@ -446,5 +461,4 @@ culture behaviour.
 «due date / date: dd/MM/yyyy»
 «amount / currency»
 «amount / number: N2»
-«description / truncate: 10»
 ```

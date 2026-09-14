@@ -26,7 +26,7 @@ public class SpecTests
     static IEnumerable<string> CaseFiles(string extension) =>
         Directory.EnumerateFiles(SpecsRoot.PATH, $"*{extension}", SearchOption.AllDirectories)
             .Where(path => !path.EndsWith(".guil.md", StringComparison.Ordinal))
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}09-integration{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}90-integration{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .OrderBy(path => path, StringComparer.Ordinal);
 
     static string DataPathFor(string casePath) =>

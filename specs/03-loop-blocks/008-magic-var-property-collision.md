@@ -1,2 +1,0 @@
-true: Alice
-false: Bob

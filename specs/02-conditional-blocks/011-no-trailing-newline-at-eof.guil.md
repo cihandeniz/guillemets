@@ -1,7 +1,0 @@
-Before.
-
-««flag
-
-Yes
-
-»»

@@ -1,0 +1,8 @@
+{
+  "Outer": {
+    "Middle": {
+      "Inner": { "Name": "Alice Smith" }
+    }
+  },
+  "Contact": { "Name": "Alice Smith" }
+}

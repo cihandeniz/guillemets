@@ -1,4 +1,0 @@
-| Tag    |
-| ------ |
-| philosophy |
-| wisdom |

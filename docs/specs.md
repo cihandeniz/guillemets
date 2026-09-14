@@ -17,6 +17,25 @@ enforce.
 punctuation in French and several other languages. They're the only delimiter
 characters this engine recognizes.
 
+Everything else is markdown the engine never interprets — a table, a blockquote,
+a list, a fence — reaching the output exactly as written, with only the `«...»`
+inside it replaced:
+
+```markdown
+> Terms apply to «name».
+> No refunds.
+```
+
+renders as
+
+```markdown
+> Terms apply to Alice.
+> No refunds.
+```
+
+A `>` or a `|` takes on meaning only where a block's own lines are built around
+it — see In a Blockquote and As a Table under Blocks, below.
+
 Multi-guillemet depth (`««`, `«««`, ...) exists for readability at nesting
 levels. The engine accepts any consistent depth — the author chooses based on
 surrounding context.
@@ -85,6 +104,164 @@ the model's own naming convention — `«full name»` resolves `FullName`,
 source (POCOs, `System.Text.Json`, Newtonsoft `JToken`); a third-party
 `IDataSource` SHOULD do the same for `TryGetProperty` to behave consistently
 with the rest of the engine.
+
+## Filters
+
+`name: value` attaches a filter to a property chain, chained with ` / `:
+
+```markdown
+«date / date: dd/MM/yyyy»
+«amount / currency»
+«description / truncate: 80»
+«name / upper»
+«list: name / join: , »
+```
+
+`: ` (colon immediately followed by exactly one space) MUST be written together,
+same as property access above — it marks where a filter's value starts.
+
+> [!NOTE]
+>
+> Whatever follows `: `, up to the next ` / ` or the end of the token, is the
+> value exactly as written — nothing is trimmed automatically. `truncate: 80 `
+> keeps its trailing space as part of the value. Symbols that carry meaning
+> elsewhere in the language — `~`, `!`, `=`, `: `, `.: `, `..: ` — are plain
+> text inside a value and need no escape. See Escaping, below, for how to fit a
+> literal `/` or `»`, or an actual newline/tab, inside a value.
+
+A filter's value is optional — write the bare name, with no `: value` at all, to
+use its default; what that default resolves to, and whether a bare name is even
+meaningful, is up to the filter itself.
+
+Filters chain into a pipeline, applied left to right — each stage receives the
+previous stage's output. A single-value filter maps over every item when its
+input is still a list; a list-collapsing filter (like `join`) acts on the whole
+list at once and produces a single string. Order matters for a pipeline mixing
+both kinds — they're genuinely sequential stages, not a paired configuration.
+
+A few filters are part of the language itself, not implementation-defined like
+the formatting filters below — every implementation MUST provide them, with a
+fixed contract that doesn't vary by runtime. Each gets its own subsection below
+explaining why it belongs here rather than in a runtime's own filter catalog.
+
+### Join
+
+`join` collapses the entire current list into a single string, joined by its
+value. Zero or one items is a no-op.
+
+```markdown
+«tags / join:  \/ »
+→ philosophy / wisdom / ancient-greek
+```
+
+Its own default value (used when written bare, with no `: value`) is `, ` when
+used inline, and a newline when used as a block footer (see Block Footer, below)
+— a bare `join` in a footer is a natural fit for joining loop output that
+already looks like separate lines, e.g. a list of `- «name»` rows. `join` is
+guaranteed because Inline Lists (below) defines its default comma-join in terms
+of it and `join last`.
+
+### Join Last
+
+`join last` merges the last two items of the current list into one, joined by
+its value; fewer than two items is a no-op. Order matters when combined with
+`join` — they're genuinely sequential stages, not a paired configuration:
+
+```markdown
+«quote: tags / join last:  and  / join: , »
+→ philosophy, wisdom and ancient-greek
+```
+
+The default auto-join (`, `, see Inline Lists, below) still applies if the
+pipeline ends without fully collapsing the list to a string, so `join last`
+alone is enough for the common "A, B and C" case.
+
+`join last`'s own bare-name default (used with no `: value` at all) is an empty
+separator — the last two items merge with nothing between them. Unlike `join`,
+there's no natural single default for `join last` across contexts, so write an
+explicit value (e.g. `join last:  and `) rather than relying on the bare form.
+Guaranteed alongside `join`, for the same reason — see Join, above.
+
+### Upper
+
+`upper` converts every value to uppercase, following whatever casing rules the
+implementation's language/culture setting applies (see below). It takes no value
+— write it bare, since anything after `: ` is ignored, the same as any filter
+that has no use for its argument.
+
+```markdown
+«name / upper»
+→ ADA LOVELACE
+```
+
+It's guaranteed because, unlike a date or currency filter, it doesn't parse the
+value through a host-specific primitive — it just transforms characters. Exactly
+how casing behaves for a given language is still implementation-defined (see
+below), but the filter itself is always available.
+
+### Lower
+
+`lower` converts every value to lowercase, the same shape as `upper` in every
+other respect, guaranteed for the same reason:
+
+```markdown
+«name / lower»
+→ ada lovelace
+```
+
+### Default
+
+`default` substitutes its value for any value that would otherwise
+render as empty — an unresolved chain (see Resolving the Block Name,
+below) or a property whose own value is empty (an explicit null, or an
+empty string). Applied per item when the input is still a list, the
+same as `upper`/`lower`; a resolved, non-empty value passes through
+unchanged.
+
+```markdown
+«nickname / default: N/A»
+```
+
+Given `nickname` is missing entirely, this renders `N/A`; given
+`nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
+reason as `upper`/`lower` — it's a direct string substitution, not a
+wrapper around a host-specific parsing/formatting primitive.
+
+### Truncate
+
+`truncate` shortens a value to the length given as its argument, appending `…`
+when it had to cut. A value already within the limit passes through untouched.
+Applied per item when the input is still a list, the same as `upper`/`lower`.
+
+```markdown
+«description / truncate: 10»
+```
+
+Given `description` is `Consulting services`, this renders `Consulting…`; given
+`Alice`, it renders `Alice` unchanged.
+
+> [!IMPORTANT]
+>
+> The argument MUST be a whole number, zero or greater. A missing, non-numeric,
+> or negative argument is a parse error.
+
+Length is counted in the runtime's own string units, and an implementation
+SHOULD avoid cutting in the middle of a character that those units encode as a
+pair — backing the cut off by one rather than splitting it. How far beyond that
+an implementation goes (combining marks, ZWJ sequences) is its own business and
+belongs in its own doc. It's guaranteed because, like `upper`/`lower`, it
+transforms characters rather than wrapping a host-specific parsing primitive.
+
+Other utility filters — formatting a date or a currency amount, and so on — are
+commonly provided but implementation-defined, not part of this language-level
+spec. Each is a thin wrapper around whatever formatting/parsing primitives the
+host runtime provides: a date filter around the runtime's own date formatter, a
+currency filter around its number formatter, and so on. The exact catalog and
+behavior necessarily vary by runtime, so every implementation MUST document such
+filters separately rather than folding them in here. This repository's .NET
+implementation documents its `date`, `currency`, and `number` (plus any
+.NET-specific notes on the guaranteed filters) in
+[`implementations/dotnet.md`](implementations/dotnet.md).
 
 ## Blocks
 
@@ -405,6 +582,177 @@ Blocks, above, for what counts as truthy per resolved type):
 > Negating an earlier segment (for example, `company: !active: something`) is
 > invalid.
 
+### Block Footer
+
+The same pipeline attaches to a block's last line, right before its closing
+`»»`, applying to the block's own accumulated output instead of a property
+chain:
+
+```markdown
+««tags = quote: tags
+
+«name»
+
+join: , »»
+```
+
+renders as a comma-separated list when used via `«tags»`. The pipeline MUST be
+the only thing on that line — nothing else may share it, before or after — and
+MUST end right where the closing `»»` starts, with no line break between them. A
+pipeline that isn't glued to the close this way isn't recognized as a footer at
+all; it's ordinary literal body content instead.
+
+> [!NOTE]
+>
+> This means a new custom filter can retroactively change how an
+> already-written template parses, if its name matches a glued last line:
+>
+> ```markdown
+> ««notes
+>
+> Summary text.
+>
+> highlight»»
+> ```
+>
+> A hard parse error with no `highlight` filter registered, silently
+> different output the moment a host app registers one — even for an
+> unrelated feature. Expected, not a bug; keep custom filter names
+> distinctive.
+
+When the block has an else branch, the footer goes on the last line of whichever
+branch renders last: the truthy body if there is no `~`, the falsy body if there
+is one. `~` itself always stays on its own line and is never adjacent to it.
+
+An unescaped `»»` at the block's own depth always terminates the last filter's
+value, even mid-value with no space before it — `join: , »»` isn't ambiguous,
+the value is exactly `, `. This is the same closing-token rule that ends any
+other block body (see Blocks, above), not something specific to filter values.
+
+A table's own trailing footer rows (see As a Table, above) are a different,
+non-conflicting concept from this pipeline. The "glued to the close" rule above
+keeps them from colliding in practice: a table row written on its own line, even
+one that happens to look like a filter name, is just another literal row — the
+pipeline only ever wins when it's written right up against `»»`.
+
+In that glued form, a table always collapses to one rendered block of text, so
+the pipeline applies to that whole rendered table as a single value, exactly
+like it would for a conditional or scope block's single output. `join`/`join
+last` are no-ops there (a single value has nothing to join), so they're harmless
+if written out of habit. Any other filter (`truncate`, `date`, ...) would
+reformat the entire rendered table text, which is never useful — don't attach a
+filter pipeline to a table body.
+
+### As a Table
+
+When a loop block's body is a markdown table, only the third row repeats — the
+first two rows (heading and separator) render once, and any rows after the third
+render once as a footer.
+
+```markdown
+««items
+
+| Description   | Quantity          | Unit Price            | Total         |
+| ------------- | ----------------- | --------------------- | ------------- |
+| «description» | «quantity» «unit» | «unit price»          | «total»       |
+|               |                   | **Subtotal**          | «subtotal»    |
+|               |                   | **Tax (%«tax rate»)** | «tax»         |
+|               |                   | **Grand Total**       | «grand total» |
+
+»»
+```
+
+> [!NOTE]
+>
+> A body with fewer than three rows isn't treated as a table — it renders as a
+> normal repeating block instead. A one-row body (just `| «description» |
+> «total» |`, no heading or divider) repeats that single row for every item,
+> exactly like a non-table loop body would.
+
+Column alignment across rows (matching `|` counts) is the author's
+responsibility — the engine doesn't parse or validate table structure at
+all, only which row repeats. A row with a different cell count than its
+header still renders exactly as written, substituted and unmodified.
+
+### In a Blockquote
+
+A block works inside a markdown blockquote — every line prefixed with `>`. The
+rule is an equivalence: a quoted block renders exactly as the same block
+unquoted would, with the quote marker kept on every line.
+
+```markdown
+> ««items
+>
+> - «name»
+>
+> »»
+```
+
+renders, given two items, as
+
+```markdown
+> - A
+> - B
+```
+
+The block's opening, closing, `~` else and footer lines, and the blank lines
+the syntax requires *inside* the block, all carry the marker. How that marker
+is spelled and counted is covered under Quote Markers, below.
+
+The blank line *before* the opening and *after* the closing sit outside the
+block and may be at any depth, or be an ordinary empty line — which is what
+makes a block the first thing in a blockquote work:
+
+```markdown
+Note:
+
+> ««shown
+>
+> It is shown.
+>
+> »»
+```
+
+That line reaches the output as the template wrote it, so it is what separates
+one quoted block from the next. An ordinary empty line between two of them
+leaves two blockquotes; a `>` line there joins them into one.
+
+```markdown
+> ««items
+>
+> - «name»
+>
+> »»
+
+> ««others
+>
+> - «name»
+>
+> »»
+```
+
+renders as two blockquotes, one per block.
+
+A block whose own lines are unquoted may still have quoted *content* in its
+body — the markers are then just literal text, and nothing above applies:
+
+```markdown
+««items
+
+> - «name»
+
+»»
+```
+
+A loop body whose lines form a markdown table (see As a Table, above) works
+inside a blockquote too. Every row line carries the marker, the repeating row
+included, so the heading renders once and each item becomes one more quoted row.
+
+> [!NOTE]
+>
+> A block's closing must sit at the same depth as its opening; a mismatch is an
+> error.
+
 ## Variable Definitions
 
 A block can capture its rendered output in a named variable instead of rendering
@@ -501,37 +849,6 @@ After flag: «greeting»
 `After flag: «greeting»` still resolves to `Hi` — the conditional never
 introduced a boundary for `greeting` to fall out of.
 
-## Tables
-
-When a loop block's body is a markdown table, only the third row repeats — the
-first two rows (heading and separator) render once, and any rows after the third
-render once as a footer.
-
-```markdown
-««items
-
-| Description   | Quantity          | Unit Price            | Total         |
-| ------------- | ----------------- | --------------------- | ------------- |
-| «description» | «quantity» «unit» | «unit price»          | «total»       |
-|               |                   | **Subtotal**          | «subtotal»    |
-|               |                   | **Tax (%«tax rate»)** | «tax»         |
-|               |                   | **Grand Total**       | «grand total» |
-
-»»
-```
-
-> [!NOTE]
->
-> A body with fewer than three rows isn't treated as a table — it renders as a
-> normal repeating block instead. A one-row body (just `| «description» |
-> «total» |`, no heading or divider) repeats that single row for every item,
-> exactly like a non-table loop body would.
-
-Column alignment across rows (matching `|` counts) is the author's
-responsibility — the engine doesn't parse or validate table structure at
-all, only which row repeats. A row with a different cell count than its
-header still renders exactly as written, substituted and unmodified.
-
 ## Inline Lists
 
 A variable that resolves to a list of scalars is automatically joined with `, `
@@ -555,201 +872,7 @@ At each step, `:` either projects/flattens a list or accesses an object's
 property, depending on what it encounters.
 
 Override the default `, ` join with the `join`/`join last` filters — see
-Filters, below.
-
-## Filters
-
-`name: value` attaches a filter to a property chain, chained with ` / `:
-
-```markdown
-«date / date: dd/MM/yyyy»
-«amount / currency»
-«description / truncate: 80»
-«name / upper»
-«list: name / join: , »
-```
-
-`: ` (colon immediately followed by exactly one space) MUST be written together,
-same as property access above — it marks where a filter's value starts.
-
-> [!NOTE]
->
-> Whatever follows `: `, up to the next ` / ` or the end of the token, is the
-> value exactly as written — nothing is trimmed automatically. `truncate: 80 `
-> keeps its trailing space as part of the value. Symbols that carry meaning
-> elsewhere in the language — `~`, `!`, `=`, `: `, `.: `, `..: ` — are plain
-> text inside a value and need no escape. See Escaping, below, for how to fit a
-> literal `/` or `»`, or an actual newline/tab, inside a value.
-
-A filter's value is optional — write the bare name, with no `: value` at all, to
-use its default; what that default resolves to, and whether a bare name is even
-meaningful, is up to the filter itself.
-
-Filters chain into a pipeline, applied left to right — each stage receives the
-previous stage's output. A single-value filter maps over every item when its
-input is still a list; a list-collapsing filter (like `join`) acts on the whole
-list at once and produces a single string. Order matters for a pipeline mixing
-both kinds — they're genuinely sequential stages, not a paired configuration.
-
-A few filters are part of the language itself, not implementation-defined like
-the formatting filters below — every implementation MUST provide them, with a
-fixed contract that doesn't vary by runtime. Each gets its own subsection below
-explaining why it belongs here rather than in a runtime's own filter catalog.
-
-### Join
-
-`join` collapses the entire current list into a single string, joined by its
-value. Zero or one items is a no-op.
-
-```markdown
-«tags / join:  \/ »
-→ philosophy / wisdom / ancient-greek
-```
-
-Its own default value (used when written bare, with no `: value`) is `, ` when
-used inline, and a newline when used as a block footer (see Block Footer, below)
-— a bare `join` in a footer is a natural fit for joining loop output that
-already looks like separate lines, e.g. a list of `- «name»` rows. `join` is
-guaranteed because Inline Lists (above) defines its default comma-join in terms
-of it and `join last`.
-
-### Join Last
-
-`join last` merges the last two items of the current list into one, joined by
-its value; fewer than two items is a no-op. Order matters when combined with
-`join` — they're genuinely sequential stages, not a paired configuration:
-
-```markdown
-«quote: tags / join last:  and  / join: , »
-→ philosophy, wisdom and ancient-greek
-```
-
-The default auto-join (`, `, see Inline Lists, above) still applies if the
-pipeline ends without fully collapsing the list to a string, so `join last`
-alone is enough for the common "A, B and C" case.
-
-`join last`'s own bare-name default (used with no `: value` at all) is an empty
-separator — the last two items merge with nothing between them. Unlike `join`,
-there's no natural single default for `join last` across contexts, so write an
-explicit value (e.g. `join last:  and `) rather than relying on the bare form.
-Guaranteed alongside `join`, for the same reason — see Join, above.
-
-### Upper
-
-`upper` converts every value to uppercase, following whatever casing rules the
-implementation's language/culture setting applies (see below). It takes no value
-— write it bare, since anything after `: ` is ignored, the same as any filter
-that has no use for its argument.
-
-```markdown
-«name / upper»
-→ ADA LOVELACE
-```
-
-It's guaranteed because, unlike a date, currency, or truncate filter, it doesn't
-parse the value through a host-specific primitive — it just transforms
-characters. Exactly how casing behaves for a given language is still
-implementation-defined (see below), but the filter itself is always available.
-
-### Lower
-
-`lower` converts every value to lowercase, the same shape as `upper` in every
-other respect, guaranteed for the same reason:
-
-```markdown
-«name / lower»
-→ ada lovelace
-```
-
-### Default
-
-`default` substitutes its value for any value that would otherwise
-render as empty — an unresolved chain (see Resolving the Block Name,
-above) or a property whose own value is empty (an explicit null, or an
-empty string). Applied per item when the input is still a list, the
-same as `upper`/`lower`; a resolved, non-empty value passes through
-unchanged.
-
-```markdown
-«nickname / default: N/A»
-```
-
-Given `nickname` is missing entirely, this renders `N/A`; given
-`nickname` is `"Al"`, it renders `Al` unchanged. Guaranteed for the same
-reason as `upper`/`lower` — it's a direct string substitution, not a
-wrapper around a host-specific parsing/formatting primitive.
-
-Other utility filters — formatting a date, a currency amount, truncating text,
-and so on — are commonly provided but implementation-defined, not part of this
-language-level spec. Each is a thin wrapper around whatever formatting/parsing
-primitives the host runtime provides: a date filter around the runtime's own
-date formatter, a currency filter around its number formatter, and so on. The
-exact catalog and behavior necessarily vary by runtime, so every implementation
-MUST document such filters separately rather than folding them in here. This
-repository's .NET implementation documents its `date`, `currency`, `number`,
-and `truncate` (plus any .NET-specific notes on `join`/`join last`/`upper`/
-`lower`) in [`implementations/dotnet.md`](implementations/dotnet.md).
-
-### Block Footer
-
-The same pipeline attaches to a block's last line, right before its closing
-`»»`, applying to the block's own accumulated output instead of a property
-chain:
-
-```markdown
-««tags = quote: tags
-
-«name»
-
-join: , »»
-```
-
-renders as a comma-separated list when used via `«tags»`. The pipeline MUST be
-the only thing on that line — nothing else may share it, before or after — and
-MUST end right where the closing `»»` starts, with no line break between them. A
-pipeline that isn't glued to the close this way isn't recognized as a footer at
-all; it's ordinary literal body content instead.
-
-> [!NOTE]
->
-> This means a new custom filter can retroactively change how an
-> already-written template parses, if its name matches a glued last line:
->
-> ```markdown
-> ««notes
->
-> Summary text.
->
-> highlight»»
-> ```
->
-> A hard parse error with no `highlight` filter registered, silently
-> different output the moment a host app registers one — even for an
-> unrelated feature. Expected, not a bug; keep custom filter names
-> distinctive.
-
-When the block has an else branch, the footer goes on the last line of whichever
-branch renders last: the truthy body if there is no `~`, the falsy body if there
-is one. `~` itself always stays on its own line and is never adjacent to it.
-
-An unescaped `»»` at the block's own depth always terminates the last filter's
-value, even mid-value with no space before it — `join: , »»` isn't ambiguous,
-the value is exactly `, `. This is the same closing-token rule that ends any
-other block body (see Blocks, above), not something specific to filter values.
-
-A table's own trailing footer rows (see Tables, above) are a different,
-non-conflicting concept from this pipeline. The "glued to the close" rule above
-keeps them from colliding in practice: a table row written on its own line, even
-one that happens to look like a filter name, is just another literal row — the
-pipeline only ever wins when it's written right up against `»»`.
-
-In that glued form, a table always collapses to one rendered block of text, so
-the pipeline applies to that whole rendered table as a single value, exactly
-like it would for a conditional or scope block's single output. `join`/`join
-last` are no-ops there (a single value has nothing to join), so they're harmless
-if written out of habit. Any other filter (`truncate`, `date`, ...) would
-reformat the entire rendered table text, which is never useful — don't attach a
-filter pipeline to a table body.
+Filters, above.
 
 ## Whitespace
 
@@ -830,6 +953,36 @@ renders, given two items, as
 - alpha
 - beta
 ```
+
+### Quote Markers
+
+Inside a blockquote (see In a Blockquote, above) what counts is the **depth** —
+how many `>` markers deep the line sits — not the exact spelling, so `>` and
+`> ` are the same depth and mix freely within one block. That matters because a
+blank line inside a quote is usually written `>` with no trailing space, editors
+and formatters being prone to stripping one.
+
+Everything after the marker run is content, preserved as written, so `>- «name»`
+renders as `>- A`. A `>` that is not part of a line's leading run is ordinary
+content too.
+
+A *blank* line keeps the spelling the template gave it, minus any trailing
+space: a `> >` blank line inside a depth-2 quote renders as `> >`, and a `>>`
+one as `>>`. Trailing space is dropped because a blank line has no content for
+it to separate.
+
+Blank lines the engine produces *within* a block's own output — between loop
+items, or where a block that rendered nothing stood — carry the block's marker
+too, so the output stays a single blockquote, and they copy the spelling of the
+block's opening line. That is what keeps such a line indistinguishable from one
+the author wrote: the quote reads consistently whichever spelling the author
+chose, rather than both being forced to one. The blank line after a block's
+close is not one of these — it belongs to the template and keeps whatever the
+template gave it (see In a Blockquote, above). A multi-paragraph loop item is
+separated from the next item by a `>` line rather than an empty one (see Blank
+Lines in the Output, above), and a block that renders nothing leaves one `>`
+line where it stood. An empty line there would end the blockquote and split it
+in two, which is why the depth has to match rather than merely being tolerated.
 
 ### Trimming Blank Lines Around a Block
 
@@ -956,6 +1109,22 @@ renders as written.
 A block's opening is the one exception: it MUST stay on one line. `««quotes:`
 with its `items` on the next line is an error, because that marker's own line
 is what the blank-line rules above are written against.
+
+Inside a blockquote a wrapped `«...»` carries the quote marker on each of its
+continuation lines, and there it is still a marker — it is stripped before the
+wrapped text is read, so the equivalence holds for a wrapped reference exactly
+as it does for a block:
+
+```markdown
+> Company name: «company:
+> name»
+```
+
+renders as
+
+```markdown
+> Company name: Acme
+```
 
 ### Line Endings
 
@@ -1184,84 +1353,6 @@ resolving from, not whether list-filtering applies to it:
 «.: items: active»
 «..: quotes: active»
 ```
-
-## Blockquotes
-
-A block works inside a markdown blockquote — every line prefixed with `>`. The
-rule is an equivalence: a quoted block renders exactly as the same block
-unquoted would, with the quote marker kept on every line.
-
-```markdown
-> ««items
->
-> - «name»
->
-> »»
-```
-
-renders, given two items, as
-
-```markdown
-> - A
-> - B
-```
-
-The block's opening, closing, `~` else and footer lines, and the blank lines
-the syntax requires *inside* the block, all carry the marker. What counts is
-the **depth** — how many `>` markers deep the line sits — not the exact
-spelling, so `>` and `> ` are the same depth and mix freely within one block.
-That matters because a blank line inside a quote is usually written `>` with no
-trailing space, editors and formatters being prone to stripping one.
-
-Everything after the marker is content, preserved as written, so `>- «name»`
-renders as `>- A`.
-
-A *blank* line has no content, so its marker is written canonically in the
-output — one `>` per level, no spacing — however the template spelled it. A
-`> >` blank line inside a depth-2 quote renders as `>>`. This is what keeps a
-blank line the engine produces itself indistinguishable from one the author
-wrote, so neither depends on the other's spacing.
-
-The blank line *before* the opening and *after* the closing sit outside the
-block and may be at any depth, or be an ordinary empty line — which is what
-makes a block the first thing in a blockquote work:
-
-```markdown
-Note:
-
-> ««shown
->
-> It is shown.
->
-> »»
-```
-
-Blank lines the engine produces itself carry the block's marker too, so the
-output stays a single blockquote. A multi-paragraph loop item is separated from
-the next item by a `>` line rather than an empty one (see Blank Lines in the
-Output, above), and a block that renders nothing leaves one `>` line where it
-stood. An empty line there would end the blockquote and split it in two, which
-is why the depth has to match rather than merely being tolerated.
-
-A block whose own lines are unquoted may still have quoted *content* in its
-body — the markers are then just literal text, and nothing above applies:
-
-```markdown
-««items
-
-> - «name»
-
-»»
-```
-
-A loop body whose lines form a markdown table (see Tables, above) works inside a
-blockquote too. Every row line carries the marker, the repeating row included,
-so the heading renders once and each item becomes one more quoted row.
-
-> [!NOTE]
->
-> A block's closing must sit at the same depth as its opening; a mismatch is an
-> error.
 
 ## Comments
 

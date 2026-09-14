@@ -1,0 +1,28 @@
+{
+  "Items": [
+    { "Active": true, "FullName": "Alice Smith" },
+    { "Active": false, "FullName": "Bob Jones" }
+  ],
+  "NoMatchItems": [
+    { "Active": false, "FullName": "Alice Smith" },
+    { "Active": false, "FullName": "Bob Jones" }
+  ],
+  "SparseItems": [
+    { "Active": true, "FullName": "Alice Smith" },
+    { "FullName": "Bob Jones" },
+    { "Active": true, "FullName": "Carol White" }
+  ],
+  "Quotes": [
+    {
+      "Prices": [
+        { "Active": true, "Amount": 100 },
+        { "Active": false, "Amount": 150 }
+      ]
+    },
+    {
+      "Prices": [
+        { "Active": true, "Amount": 300 }
+      ]
+    }
+  ]
+}

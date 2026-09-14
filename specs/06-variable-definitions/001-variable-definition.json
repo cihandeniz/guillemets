@@ -1,0 +1,18 @@
+{
+  "Individual": true,
+  "FullName": "Alice Smith",
+  "CompanyName": "Acme Inc.",
+  "Company": "Acme Inc.",
+  "Vendor": {
+    "Street": "1 Main St.",
+    "City": "Springfield"
+  },
+  "Quote": {
+    "Tags": [
+      { "Name": "philosophy" },
+      { "Name": "wisdom" },
+      { "Name": "ancient-greek" }
+    ]
+  },
+  "EmptyQuote": { "Tags": [] }
+}

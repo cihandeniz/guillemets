@@ -1,5 +1,0 @@
-««quotes: prices
-
-- «amount»
-
-»»

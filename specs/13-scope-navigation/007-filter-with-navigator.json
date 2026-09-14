@@ -1,8 +1,0 @@
-{
-  "Company": {
-    "Name": "acme corp",
-    "Quotes": [
-      { "Number": 1 }
-    ]
-  }
-}

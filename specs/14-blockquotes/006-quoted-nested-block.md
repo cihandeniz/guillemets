@@ -1,7 +1,0 @@
-> Acme
->
-> - Springfield
->
-> Globex
->
-> - Shelbyville
